@@ -21,6 +21,13 @@ import {
   getSavedLocation,
   type LocationResult,
 } from "./services/locationService";
+import {
+  trackLocationDetected,
+  trackLocationChanged,
+  trackLocationError,
+  trackWeatherView,
+  trackApiError,
+} from "./services/analytics";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -142,6 +149,12 @@ function App() {
       setHourlyForecast(hourly);
       setMonthlyForecast(monthly);
 
+      // Track weather views
+      if (current) trackWeatherView("current");
+      if (hourly.length > 0) trackWeatherView("hourly");
+      if (sevenDay.length > 0) trackWeatherView("daily");
+      if (monthly) trackWeatherView("monthly");
+
       // Update structured data when weather data loads
       if (current && coordinates) {
         // Parse location name to extract city and state
@@ -155,7 +168,8 @@ function App() {
         };
         updateStructuredData(locationResult, current);
       }
-    } catch {
+    } catch (error) {
+      trackApiError("weather");
       setError(
         "Failed to load weather data. The location may not be supported by the National Weather Service.",
       );
@@ -172,6 +186,7 @@ function App() {
     try {
       const saved = getSavedLocation();
       if (saved) {
+        trackLocationDetected("saved");
         setCoordinates(saved.coordinates);
         // If saved location still shows "Your Location" or coordinates, try to reverse geocode it
         if (
@@ -197,6 +212,7 @@ function App() {
 
       const coords = await getBrowserLocation();
       const locationResult = await reverseGeocode(coords);
+      trackLocationDetected("browser");
       setCoordinates(coords);
       setLocationName(locationResult.displayName);
       saveLocation(locationResult);
@@ -204,6 +220,7 @@ function App() {
       console.log("Location detected:", locationResult.displayName);
     } catch (locationError) {
       console.log("Location detection failed:", locationError);
+      trackLocationError("browser_denied");
       // Don't set error message, just show search interface
       setLocationName("Enter your location");
       setShowSearch(true);
@@ -229,12 +246,14 @@ function App() {
     setShowSearch(false);
 
     try {
+      trackLocationChanged("search");
       setCoordinates(location.coordinates);
       setLocationName(location.displayName);
       saveLocation(location);
       updatePageTitle(location.displayName);
       updateStructuredData(location, currentConditions);
-    } catch {
+    } catch (error) {
+      trackApiError("location");
       setError("Failed to find location");
     } finally {
       setIsLoading(false);
