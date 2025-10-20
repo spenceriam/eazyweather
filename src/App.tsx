@@ -55,59 +55,63 @@ function App() {
     location: LocationResult,
     conditions: CurrentConditionsType | null,
   ) {
-    const script = document.getElementById("weather-structured-data");
-    if (!script) return;
+    try {
+      const script = document.getElementById("weather-structured-data");
+      if (!script) return;
 
-    const structuredData = {
-      "@context": "https://schema.org",
-      "@type": "WeatherForecast",
-      name: `${location.displayName} Weather Forecast`,
-      description: `Current weather conditions and forecast for ${location.displayName}`,
-      location: {
-        "@type": "Place",
-        name: location.displayName,
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: location.city,
-          addressRegion: location.state,
-          addressCountry: location.country,
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "WeatherForecast",
+        name: `${location.displayName} Weather Forecast`,
+        description: `Current weather conditions and forecast for ${location.displayName}`,
+        location: {
+          "@type": "Place",
+          name: location.displayName,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: location.city || location.displayName.split(',')[0],
+            addressRegion: location.state || location.displayName.split(',')[1]?.trim(),
+            addressCountry: location.country || "US",
+          },
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: location.coordinates.latitude,
+            longitude: location.coordinates.longitude,
+          },
         },
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: location.coordinates.latitude,
-          longitude: location.coordinates.longitude,
+        forecast: conditions
+          ? {
+              "@type": "WeatherConditions",
+              temperature: {
+                "@type": "QuantitativeValue",
+                value: conditions.temperature,
+                unitCode: conditions.temperatureUnit === "C" ? "C" : "F",
+              },
+              humidity: {
+                "@type": "QuantitativeValue",
+                value: conditions.relativeHumidity,
+                unitCode: "P1",
+              },
+              windSpeed: {
+                "@type": "QuantitativeValue",
+                value: conditions.windSpeed,
+                unitText: conditions.windSpeed.includes("mph") ? "mph" : "km/h",
+              },
+              weatherCondition: conditions.textDescription,
+            }
+          : {},
+        dateModified: new Date().toISOString(),
+        provider: {
+          "@type": "Organization",
+          name: "National Weather Service",
+          url: "https://weather.gov",
         },
-      },
-      forecast: conditions
-        ? {
-            "@type": "WeatherConditions",
-            temperature: {
-              "@type": "QuantitativeValue",
-              value: conditions.temperature,
-              unitCode: conditions.temperatureUnit === "C" ? "C" : "F",
-            },
-            humidity: {
-              "@type": "QuantitativeValue",
-              value: conditions.relativeHumidity,
-              unitCode: "P1",
-            },
-            windSpeed: {
-              "@type": "QuantitativeValue",
-              value: conditions.windSpeed,
-              unitText: conditions.windSpeed.includes("mph") ? "mph" : "km/h",
-            },
-            weatherCondition: conditions.textDescription,
-          }
-        : {},
-      dateModified: new Date().toISOString(),
-      provider: {
-        "@type": "Organization",
-        name: "National Weather Service",
-        url: "https://weather.gov",
-      },
-    };
+      };
 
-    script.textContent = JSON.stringify(structuredData);
+      script.textContent = JSON.stringify(structuredData);
+    } catch (error) {
+      console.warn("Failed to update structured data:", error);
+    }
   }
 
   const [currentConditions, setCurrentConditions] =
@@ -140,23 +144,25 @@ function App() {
 
       // Update structured data when weather data loads
       if (current && coordinates) {
+        // Parse location name to extract city and state
+        const locationParts = locationName.split(',');
         const locationResult = {
           coordinates,
           displayName: locationName,
-          city: "",
-          state: "",
-          country: "",
+          city: locationParts[0]?.trim() || "",
+          state: locationParts[1]?.trim() || "",
+          country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
         };
         updateStructuredData(locationResult, current);
       }
-    } catch (err) {
+    } catch {
       setError(
         "Failed to load weather data. The location may not be supported by the National Weather Service.",
       );
     } finally {
       setIsLoading(false);
     }
-  }, [coordinates, locationName, currentConditions]);
+  }, [coordinates, locationName]);
 
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
