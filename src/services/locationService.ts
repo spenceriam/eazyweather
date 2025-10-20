@@ -121,8 +121,15 @@ export async function reverseGeocode(
 
     const address = data.address;
 
+    // Try multiple city-level fields, but never county
     const city =
-      address.city || address.town || address.village || address.county || "";
+      address.city ||
+      address.town ||
+      address.village ||
+      address.municipality ||
+      address.locality ||
+      address.hamlet ||
+      "";
     const state = address.state || address.province || "";
     const country = address.country || "";
 
@@ -130,20 +137,30 @@ export async function reverseGeocode(
 
     // Format display name based on location type
     let displayName = "";
+
+    // For US and Canada, always require city + state/province
     if (country === "United States" || country === "Canada") {
-      displayName =
-        city && state
-          ? `${city}, ${state}`
-          : city ||
-            state ||
-            `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
+      if (city && state) {
+        displayName = `${city}, ${state}`;
+      } else if (city) {
+        // If we have a city but no state, still show the city
+        displayName = city;
+      } else {
+        // No city found - fall back to coordinates
+        displayName = `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
+      }
     } else {
-      displayName =
-        city && state
-          ? `${city}, ${state}`
-          : city ||
-            country ||
-            `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
+      // For international locations, prefer city + state/province, then city + country
+      if (city && state) {
+        displayName = `${city}, ${state}`;
+      } else if (city && country) {
+        displayName = `${city}, ${country}`;
+      } else if (city) {
+        displayName = city;
+      } else {
+        // No city found - fall back to coordinates
+        displayName = `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
+      }
     }
 
     console.log("Final display name:", displayName);
@@ -196,18 +213,44 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       longitude: parseFloat(result.lon),
     };
 
-    const city = address.city || address.town || address.village || "";
+    // Try multiple city-level fields, but never county
+    const city =
+      address.city ||
+      address.town ||
+      address.village ||
+      address.municipality ||
+      address.locality ||
+      address.hamlet ||
+      "";
     const state = address.state || address.province || "";
     const country = address.country || "";
 
-    // Format display name based on location type
+    // Format display name based on location type - same logic as reverse geocoding
     let displayName = "";
+
+    // For US and Canada, always require city + state/province
     if (country === "United States" || country === "Canada") {
-      displayName =
-        city && state ? `${city}, ${state}` : city || state || query;
+      if (city && state) {
+        displayName = `${city}, ${state}`;
+      } else if (city) {
+        // If we have a city but no state, still show the city
+        displayName = city;
+      } else {
+        // No city found - use the original query
+        displayName = query;
+      }
     } else {
-      displayName =
-        city && state ? `${city}, ${state}` : city || country || query;
+      // For international locations, prefer city + state/province, then city + country
+      if (city && state) {
+        displayName = `${city}, ${state}`;
+      } else if (city && country) {
+        displayName = `${city}, ${country}`;
+      } else if (city) {
+        displayName = city;
+      } else {
+        // No city found - use the original query
+        displayName = query;
+      }
     }
 
     return {
