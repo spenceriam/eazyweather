@@ -37,6 +37,7 @@ export async function reverseGeocode(
   coords: Coordinates,
 ): Promise<LocationResult> {
   try {
+    console.log("Reverse geocoding coordinates:", coords);
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&addressdetails=1`,
       {
@@ -47,15 +48,24 @@ export async function reverseGeocode(
     );
 
     if (!response.ok) {
-      throw new Error("Reverse geocoding failed");
+      throw new Error(`Reverse geocoding failed: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("Reverse geocoding response:", data);
+
+    if (!data || !data.address) {
+      throw new Error("Invalid response format from geocoding service");
+    }
+
     const address = data.address;
 
-    const city = address.city || address.town || address.village || "";
+    const city =
+      address.city || address.town || address.village || address.county || "";
     const state = address.state || address.province || "";
     const country = address.country || "";
+
+    console.log("Parsed address:", { city, state, country });
 
     // Format display name based on location type
     let displayName = "";
@@ -63,13 +73,19 @@ export async function reverseGeocode(
       displayName =
         city && state
           ? `${city}, ${state}`
-          : city || state || "Unknown Location";
+          : city ||
+            state ||
+            `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
     } else {
       displayName =
         city && state
           ? `${city}, ${state}`
-          : city || country || "Unknown Location";
+          : city ||
+            country ||
+            `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`;
     }
+
+    console.log("Final display name:", displayName);
 
     return {
       coordinates: coords,
@@ -80,10 +96,10 @@ export async function reverseGeocode(
     };
   } catch (error) {
     console.error("Reverse geocoding error:", error);
-    // Return basic coordinates info if geocoding fails
+    // Return coordinates as fallback instead of "Your Location"
     return {
       coordinates: coords,
-      displayName: "Your Location",
+      displayName: `${coords.latitude.toFixed(2)}°, ${coords.longitude.toFixed(2)}°`,
       city: "",
       state: "",
       country: "",

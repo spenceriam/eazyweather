@@ -79,7 +79,21 @@ function App() {
       const saved = getSavedLocation();
       if (saved) {
         setCoordinates(saved.coordinates);
-        setLocationName(saved.displayName || "Your Location");
+        // If saved location still shows "Your Location" or coordinates, try to reverse geocode it
+        if (
+          saved.displayName === "Your Location" ||
+          saved.displayName.includes(",")
+        ) {
+          try {
+            const locationResult = await reverseGeocode(saved.coordinates);
+            setLocationName(locationResult.displayName);
+            saveLocation(locationResult);
+          } catch {
+            setLocationName(saved.displayName);
+          }
+        } else {
+          setLocationName(saved.displayName);
+        }
         setIsLoading(false);
         return;
       }
@@ -89,6 +103,7 @@ function App() {
       setCoordinates(coords);
       setLocationName(locationResult.displayName);
       saveLocation(locationResult);
+      console.log("Location detected:", locationResult.displayName);
     } catch {
       setError(
         "Unable to get your location. Please enter a location manually.",
