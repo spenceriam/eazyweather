@@ -36,6 +36,80 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
 
+  // Update page title for SEO
+  function updatePageTitle(location: string) {
+    const baseTitle = "EazyWeather - Free Local Weather Forecast";
+    if (
+      location &&
+      location !== "Loading..." &&
+      location !== "Enter your location"
+    ) {
+      document.title = `${location} Weather Forecast | ${baseTitle}`;
+    } else {
+      document.title = baseTitle;
+    }
+  }
+
+  // Update structured data for SEO
+  function updateStructuredData(
+    location: LocationResult,
+    conditions: CurrentConditionsType | null,
+  ) {
+    const script = document.getElementById("weather-structured-data");
+    if (!script) return;
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "WeatherForecast",
+      name: `${location.displayName} Weather Forecast`,
+      description: `Current weather conditions and forecast for ${location.displayName}`,
+      location: {
+        "@type": "Place",
+        name: location.displayName,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: location.city,
+          addressRegion: location.state,
+          addressCountry: location.country,
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: location.coordinates.latitude,
+          longitude: location.coordinates.longitude,
+        },
+      },
+      forecast: conditions
+        ? {
+            "@type": "WeatherConditions",
+            temperature: {
+              "@type": "QuantitativeValue",
+              value: conditions.temperature,
+              unitCode: conditions.temperatureUnit === "C" ? "C" : "F",
+            },
+            humidity: {
+              "@type": "QuantitativeValue",
+              value: conditions.relativeHumidity,
+              unitCode: "P1",
+            },
+            windSpeed: {
+              "@type": "QuantitativeValue",
+              value: conditions.windSpeed,
+              unitText: conditions.windSpeed.includes("mph") ? "mph" : "km/h",
+            },
+            weatherCondition: conditions.textDescription,
+          }
+        : {},
+      dateModified: new Date().toISOString(),
+      provider: {
+        "@type": "Organization",
+        name: "National Weather Service",
+        url: "https://weather.gov",
+      },
+    };
+
+    script.textContent = JSON.stringify(structuredData);
+  }
+
   const [currentConditions, setCurrentConditions] =
     useState<CurrentConditionsType | null>(null);
   const [forecast, setForecast] = useState<ForecastPeriod[]>([]);
@@ -63,14 +137,26 @@ function App() {
       setForecast(sevenDay);
       setHourlyForecast(hourly);
       setMonthlyForecast(monthly);
-    } catch {
+
+      // Update structured data when weather data loads
+      if (current && coordinates) {
+        const locationResult = {
+          coordinates,
+          displayName: locationName,
+          city: "",
+          state: "",
+          country: "",
+        };
+        updateStructuredData(locationResult, current);
+      }
+    } catch (err) {
       setError(
         "Failed to load weather data. The location may not be supported by the National Weather Service.",
       );
     } finally {
       setIsLoading(false);
     }
-  }, [coordinates]);
+  }, [coordinates, locationName, currentConditions]);
 
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
@@ -90,11 +176,14 @@ function App() {
             const locationResult = await reverseGeocode(saved.coordinates);
             setLocationName(locationResult.displayName);
             saveLocation(locationResult);
+            updatePageTitle(locationResult.displayName);
           } catch {
             setLocationName(saved.displayName);
+            updatePageTitle(saved.displayName);
           }
         } else {
           setLocationName(saved.displayName);
+          updatePageTitle(saved.displayName);
         }
         setIsLoading(false);
         return;
@@ -105,12 +194,14 @@ function App() {
       setCoordinates(coords);
       setLocationName(locationResult.displayName);
       saveLocation(locationResult);
+      updatePageTitle(locationResult.displayName);
       console.log("Location detected:", locationResult.displayName);
     } catch (locationError) {
       console.log("Location detection failed:", locationError);
       // Don't set error message, just show search interface
       setLocationName("Enter your location");
       setShowSearch(true);
+      updatePageTitle("EazyWeather - Free Local Weather Forecast");
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +226,8 @@ function App() {
       setCoordinates(location.coordinates);
       setLocationName(location.displayName);
       saveLocation(location);
+      updatePageTitle(location.displayName);
+      updateStructuredData(location, currentConditions);
     } catch {
       setError("Failed to find location");
     } finally {

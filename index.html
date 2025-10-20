@@ -1,13 +1,151 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>eazyweather Simple Weather App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Primary Meta Tags -->
+        <title>
+            EazyWeather - Free Local Weather Forecast & Conditions | Real-Time
+            Weather Updates
+        </title>
+        <meta
+            name="title"
+            content="EazyWeather - Free Local Weather Forecast & Conditions | Real-Time Weather Updates"
+        />
+        <meta
+            name="description"
+            content="Get accurate local weather forecasts, current conditions, and hourly updates with EazyWeather. Free weather app with 7-day forecasts, radar, and severe weather alerts for any location worldwide."
+        />
+        <meta
+            name="keywords"
+            content="weather forecast, local weather, weather conditions, hourly forecast, 7 day forecast, weather radar, severe weather, temperature, precipitation, wind speed, humidity, weather app, free weather"
+        />
+        <meta name="author" content="EazyWeather" />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="English" />
+        <meta name="geo.region" content="US" />
+        <meta name="geo.position" content="40.7128;-74.0060" />
+        <meta name="ICBM" content="40.7128, -74.0060" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://eazyweather.vercel.app/" />
+        <meta
+            property="og:title"
+            content="EazyWeather - Free Local Weather Forecast & Conditions"
+        />
+        <meta
+            property="og:description"
+            content="Get accurate local weather forecasts, current conditions, and hourly updates. Free weather app with 7-day forecasts and severe weather alerts."
+        />
+        <meta
+            property="og:image"
+            content="https://eazyweather.vercel.app/og-image.jpg"
+        />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="EazyWeather" />
+        <meta property="og:locale" content="en_US" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+            property="twitter:url"
+            content="https://eazyweather.vercel.app/"
+        />
+        <meta
+            property="twitter:title"
+            content="EazyWeather - Free Local Weather Forecast & Conditions"
+        />
+        <meta
+            property="twitter:description"
+            content="Get accurate local weather forecasts, current conditions, and hourly updates. Free weather app with 7-day forecasts and severe weather alerts."
+        />
+        <meta
+            property="twitter:image"
+            content="https://eazyweather.vercel.app/og-image.jpg"
+        />
+
+        <!-- Additional SEO Meta Tags -->
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#3b82f6" />
+        <link rel="canonical" href="https://eazyweather.vercel.app/" />
+
+        <!-- Favicon -->
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+
+        <!-- Structured Data -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "EazyWeather",
+                "description": "Free local weather forecast and conditions app with real-time updates",
+                "url": "https://eazyweather.vercel.app/",
+                "applicationCategory": "WeatherApplication",
+                "operatingSystem": "Web Browser",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                },
+                "creator": {
+                    "@type": "Organization",
+                    "name": "EazyWeather"
+                },
+                "featureList": [
+                    "Current weather conditions",
+                    "Hourly weather forecasts",
+                    "7-day weather outlook",
+                    "Monthly weather calendar",
+                    "Location-based weather",
+                    "Severe weather alerts",
+                    "Temperature and humidity",
+                    "Wind speed and direction"
+                ],
+                "screenshot": "https://eazyweather.vercel.app/screenshot.jpg",
+                "softwareVersion": "1.0.0",
+                "datePublished": "2025-01-19",
+                "inLanguage": "en-US"
+            }
+        </script>
+
+        <!-- Dynamic Weather Structured Data -->
+        <script id="weather-structured-data" type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WeatherForecast",
+                "name": "Local Weather Forecast",
+                "description": "Current weather conditions and forecast for your location",
+                "provider": {
+                    "@type": "Organization",
+                    "name": "National Weather Service",
+                    "url": "https://weather.gov"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>

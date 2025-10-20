@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://eazyweather.vercel.app/sitemap.xml
+
+# Block common non-content paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
+
+# Allow search engines to crawl all content
+Crawl-delay: 1
