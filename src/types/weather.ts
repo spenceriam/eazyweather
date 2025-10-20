@@ -52,9 +52,21 @@ export interface HourlyForecast {
 }
 
 export interface Location {
-  type: 'coordinates' | 'manual';
+  type: "coordinates" | "manual";
   coordinates: Coordinates;
   displayName?: string;
 }
 
-export type ViewMode = 'current' | 'forecast' | 'hourly' | 'radar';
+export interface MonthlyDay {
+  date: number;
+  temperature: number;
+  condition: string;
+  icon: string;
+  isAvailable: boolean;
+}
+
+export interface MonthlyForecast {
+  month: number;
+  year: number;
+  days: MonthlyDay[];
+}

@@ -1,62 +1,93 @@
-import { WeatherIcon } from './icons/WeatherIcon';
-import type { HourlyForecast as HourlyForecastType } from '../types/weather';
+import { useState } from "react";
+import { WeatherIcon } from "./icons/WeatherIcon";
+import type { HourlyForecast as HourlyForecastType } from "../types/weather";
 
 interface HourlyForecastProps {
   forecast: HourlyForecastType[];
 }
 
 export function HourlyForecast({ forecast }: HourlyForecastProps) {
-  return (
-    <div className="py-6 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            {forecast.map((hour, index) => {
-              const time = new Date(hour.startTime);
-              const timeStr = time.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                hour12: true
-              });
-              const dateStr = time.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-              });
+  const [show24Hours, setShow24Hours] = useState(true);
 
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center min-w-[120px] hover:shadow-lg transition-shadow"
-                >
-                  <div className="text-sm font-medium text-gray-700 mb-1">
-                    {timeStr}
+  const displayForecast = show24Hours
+    ? forecast.slice(0, 24)
+    : forecast.slice(24, 48);
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  return (
+    <section id="hourly" className="bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Hourly Forecast
+          </h2>
+          <button
+            onClick={() => setShow24Hours(!show24Hours)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            {show24Hours ? "Show Next 24 Hours" : "Show First 24 Hours"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {displayForecast.map((hour, index) => {
+            const time = new Date(hour.startTime);
+            const timeStr = time.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              hour12: true,
+            });
+            const dateStr = time.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            });
+
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="text-lg font-medium text-gray-700">
+                      {timeStr}
+                    </div>
+                    <div className="text-sm text-gray-500">{dateStr}</div>
                   </div>
-                  <div className="text-xs text-gray-500 mb-3">
-                    {dateStr}
+                  <div className="text-2xl font-light text-gray-800">
+                    {hour.temperature}°
                   </div>
+                </div>
+
+                <div className="flex items-center justify-center mb-3">
                   <WeatherIcon
                     condition={hour.shortForecast}
                     isDaytime={hour.isDaytime}
-                    size={60}
-                    className="mb-3"
+                    size={80}
                   />
-                  <div className="text-2xl font-light text-gray-800 mb-2">
-                    {hour.temperature}°
-                  </div>
-                  <div className="text-xs text-gray-600 text-center mb-2 h-8 line-clamp-2">
-                    {hour.shortForecast}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {hour.windSpeed}
-                  </div>
                 </div>
-              );
-            })}
-          </div>
+
+                <div className="text-sm text-gray-600 text-center mb-2">
+                  {hour.shortForecast}
+                </div>
+
+                <div className="text-xs text-gray-500 text-center">
+                  Wind: {hour.windSpeed}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="text-center text-sm text-gray-400 mt-4">
-          Scroll horizontally to view more hours
-        </div>
+
+        <button
+          onClick={scrollToTop}
+          className="mt-8 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Back to Top
+        </button>
       </div>
-    </div>
+    </section>
   );
 }
