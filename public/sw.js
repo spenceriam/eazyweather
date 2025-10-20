@@ -2,9 +2,7 @@ const CACHE_NAME = 'eazyweather-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/manifest.json'
 ];
 
 // Install event - cache resources
@@ -20,6 +18,16 @@ self.addEventListener('install', event => {
 
 // Fetch event - serve cached content when offline
 self.addEventListener('fetch', event => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -37,18 +45,27 @@ self.addEventListener('fetch', event => {
             return response;
           }
 
-          // Clone the response
-          const responseToCache = response.clone();
+          // Only cache HTML, CSS, JS, and images
+          const contentType = response.headers.get('content-type');
+          if (contentType && (
+            contentType.includes('text/html') ||
+            contentType.includes('text/css') ||
+            contentType.includes('application/javascript') ||
+            contentType.includes('image/')
+          )) {
+            // Clone the response
+            const responseToCache = response.clone();
 
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+          }
 
           return response;
         }).catch(() => {
-          // Return cached version if available for API calls
-          if (event.request.url.includes('/api/')) {
+          // Return cached version if available for navigation requests
+          if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
         });
