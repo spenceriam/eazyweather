@@ -55,6 +55,9 @@ export interface Location {
   type: "coordinates" | "manual";
   coordinates: Coordinates;
   displayName?: string;
+  city?: string;
+  state?: string;
+  country?: string;
 }
 
 export interface MonthlyDay {

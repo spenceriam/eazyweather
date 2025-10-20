@@ -18,66 +18,73 @@ export function CurrentConditions({ conditions }: CurrentConditionsProps) {
   }
 
   return (
-    <section id="current" className="bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        <div className="flex flex-col items-center justify-center">
-          <div className="mb-8">
-            <WeatherIcon
-              condition={conditions.textDescription}
-              isDaytime={isDaytime}
-              size={180}
-              className="drop-shadow-lg"
-            />
+    <section id="current" className="bg-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+              {/* Left side - Weather icon and temperature */}
+              <div className="flex flex-col items-center md:items-start">
+                <div className="mb-4">
+                  <WeatherIcon
+                    condition={conditions.textDescription}
+                    isDaytime={isDaytime}
+                    size={120}
+                    className="drop-shadow-lg"
+                  />
+                </div>
+                <div className="text-center md:text-left">
+                  <div className="text-5xl font-light text-gray-800 mb-2">
+                    {tempF}°
+                  </div>
+                  <div className="text-lg text-gray-600 capitalize mb-1">
+                    {conditions.textDescription}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Updated:{" "}
+                    {new Date(conditions.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - Weather details */}
+              <div className="flex-1 grid grid-cols-2 gap-6">
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Humidity
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {Math.round(conditions.relativeHumidity)}%
+                  </span>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Wind
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {conditions.windSpeed}
+                  </span>
+                </div>
+
+                <div className="flex flex-col col-span-2">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Wind Direction
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {getWindDirection(conditions.windDirection)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={scrollToTop}
+              className="mt-6 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Back to Top
+            </button>
           </div>
-
-          <div className="text-center mb-8">
-            <div className="text-7xl md:text-8xl font-light text-gray-800 mb-2">
-              {tempF}°
-            </div>
-            <div className="text-2xl md:text-3xl text-gray-600 mb-4 capitalize">
-              {conditions.textDescription}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-center">
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-500 uppercase tracking-wide">
-                Humidity
-              </span>
-              <span className="text-2xl font-medium text-gray-800">
-                {Math.round(conditions.relativeHumidity)}%
-              </span>
-            </div>
-
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-500 uppercase tracking-wide">
-                Wind
-              </span>
-              <span className="text-2xl font-medium text-gray-800">
-                {conditions.windSpeed}
-              </span>
-            </div>
-
-            <div className="flex flex-col col-span-2">
-              <span className="text-sm text-gray-500 uppercase tracking-wide">
-                Wind Direction
-              </span>
-              <span className="text-2xl font-medium text-gray-800">
-                {getWindDirection(conditions.windDirection)}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-8 text-sm text-gray-400">
-            Updated: {new Date(conditions.timestamp).toLocaleTimeString()}
-          </div>
-
-          <button
-            onClick={scrollToTop}
-            className="mt-12 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Back to Top
-          </button>
         </div>
       </div>
     </section>

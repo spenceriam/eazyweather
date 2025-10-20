@@ -15,9 +15,11 @@ import {
   getMonthlyForecast,
 } from "./services/weatherApi";
 import {
+  reverseGeocode,
   getBrowserLocation,
   saveLocation,
   getSavedLocation,
+  type LocationResult,
 } from "./services/locationService";
 import type {
   Coordinates,
@@ -83,9 +85,10 @@ function App() {
       }
 
       const coords = await getBrowserLocation();
+      const locationResult = await reverseGeocode(coords);
       setCoordinates(coords);
-      setLocationName("Your Location");
-      saveLocation(coords, "Your Location");
+      setLocationName(locationResult.displayName);
+      saveLocation(locationResult);
     } catch {
       setError(
         "Unable to get your location. Please enter a location manually.",
@@ -105,14 +108,14 @@ function App() {
     }
   }, [coordinates, loadWeatherData]);
 
-  async function handleLocationSelect(coords: Coordinates, name: string) {
+  async function handleLocationSelect(location: LocationResult) {
     setIsLoading(true);
     setError(null);
 
     try {
-      setCoordinates(coords);
-      setLocationName(name);
-      saveLocation(coords, name);
+      setCoordinates(location.coordinates);
+      setLocationName(location.displayName);
+      saveLocation(location);
     } catch {
       setError("Failed to find location");
     } finally {
@@ -137,87 +140,100 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header locationName={locationName} />
+    <div className="min-h-screen bg-gray-200">
+      {/* Darker sides background */}
+      <div className="min-h-screen">
+        {/* Header with full width */}
+        <Header locationName={locationName} />
 
-      <main>
-        <LocationSection
-          coordinates={coordinates}
-          locationName={locationName}
-          onLocationUpdate={handleLocationSelect}
-        />
+        <main>
+          {/* Location section - full width */}
+          <LocationSection
+            coordinates={coordinates}
+            locationName={locationName}
+            onLocationUpdate={handleLocationSelect}
+          />
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <LoadingSpinner />
+          {/* Centered white content area */}
+          <div className="bg-white">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <LoadingSpinner />
+              </div>
+            ) : error ? (
+              <div className="max-w-7xl mx-auto px-4 py-16">
+                <ErrorMessage message={error} onRetry={loadWeatherData} />
+              </div>
+            ) : (
+              <>
+                {currentConditions ? (
+                  <CurrentConditions conditions={currentConditions} />
+                ) : (
+                  <section id="current" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-16">
+                      <div className="max-w-4xl mx-auto">
+                        <div className="text-center">
+                          <ErrorMessage
+                            message="Current conditions are not available for this location."
+                            onRetry={loadWeatherData}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {hourlyForecast.length > 0 ? (
+                  <HourlyForecast forecast={hourlyForecast} />
+                ) : (
+                  <section id="hourly" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                      <div className="max-w-4xl mx-auto">
+                        <ErrorMessage
+                          message="Hourly forecast data is not available for this location."
+                          onRetry={loadWeatherData}
+                        />
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {forecast.length > 0 ? (
+                  <SevenDayForecast forecast={forecast} />
+                ) : (
+                  <section id="forecast" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                      <div className="max-w-4xl mx-auto">
+                        <ErrorMessage
+                          message="7-day forecast data is not available for this location."
+                          onRetry={loadWeatherData}
+                        />
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {monthlyForecast ? (
+                  <MonthlyForecast forecast={monthlyForecast} />
+                ) : (
+                  <section id="monthly" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                      <div className="max-w-4xl mx-auto">
+                        <ErrorMessage
+                          message="Monthly forecast data is not available for this location."
+                          onRetry={loadWeatherData}
+                        />
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
           </div>
-        ) : error ? (
-          <div className="max-w-7xl mx-auto px-4 py-16">
-            <ErrorMessage message={error} onRetry={loadWeatherData} />
-          </div>
-        ) : (
-          <>
-            {currentConditions ? (
-              <CurrentConditions conditions={currentConditions} />
-            ) : (
-              <section
-                id="current"
-                className="bg-gradient-to-b from-blue-50 to-white"
-              >
-                <div className="max-w-7xl mx-auto px-4 py-16">
-                  <div className="text-center">
-                    <ErrorMessage
-                      message="Current conditions are not available for this location."
-                      onRetry={loadWeatherData}
-                    />
-                  </div>
-                </div>
-              </section>
-            )}
+        </main>
 
-            {hourlyForecast.length > 0 ? (
-              <HourlyForecast forecast={hourlyForecast} />
-            ) : (
-              <section id="hourly" className="bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 py-8">
-                  <ErrorMessage
-                    message="Hourly forecast data is not available for this location."
-                    onRetry={loadWeatherData}
-                  />
-                </div>
-              </section>
-            )}
-
-            {forecast.length > 0 ? (
-              <SevenDayForecast forecast={forecast} />
-            ) : (
-              <section id="forecast" className="bg-white">
-                <div className="max-w-7xl mx-auto px-4 py-8">
-                  <ErrorMessage
-                    message="7-day forecast data is not available for this location."
-                    onRetry={loadWeatherData}
-                  />
-                </div>
-              </section>
-            )}
-
-            {monthlyForecast ? (
-              <MonthlyForecast forecast={monthlyForecast} />
-            ) : (
-              <section id="monthly" className="bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 py-8">
-                  <ErrorMessage
-                    message="Monthly forecast data is not available for this location."
-                    onRetry={loadWeatherData}
-                  />
-                </div>
-              </section>
-            )}
-          </>
-        )}
-      </main>
-
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }

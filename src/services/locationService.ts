@@ -1,9 +1,17 @@
-import type { Coordinates } from '../types/weather';
+import type { Coordinates } from "../types/weather";
+
+export interface LocationResult {
+  coordinates: Coordinates;
+  displayName: string;
+  city: string;
+  state: string;
+  country: string;
+}
 
 export async function getBrowserLocation(): Promise<Coordinates> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation is not supported by your browser'));
+      reject(new Error("Geolocation is not supported by your browser"));
       return;
     }
 
@@ -11,7 +19,7 @@ export async function getBrowserLocation(): Promise<Coordinates> {
       (position) => {
         resolve({
           latitude: position.coords.latitude,
-          longitude: position.coords.longitude
+          longitude: position.coords.longitude,
         });
       },
       (error) => {
@@ -19,69 +27,189 @@ export async function getBrowserLocation(): Promise<Coordinates> {
       },
       {
         timeout: 10000,
-        maximumAge: 600000
-      }
+        maximumAge: 600000,
+      },
     );
   });
 }
 
-export async function geocodeLocation(query: string): Promise<Coordinates> {
+export async function reverseGeocode(
+  coords: Coordinates,
+): Promise<LocationResult> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&addressdetails=1`,
       {
         headers: {
-          'User-Agent': 'EazyWeather/1.0'
-        }
-      }
+          "User-Agent": "EazyWeather/1.0",
+        },
+      },
     );
 
     if (!response.ok) {
-      throw new Error('Geocoding failed');
+      throw new Error("Reverse geocoding failed");
+    }
+
+    const data = await response.json();
+    const address = data.address;
+
+    const city = address.city || address.town || address.village || "";
+    const state = address.state || address.province || "";
+    const country = address.country || "";
+
+    // Format display name based on location type
+    let displayName = "";
+    if (country === "United States" || country === "Canada") {
+      displayName =
+        city && state
+          ? `${city}, ${state}`
+          : city || state || "Unknown Location";
+    } else {
+      displayName =
+        city && state
+          ? `${city}, ${state}`
+          : city || country || "Unknown Location";
+    }
+
+    return {
+      coordinates: coords,
+      displayName,
+      city,
+      state,
+      country,
+    };
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    // Return basic coordinates info if geocoding fails
+    return {
+      coordinates: coords,
+      displayName: "Your Location",
+      city: "",
+      state: "",
+      country: "",
+    };
+  }
+}
+
+export async function geocodeLocation(query: string): Promise<LocationResult> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`,
+      {
+        headers: {
+          "User-Agent": "EazyWeather/1.0",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Geocoding failed");
     }
 
     const data = await response.json();
 
     if (!data || data.length === 0) {
-      throw new Error('Location not found');
+      throw new Error("Location not found");
+    }
+
+    const result = data[0];
+    const address = result.address;
+    const coords = {
+      latitude: parseFloat(result.lat),
+      longitude: parseFloat(result.lon),
+    };
+
+    const city = address.city || address.town || address.village || "";
+    const state = address.state || address.province || "";
+    const country = address.country || "";
+
+    // Format display name based on location type
+    let displayName = "";
+    if (country === "United States" || country === "Canada") {
+      displayName =
+        city && state ? `${city}, ${state}` : city || state || query;
+    } else {
+      displayName =
+        city && state ? `${city}, ${state}` : city || country || query;
     }
 
     return {
-      latitude: parseFloat(data[0].lat),
-      longitude: parseFloat(data[0].lon)
+      coordinates: coords,
+      displayName,
+      city,
+      state,
+      country,
     };
   } catch (error) {
-    console.error('Geocoding error:', error);
-    throw new Error('Unable to find location. Please try a different search.');
+    console.error("Geocoding error:", error);
+    throw new Error("Unable to find location. Please try a different search.");
   }
 }
 
-export function saveLocation(coords: Coordinates, displayName?: string): void {
-  localStorage.setItem('eazyweather_location', JSON.stringify({
-    coordinates: coords,
-    displayName,
-    timestamp: Date.now()
-  }));
+export function saveLocation(locationResult: LocationResult): void {
+  localStorage.setItem(
+    "eazyweather_location",
+    JSON.stringify({
+      ...locationResult,
+      timestamp: Date.now(),
+    }),
+  );
 }
 
-export function getSavedLocation(): { coordinates: Coordinates; displayName?: string } | null {
+export function getSavedLocation(): LocationResult | null {
   try {
-    const saved = localStorage.getItem('eazyweather_location');
+    const saved = localStorage.getItem("eazyweather_location");
     if (!saved) return null;
 
     const data = JSON.parse(saved);
     const age = Date.now() - data.timestamp;
 
     if (age > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem('eazyweather_location');
+      localStorage.removeItem("eazyweather_location");
       return null;
     }
 
     return {
       coordinates: data.coordinates,
-      displayName: data.displayName
+      displayName: data.displayName,
+      city: data.city,
+      state: data.state,
+      country: data.country,
     };
   } catch {
     return null;
+  }
+}
+
+export function saveLocationToHistory(locationResult: LocationResult): void {
+  try {
+    const history = getLocationHistory();
+
+    // Remove if already exists to avoid duplicates
+    const filteredHistory = history.filter(
+      (loc) => loc.displayName !== locationResult.displayName,
+    );
+
+    // Add to beginning and keep only last 4
+    const newHistory = [locationResult, ...filteredHistory].slice(0, 4);
+
+    localStorage.setItem(
+      "eazyweather_location_history",
+      JSON.stringify(newHistory),
+    );
+  } catch (error) {
+    console.error("Error saving location history:", error);
+  }
+}
+
+export function getLocationHistory(): LocationResult[] {
+  try {
+    const saved = localStorage.getItem("eazyweather_location_history");
+    if (!saved) return [];
+
+    const data = JSON.parse(saved);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
 }
