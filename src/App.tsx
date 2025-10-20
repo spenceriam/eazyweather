@@ -34,6 +34,7 @@ function App() {
   const [locationName, setLocationName] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
 
   const [currentConditions, setCurrentConditions] =
     useState<CurrentConditionsType | null>(null);
@@ -74,6 +75,7 @@ function App() {
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setShowSearch(false);
 
     try {
       const saved = getSavedLocation();
@@ -104,10 +106,11 @@ function App() {
       setLocationName(locationResult.displayName);
       saveLocation(locationResult);
       console.log("Location detected:", locationResult.displayName);
-    } catch {
-      setError(
-        "Unable to get your location. Please enter a location manually.",
-      );
+    } catch (locationError) {
+      console.log("Location detection failed:", locationError);
+      // Don't set error message, just show search interface
+      setLocationName("Enter your location");
+      setShowSearch(true);
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +129,7 @@ function App() {
   async function handleLocationSelect(location: LocationResult) {
     setIsLoading(true);
     setError(null);
+    setShowSearch(false);
 
     try {
       setCoordinates(location.coordinates);
@@ -138,7 +142,7 @@ function App() {
     }
   }
 
-  if (isLoading && !coordinates) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner />
@@ -146,7 +150,7 @@ function App() {
     );
   }
 
-  if (error && !coordinates) {
+  if (error && !coordinates && !showSearch) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <ErrorMessage message={error} onRetry={initializeLocation} />
@@ -167,6 +171,7 @@ function App() {
             coordinates={coordinates}
             locationName={locationName}
             onLocationUpdate={handleLocationSelect}
+            forceShowSearch={showSearch}
           />
 
           {/* Centered white content area */}

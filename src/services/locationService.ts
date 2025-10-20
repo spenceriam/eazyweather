@@ -15,6 +15,14 @@ export async function getBrowserLocation(): Promise<Coordinates> {
       return;
     }
 
+    // Try multiple strategies for better compatibility
+    const options = {
+      enableHighAccuracy: false, // Start with lower accuracy for faster response
+      timeout: 15000, // Increased timeout for better reliability
+      maximumAge: 300000, // 5 minutes cache
+    };
+
+    // First attempt with standard settings
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -23,12 +31,65 @@ export async function getBrowserLocation(): Promise<Coordinates> {
         });
       },
       (error) => {
-        reject(new Error(`Location error: ${error.message}`));
+        console.log("First location attempt failed:", error.message);
+
+        // Second attempt with high accuracy enabled
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (secondError) => {
+            console.log("Second location attempt failed:", secondError.message);
+
+            // Final attempt with maximum timeout
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                resolve({
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                });
+              },
+              (finalError) => {
+                let errorMessage = "Unable to get your location";
+
+                switch (finalError.code) {
+                  case 1: // PERMISSION_DENIED
+                    errorMessage =
+                      "Location access denied. Please enter your location manually.";
+                    break;
+                  case 2: // POSITION_UNAVAILABLE
+                    errorMessage =
+                      "Location information unavailable. Please enter your location manually.";
+                    break;
+                  case 3: // TIMEOUT
+                    errorMessage =
+                      "Location request timed out. Please enter your location manually.";
+                    break;
+                  default:
+                    errorMessage =
+                      "Location detection failed. Please enter your location manually.";
+                }
+
+                reject(new Error(errorMessage));
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 30000, // 30 seconds max timeout
+                maximumAge: 0, // No cache for final attempt
+              },
+            );
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 20000, // 20 seconds
+            maximumAge: 60000, // 1 minute cache
+          },
+        );
       },
-      {
-        timeout: 10000,
-        maximumAge: 600000,
-      },
+      options,
     );
   });
 }

@@ -15,14 +15,15 @@ interface LocationSectionProps {
   coordinates: Coordinates | null;
   locationName: string;
   onLocationUpdate: (location: LocationResult) => void;
+  forceShowSearch?: boolean;
 }
 
 export function LocationSection({
-  coordinates,
   locationName,
   onLocationUpdate,
+  forceShowSearch = false,
 }: LocationSectionProps) {
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(forceShowSearch);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +33,13 @@ export function LocationSection({
   useEffect(() => {
     setSearchHistory(getLocationHistory());
   }, []);
+
+  // Handle forceShowSearch prop changes
+  useEffect(() => {
+    if (forceShowSearch && !isSearching) {
+      setIsSearching(true);
+    }
+  }, [forceShowSearch, isSearching]);
 
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,10 +97,6 @@ export function LocationSection({
     );
   }
 
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   return (
     <section id="location" className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -124,7 +128,7 @@ export function LocationSection({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter city, state or country"
+                    placeholder="Enter city, state or country (e.g., New York, NY)"
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
                     autoFocus
