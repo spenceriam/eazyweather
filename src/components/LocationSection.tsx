@@ -44,6 +44,31 @@ export function LocationSection({
     }
   }, [forceShowSearch, isSearching]);
 
+  async function handleSearchChange(query: string) {
+    setSearchQuery(query);
+
+    if (query.trim().length < 2) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const results = await geocodeLocationMultiple(query);
+      setSearchResults(results);
+      setShowSearchResults(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to find location");
+      setShowSearchResults(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -75,6 +100,12 @@ export function LocationSection({
     setShowSearchResults(false);
     setSearchResults([]);
     setError(null);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      handleSearchClear();
+    }
   }
 
   async function handleUseCurrentLocation() {
@@ -145,13 +176,9 @@ export function LocationSection({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (e.target.value.trim() === "") {
-                        handleSearchClear();
-                      }
-                    }}
-                    placeholder="Enter city, state or country (e.g., New York, NY)"
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Start typing to search locations..."
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
                     autoFocus
@@ -167,9 +194,9 @@ export function LocationSection({
                   )}
                 </div>
 
-                {/* Search Results */}
+                {/* Search Results Dropdown */}
                 {showSearchResults && (
-                  <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                  <div className="absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg z-50">
                     <SearchResults
                       results={searchResults}
                       onSelect={handleSearchResultSelect}
@@ -192,7 +219,7 @@ export function LocationSection({
                     disabled={isLoading}
                     className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Use Current
+                    Use My Location
                   </button>
                   <button
                     type="button"
@@ -206,7 +233,7 @@ export function LocationSection({
                     disabled={isLoading}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Cancel
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </form>

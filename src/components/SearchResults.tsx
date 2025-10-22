@@ -7,7 +7,11 @@ interface SearchResultsProps {
   isLoading: boolean;
 }
 
-export function SearchResults({ results, onSelect, isLoading }: SearchResultsProps) {
+export function SearchResults({
+  results,
+  onSelect,
+  isLoading,
+}: SearchResultsProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
@@ -66,19 +70,24 @@ function getLocationDetails(location: LocationResult): string {
     parts.push(location.country);
   }
 
-  // If we have the same parts as display name, provide additional context
-  if (parts.join(', ') === location.displayName && parts.length > 1) {
-    return `Coordinates: ${location.coordinates.latitude.toFixed(4)}°, ${location.coordinates.longitude.toFixed(4)}°`;
-  }
-
   // If display name is different from parts, show the breakdown
-  const displayNameParts = location.displayName.split(', ').map(p => p.trim());
-  const uniqueParts = parts.filter(p => !displayNameParts.includes(p));
+  const displayNameParts = location.displayName
+    .split(", ")
+    .map((p) => p.trim());
+  const uniqueParts = parts.filter((p) => !displayNameParts.includes(p));
 
   if (uniqueParts.length > 0) {
-    return `Also: ${uniqueParts.join(', ')}`;
+    return `Also: ${uniqueParts.join(", ")}`;
   }
 
-  // Show coordinates if no additional context
-  return `Coordinates: ${location.coordinates.latitude.toFixed(4)}°, ${location.coordinates.longitude.toFixed(4)}°`;
+  // If no additional context, show a more descriptive label
+  if (location.city && location.state && location.country) {
+    return "Complete location information";
+  } else if (location.city && location.country) {
+    return "City and country";
+  } else if (location.city) {
+    return "City location";
+  }
+
+  return "Location details";
 }
