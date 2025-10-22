@@ -115,7 +115,7 @@ export function LocationSection({
           {!isSearching ? (
             <button
               onClick={() => setIsSearching(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors whitespace-nowrap"
             >
               <Search className="w-4 h-4" />
               Change Location

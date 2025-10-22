@@ -33,14 +33,26 @@ The application displays all weather information in a single scrollable page wit
 5. **Monthly Forecast** - Calendar grid with temperature averages
 
 ## Development workflow
-1. All new components should be TypeScript with proper interfaces
-2. Use Tailwind CSS classes for styling, avoid inline styles
-3. Weather API calls should go through `weatherApi.ts` service
-4. Location handling should use `locationService.ts` service with reverse geocoding
-5. Error handling should display user-friendly messages via ErrorMessage component
-6. Use semantic HTML5 elements for better accessibility
-7. Implement smooth scrolling between sections using anchor links
-8. **IMPORTANT**: Always check if dev server is running before starting another one
+1. **ALWAYS** create a new branch for each issue: `git checkout -b issue-{number}-description`
+2. Work on features in the branch, commit changes with descriptive messages
+3. Create a Pull Request when work is complete (DO NOT MERGE - user handles merges)
+4. Update issue status and priority document to track progress
+5. All new components should be TypeScript with proper interfaces
+6. Use Tailwind CSS classes for styling, avoid inline styles
+7. Weather API calls should go through `weatherApi.ts` service
+8. Location handling should use `locationService.ts` service with reverse geocoding
+9. Error handling should display user-friendly messages via ErrorMessage component
+10. Use semantic HTML5 elements for better accessibility
+11. Implement smooth scrolling between sections using anchor links
+12. **IMPORTANT**: Always check if dev server is running before starting another one
+
+## Branch and PR workflow
+- **Branch naming**: `issue-{number}-brief-description` (e.g., `issue-14-button-styling`)
+- **Commit messages**: Include issue number and clear description (e.g., "Fix issue #14: Improve button styling")
+- **PR creation**: Create PR from branch to main, reference issue number in description
+- **DO NOT MERGE**: User handles all PR merges
+- **Issue tracking**: Close issues and comment when completed
+- **Priority document**: Update `priority_enhancements.md` to mark completed issues
 
 ## Code style
 - TypeScript strict mode enabled
