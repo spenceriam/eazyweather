@@ -8,6 +8,7 @@ import { MonthlyForecast } from "./components/MonthlyForecast";
 import { LocationSection } from "./components/LocationSection";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
+import { InitialLocationModal } from "./components/InitialLocationModal";
 import {
   getCurrentConditions,
   get7DayForecast,
@@ -38,10 +39,11 @@ import type {
 
 function App() {
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [locationName, setLocationName] = useState("Loading...");
-  const [isLoading, setIsLoading] = useState(true);
+  const [locationName, setLocationName] = useState("Chicago, Illinois");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showInitialModal, setShowInitialModal] = useState(true);
 
   // Update page title for SEO
   function updatePageTitle(location: string) {
@@ -76,8 +78,10 @@ function App() {
           name: location.displayName,
           address: {
             "@type": "PostalAddress",
-            addressLocality: location.city || location.displayName.split(',')[0],
-            addressRegion: location.state || location.displayName.split(',')[1]?.trim(),
+            addressLocality:
+              location.city || location.displayName.split(",")[0],
+            addressRegion:
+              location.state || location.displayName.split(",")[1]?.trim(),
             addressCountry: location.country || "US",
           },
           geo: {
@@ -158,7 +162,7 @@ function App() {
       // Update structured data when weather data loads
       if (current && coordinates) {
         // Parse location name to extract city and state
-        const locationParts = locationName.split(',');
+        const locationParts = locationName.split(",");
         const locationResult = {
           coordinates,
           displayName: locationName,
@@ -188,6 +192,7 @@ function App() {
       if (saved) {
         trackLocationDetected("saved");
         setCoordinates(saved.coordinates);
+        setShowInitialModal(false);
         // If saved location still shows "Your Location" or coordinates, try to reverse geocode it
         if (
           saved.displayName === "Your Location" ||
@@ -210,22 +215,28 @@ function App() {
         return;
       }
 
-      const coords = await getBrowserLocation();
-      const locationResult = await reverseGeocode(coords);
-      trackLocationDetected("browser");
-      setCoordinates(coords);
-      setLocationName(locationResult.displayName);
-      saveLocation(locationResult);
-      updatePageTitle(locationResult.displayName);
-      console.log("Location detected:", locationResult.displayName);
+      // Default to Chicago coordinates
+      const chicagoCoords: Coordinates = {
+        latitude: 41.8781,
+        longitude: -87.6298,
+      };
+      setCoordinates(chicagoCoords);
+      setLocationName("Chicago, Illinois");
+      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      setShowInitialModal(true);
+      setIsLoading(false);
     } catch (locationError) {
-      console.log("Location detection failed:", locationError);
-      trackLocationError("browser_denied");
-      // Don't set error message, just show search interface
-      setLocationName("Enter your location");
-      setShowSearch(true);
-      updatePageTitle("EazyWeather - Free Local Weather Forecast");
-    } finally {
+      console.log("Location initialization failed:", locationError);
+      trackLocationError("initialization");
+      // Default to Chicago as fallback
+      const chicagoCoords: Coordinates = {
+        latitude: 41.8781,
+        longitude: -87.6298,
+      };
+      setCoordinates(chicagoCoords);
+      setLocationName("Chicago, Illinois");
+      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      setShowInitialModal(true);
       setIsLoading(false);
     }
   }, []);
@@ -258,6 +269,52 @@ function App() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleInitialLocationSelect(query: string, useGPS: boolean) {
+    setShowInitialModal(false);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (useGPS) {
+        // Use GPS location
+        const coords = await getBrowserLocation();
+        const locationResult = await reverseGeocode(coords);
+        trackLocationDetected("browser");
+        setCoordinates(coords);
+        setLocationName(locationResult.displayName);
+        saveLocation(locationResult);
+        updatePageTitle(locationResult.displayName);
+      } else {
+        // Use searched location
+        const { geocodeLocation } = await import("./services/locationService");
+        const locationResult = await geocodeLocation(query);
+        trackLocationChanged("search");
+        setCoordinates(locationResult.coordinates);
+        setLocationName(locationResult.displayName);
+        saveLocation(locationResult);
+        updatePageTitle(locationResult.displayName);
+      }
+    } catch (error) {
+      console.log("Location selection failed:", error);
+      trackLocationError("initial_selection");
+      // Fall back to Chicago
+      const chicagoCoords: Coordinates = {
+        latitude: 41.8781,
+        longitude: -87.6298,
+      };
+      setCoordinates(chicagoCoords);
+      setLocationName("Chicago, Illinois");
+      updatePageTitle("Chicago, IL Weather - EazyWeather");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleInitialModalClose() {
+    setShowInitialModal(false);
+    // User chose to use Chicago, which is already set as default
   }
 
   if (isLoading) {
@@ -371,6 +428,13 @@ function App() {
         </main>
 
         <Footer />
+
+        {/* Initial Location Selection Modal */}
+        <InitialLocationModal
+          isOpen={showInitialModal}
+          onClose={handleInitialModalClose}
+          onLocationSelect={handleInitialLocationSelect}
+        />
       </div>
     </div>
   );
