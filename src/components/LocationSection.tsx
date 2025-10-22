@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Search, Clock, X } from "lucide-react";
 import {
   reverseGeocode,
@@ -10,7 +10,6 @@ import {
   type LocationResult,
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
-import { SearchResults } from "./SearchResults";
 
 interface LocationSectionProps {
   coordinates: Coordinates | null;
@@ -31,7 +30,6 @@ export function LocationSection({
   const [searchHistory, setSearchHistory] = useState<LocationResult[]>([]);
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load search history on mount
   useEffect(() => {
@@ -45,44 +43,6 @@ export function LocationSection({
     }
   }, [forceShowSearch, isSearching]);
 
-  async function handleSearchChange(query: string) {
-    setSearchQuery(query);
-
-    // Clear existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // If query is too short, hide results immediately
-    if (query.trim().length < 2) {
-      setShowSearchResults(false);
-      setSearchResults([]);
-      setError(null);
-      return;
-    }
-
-    // Set loading state immediately for better UX
-    setIsLoading(true);
-    setError(null);
-    setShowSearchResults(true); // Show loading state immediately
-
-    // Debounce search - wait 600ms after user stops typing for better responsiveness
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const results = await geocodeLocationMultiple(query);
-        setSearchResults(results);
-        setShowSearchResults(true);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to find location",
-        );
-        setShowSearchResults(false);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 800);
-  }
-
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -92,55 +52,18 @@ export function LocationSection({
 
     try {
       const results = await geocodeLocationMultiple(searchQuery);
-      setSearchResults(results);
-      setShowSearchResults(true);
+      if (results.length === 1) {
+        // If only one result, select it automatically
+        handleLocationSuccess(results[0]);
+        setSearchQuery("");
+      } else {
+        // Show multiple results for selection
+        setSearchResults(results);
+        setShowSearchResults(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to find location");
       setShowSearchResults(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function handleSearchResultSelect(locationResult: LocationResult) {
-    handleLocationSuccess(locationResult);
-    setSearchQuery("");
-    setShowSearchResults(false);
-    setSearchResults([]);
-  }
-
-  function handleSearchClear() {
-    setSearchQuery("");
-    setShowSearchResults(false);
-    setSearchResults([]);
-    setError(null);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      handleSearchClear();
-    }
-  }
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  async function handleUseCurrentLocation() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const coords = await getBrowserLocation();
-      const locationResult = await reverseGeocode(coords);
-      handleLocationSuccess(locationResult);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get location");
     } finally {
       setIsLoading(false);
     }
@@ -167,6 +90,35 @@ export function LocationSection({
       "eazyweather_location_history",
       JSON.stringify(updatedHistory),
     );
+  }
+
+  function handleSearchResultSelect(locationResult: LocationResult) {
+    handleLocationSuccess(locationResult);
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setSearchResults([]);
+  }
+
+  async function handleUseCurrentLocation() {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const coords = await getBrowserLocation();
+      const locationResult = await reverseGeocode(coords);
+      handleLocationSuccess(locationResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to get location");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleSearchClear() {
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setSearchResults([]);
+    setError(null);
   }
 
   return (
@@ -199,12 +151,9 @@ export function LocationSection({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type to search locations..."
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Enter city, state or country (e.g., New York, NY)"
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    autoComplete="off"
-                    spellCheck="false"
                     disabled={isLoading}
                     autoFocus
                   />
@@ -219,14 +168,25 @@ export function LocationSection({
                   )}
                 </div>
 
-                {/* Search Results Dropdown */}
+                {/* Search Results */}
                 {showSearchResults && (
-                  <div className="absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg z-50 max-h-80 overflow-y-auto">
-                    <SearchResults
-                      results={searchResults}
-                      onSelect={handleSearchResultSelect}
-                      isLoading={isLoading}
-                    />
+                  <div className="mt-4 space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                    {searchResults.map((location, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSearchResultSelect(location)}
+                        className="w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <div className="font-medium text-gray-900">
+                          {location.displayName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {location.city && location.state && location.country
+                            ? `${location.city}, ${location.state}, ${location.country}`
+                            : location.displayName}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 )}
 
