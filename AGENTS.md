@@ -58,8 +58,8 @@ The application displays all weather information in a single scrollable page wit
 
 ## Progress tracking
 - **Phase 1 Complete**: All Quick Wins finished (issues #4, #14, #16)
-- **Phase 2 Started**: Core UX Improvements (issue #5 completed)
-- **Next priorities**: Issue #3 (Mobile Hourly Forecast), Issue #6 (Enhanced Search Results)
+- **Phase 2 Progress**: Core UX Improvements (issues #5 and #3 completed)
+- **Next priority**: Issue #6 (Enhanced Search Results with Location Context)
 - **Documentation**: Always update priority_enhancements.md and close issues with completion comments
 
 ## Code style
