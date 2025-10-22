@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, MapPin, Search } from 'lucide-react';
+import { useState } from "react";
+import { X, MapPin, Search } from "lucide-react";
 
 interface InitialLocationModalProps {
   isOpen: boolean;
@@ -7,8 +7,12 @@ interface InitialLocationModalProps {
   onLocationSelect: (query: string, useGPS: boolean) => void;
 }
 
-export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: InitialLocationModalProps) {
-  const [locationInput, setLocationInput] = useState('');
+export function InitialLocationModal({
+  isOpen,
+  onClose,
+  onLocationSelect,
+}: InitialLocationModalProps) {
+  const [locationInput, setLocationInput] = useState("");
 
   if (!isOpen) return null;
 
@@ -16,12 +20,12 @@ export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: Init
     e.preventDefault();
     if (locationInput.trim()) {
       onLocationSelect(locationInput.trim(), false);
-      setLocationInput('');
+      setLocationInput("");
     }
   };
 
   const handleGPS = () => {
-    onLocationSelect('', true);
+    onLocationSelect("", true);
   };
 
   return (
@@ -29,8 +33,12 @@ export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: Init
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Welcome to EazyWeather</h2>
-            <p className="text-sm text-gray-600 mt-1">Choose your location to get started</p>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Welcome to EazyWeather
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Choose your location to get started
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -55,7 +63,7 @@ export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: Init
             className="w-full flex items-center justify-center gap-3 bg-blue-500 text-white px-4 py-3 rounded-md hover:bg-blue-600 transition-colors mb-6"
           >
             <MapPin className="w-5 h-5" />
-            <span className="font-medium">Use My Current Location</span>
+            <span className="font-medium">Use My Location</span>
           </button>
 
           <div className="relative mb-4">
@@ -63,13 +71,18 @@ export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: Init
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or search for a location</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or search for a location
+              </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="location"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 City, State or Postal Code
               </label>
               <div className="relative">
@@ -82,35 +95,14 @@ export function InitialLocationModal({ isOpen, onClose, onLocationSelect }: Init
                   className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   autoFocus
                 />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <button
+                  type="submit"
+                  disabled={!locationInput.trim()}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-blue-500 disabled:cursor-not-allowed disabled:text-gray-300 transition-colors"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
               </div>
-            </div>
-
-            <div className="text-xs text-gray-500 mb-4 space-y-1">
-              <p>Examples:</p>
-              <ul className="list-disc list-inside pl-2 space-y-1">
-                <li>Seattle, WA</li>
-                <li>Miami, Florida</li>
-                <li>90210</li>
-                <li>Austin, TX, USA</li>
-              </ul>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Use Chicago
-              </button>
-              <button
-                type="submit"
-                disabled={!locationInput.trim()}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Search
-              </button>
             </div>
           </form>
         </div>
