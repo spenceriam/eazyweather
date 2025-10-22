@@ -266,6 +266,79 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
   }
 }
 
+export async function geocodeLocationMultiple(
+  query: string,
+): Promise<LocationResult[]> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+      {
+        headers: {
+          "User-Agent": "EazyWeather/1.0",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Geocoding failed");
+    }
+
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      throw new Error("Location not found");
+    }
+
+    return data.map((result: any) => {
+      const address = result.address;
+      const coords = {
+        latitude: parseFloat(result.lat),
+        longitude: parseFloat(result.lon),
+      };
+
+      // Try multiple city-level fields, but never county
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.locality ||
+        address.hamlet ||
+        "";
+      const state = address.state || address.province || "";
+      const country = address.country || "";
+
+      // Format full display name with complete context
+      let displayName = "";
+
+      // Always include the most complete context available
+      if (city && state && country) {
+        displayName = `${city}, ${state}, ${country}`;
+      } else if (city && country) {
+        displayName = `${city}, ${country}`;
+      } else if (city && state) {
+        displayName = `${city}, ${state}`;
+      } else if (city) {
+        displayName = city;
+      } else {
+        // Fallback to the display name from the API or original query
+        displayName = result.display_name || query;
+      }
+
+      return {
+        coordinates: coords,
+        displayName,
+        city,
+        state,
+        country,
+      };
+    });
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    throw new Error("Unable to find location. Please try a different search.");
+  }
+}
+
 export function saveLocation(locationResult: LocationResult): void {
   localStorage.setItem(
     "eazyweather_location",
