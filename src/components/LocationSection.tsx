@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Search, Clock, X } from "lucide-react";
 import {
   reverseGeocode,
-  geocodeLocation,
+  geocodeLocationMultiple,
   getBrowserLocation,
   saveLocation,
   saveLocationToHistory,
@@ -10,6 +10,7 @@ import {
   type LocationResult,
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
+import { SearchResults } from "./SearchResults";
 
 interface LocationSectionProps {
   coordinates: Coordinates | null;
@@ -28,6 +29,8 @@ export function LocationSection({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<LocationResult[]>([]);
+  const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Load search history on mount
   useEffect(() => {
@@ -49,14 +52,29 @@ export function LocationSection({
     setError(null);
 
     try {
-      const locationResult = await geocodeLocation(searchQuery);
-      handleLocationSuccess(locationResult);
-      setSearchQuery("");
+      const results = await geocodeLocationMultiple(searchQuery);
+      setSearchResults(results);
+      setShowSearchResults(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to find location");
+      setShowSearchResults(false);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleSearchResultSelect(locationResult: LocationResult) {
+    handleLocationSuccess(locationResult);
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setSearchResults([]);
+  }
+
+  function handleSearchClear() {
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setSearchResults([]);
+    setError(null);
   }
 
   async function handleUseCurrentLocation() {
@@ -127,7 +145,12 @@ export function LocationSection({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (e.target.value.trim() === "") {
+                        handleSearchClear();
+                      }
+                    }}
                     placeholder="Enter city, state or country (e.g., New York, NY)"
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
@@ -136,13 +159,24 @@ export function LocationSection({
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery("")}
+                      onClick={handleSearchClear}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   )}
                 </div>
+
+                {/* Search Results */}
+                {showSearchResults && (
+                  <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <SearchResults
+                      results={searchResults}
+                      onSelect={handleSearchResultSelect}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <button
@@ -166,6 +200,8 @@ export function LocationSection({
                       setIsSearching(false);
                       setSearchQuery("");
                       setError(null);
+                      setShowSearchResults(false);
+                      setSearchResults([]);
                     }}
                     disabled={isLoading}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
