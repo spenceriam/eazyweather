@@ -13,10 +13,6 @@ export function CurrentConditions({ conditions }: CurrentConditionsProps) {
 
   const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
 
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   return (
     <section id="current" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -77,13 +73,6 @@ export function CurrentConditions({ conditions }: CurrentConditionsProps) {
                 </div>
               </div>
             </div>
-
-            <button
-              onClick={scrollToTop}
-              className="mt-6 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Back to Top
-            </button>
           </div>
         </div>
       </div>
