@@ -50,43 +50,55 @@ export function HourlyForecast({ forecast }: HourlyForecastProps) {
                   key={index}
                   className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
                 >
-                  <div className="flex items-center justify-between">
-                    {/* Left side - Time and Date */}
-                    <div className="w-24">
+                  {/* Mobile-first layout */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {/* Top row - Time and Date */}
+                    <div className="flex items-center justify-between sm:w-24">
                       <div className="text-lg font-medium text-gray-700">
                         {timeStr}
                       </div>
-                      <div className="text-sm text-gray-500">{dateStr}</div>
-                    </div>
-
-                    {/* Weather Icon */}
-                    <div className="flex items-center justify-center w-16">
-                      <WeatherIcon
-                        condition={hour.shortForecast}
-                        isDaytime={hour.isDaytime}
-                        size={48}
-                      />
-                    </div>
-
-                    {/* Temperature */}
-                    <div className="w-16 text-center">
-                      <div className="text-2xl font-light text-gray-800">
-                        {hour.temperature}°
+                      <div className="text-sm text-gray-500 sm:hidden">
+                        {dateStr}
                       </div>
                     </div>
 
-                    {/* Conditions */}
+                    {/* Middle section - Icon and Temperature */}
+                    <div className="flex items-center justify-center gap-4 sm:gap-2">
+                      {/* Weather Icon */}
+                      <div className="flex items-center justify-center">
+                        <WeatherIcon
+                          condition={hour.shortForecast}
+                          isDaytime={hour.isDaytime}
+                          size={48}
+                        />
+                      </div>
+
+                      {/* Temperature - Centered */}
+                      <div className="text-center">
+                        <div className="text-2xl font-light text-gray-800">
+                          {hour.temperature}°
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop date - hidden on mobile */}
+                    <div className="hidden sm:block w-24 text-right">
+                      <div className="text-sm text-gray-500">{dateStr}</div>
+                    </div>
+                  </div>
+
+                  {/* Second row - Weather Conditions and Wind */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    {/* Weather Conditions */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-600 capitalize truncate">
+                      <div className="text-sm text-gray-600 capitalize text-center sm:text-left">
                         {hour.shortForecast}
                       </div>
                     </div>
 
                     {/* Wind */}
-                    <div className="w-20 text-right">
-                      <div className="text-sm text-gray-500">
-                        Wind: {hour.windSpeed}
-                      </div>
+                    <div className="text-sm text-gray-500">
+                      Wind: {hour.windSpeed}
                     </div>
                   </div>
                 </div>
