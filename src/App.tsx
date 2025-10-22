@@ -9,6 +9,7 @@ import { LocationSection } from "./components/LocationSection";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
+
 import {
   getCurrentConditions,
   get7DayForecast,
@@ -29,6 +30,7 @@ import {
   trackWeatherView,
   trackApiError,
 } from "./services/analytics";
+import { refreshService } from "./services/refreshService";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -44,6 +46,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showInitialModal, setShowInitialModal] = useState(true);
+
+  // Refresh state
+  const [refreshState, setRefreshState] = useState(refreshService.getState());
 
   // Update page title for SEO
   function updatePageTitle(location: string) {
@@ -137,50 +142,91 @@ function App() {
   const loadWeatherData = useCallback(async () => {
     if (!coordinates) return;
 
-    setIsLoading(true);
-    setError(null);
+    // Use refresh service to handle the refresh
+    await refreshService.requestManualRefresh(async () => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const [current, sevenDay, hourly, monthly] = await Promise.all([
-        getCurrentConditions(coordinates),
-        get7DayForecast(coordinates),
-        getHourlyForecast(coordinates),
-        getMonthlyForecast(coordinates),
-      ]);
+      try {
+        const [current, sevenDay, hourly, monthly] = await Promise.all([
+          getCurrentConditions(coordinates),
+          get7DayForecast(coordinates),
+          getHourlyForecast(coordinates),
+          getMonthlyForecast(coordinates),
+        ]);
 
-      setCurrentConditions(current);
-      setForecast(sevenDay);
-      setHourlyForecast(hourly);
-      setMonthlyForecast(monthly);
+        setCurrentConditions(current);
+        setForecast(sevenDay);
+        setHourlyForecast(hourly);
+        setMonthlyForecast(monthly);
 
-      // Track weather views
-      if (current) trackWeatherView("current");
-      if (hourly.length > 0) trackWeatherView("hourly");
-      if (sevenDay.length > 0) trackWeatherView("daily");
-      if (monthly) trackWeatherView("monthly");
+        // Track weather views
+        if (current) trackWeatherView("current");
+        if (hourly.length > 0) trackWeatherView("hourly");
+        if (sevenDay.length > 0) trackWeatherView("daily");
+        if (monthly) trackWeatherView("monthly");
 
-      // Update structured data when weather data loads
-      if (current && coordinates) {
-        // Parse location name to extract city and state
-        const locationParts = locationName.split(",");
-        const locationResult = {
-          coordinates,
-          displayName: locationName,
-          city: locationParts[0]?.trim() || "",
-          state: locationParts[1]?.trim() || "",
-          country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
-        };
-        updateStructuredData(locationResult, current);
+        // Update structured data when weather data loads
+        if (current && coordinates) {
+          // Parse location name to extract city and state
+          const locationParts = locationName.split(",");
+          const locationResult = {
+            coordinates,
+            displayName: locationName,
+            city: locationParts[0]?.trim() || "",
+            state: locationParts[1]?.trim() || "",
+            country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
+          };
+          updateStructuredData(locationResult, current);
+        }
+      } catch (error) {
+        console.error("Failed to load weather data:", error);
+        trackApiError("weather");
+        setError(
+          "Failed to load weather data. The location may not be supported by the National Weather Service.",
+        );
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      trackApiError("weather");
-      setError(
-        "Failed to load weather data. The location may not be supported by the National Weather Service.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    });
   }, [coordinates, locationName]);
+
+  // Refresh service effects
+  useEffect(() => {
+    // Listen for refresh state changes
+    const unsubscribe = refreshService.addListener(() => {
+      setRefreshState(refreshService.getState());
+    });
+
+    // Handle auto-refresh triggers
+    const handleAutoRefresh = () => {
+      if (refreshService.shouldAutoRefresh() && coordinates) {
+        loadWeatherData();
+      }
+    };
+
+    // Set up auto-refresh
+    if (coordinates) {
+      refreshService.startAutoRefresh();
+    }
+
+    // Custom auto-refresh handler
+    const intervalId = setInterval(() => {
+      if (
+        refreshService.getState().nextAutoRefreshTime &&
+        Date.now() >= refreshService.getState().nextAutoRefreshTime! &&
+        refreshService.shouldAutoRefresh()
+      ) {
+        handleAutoRefresh();
+      }
+    }, 1000); // Check every second
+
+    return () => {
+      unsubscribe();
+      clearInterval(intervalId);
+      refreshService.destroy();
+    };
+  }, [coordinates, loadWeatherData]);
 
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
@@ -333,12 +379,23 @@ function App() {
     );
   }
 
+  // Manual refresh handler
+  const handleManualRefresh = () => {
+    if (coordinates) {
+      loadWeatherData();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-200">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
-        <Header locationName={locationName} />
+        <Header
+          locationName={locationName}
+          onRefresh={handleManualRefresh}
+          refreshState={refreshState}
+        />
 
         <main>
           {/* Location section - full width */}

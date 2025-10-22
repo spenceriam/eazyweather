@@ -1,10 +1,13 @@
-import { Cloud } from "lucide-react";
+import { Cloud, RefreshCw } from "lucide-react";
+import type { RefreshState } from "../services/refreshService";
 
 interface HeaderProps {
   locationName: string;
+  onRefresh?: () => void;
+  refreshState?: RefreshState;
 }
 
-export function Header({ locationName }: HeaderProps) {
+export function Header({ locationName, onRefresh, refreshState }: HeaderProps) {
   const navItems = [
     { id: "current", label: "Current" },
     { id: "hourly", label: "Hourly" },
@@ -26,19 +29,44 @@ export function Header({ locationName }: HeaderProps) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-2 text-gray-700">
               <span className="text-sm font-medium">{locationName}</span>
+              {refreshState?.lastRefreshTime && (
+                <span className="text-xs text-gray-500">
+                  Updated:{" "}
+                  {new Date(refreshState.lastRefreshTime).toLocaleTimeString()}
+                </span>
+              )}
             </div>
 
-            <nav className="flex gap-2 flex-wrap">
-              {navItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+            <div className="flex items-center gap-2">
+              <nav className="flex gap-2 flex-wrap">
+                {navItems.map((item) => (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+
+              {onRefresh && (
+                <button
+                  onClick={onRefresh}
+                  disabled={refreshState?.isRefreshing}
+                  className="p-2 text-gray-600 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={
+                    refreshState?.isRefreshing
+                      ? "Refreshing..."
+                      : "Refresh weather data"
+                  }
                 >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
+                  <RefreshCw
+                    className={`w-5 h-5 ${refreshState?.isRefreshing ? "animate-spin" : ""}`}
+                  />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

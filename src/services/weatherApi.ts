@@ -11,21 +11,187 @@ import type {
 const BASE_URL = "https://api.weather.gov";
 const USER_AGENT = "(EazyWeather, eazyweather@example.com)";
 
-async function fetchWithUserAgent(url: string) {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "application/geo+json",
-    },
-  });
+// Rate limiting configuration
+const MIN_REQUEST_INTERVAL = 30000; // 30 seconds minimum between requests
+const RATE_LIMIT_RETRY_DELAY = 5000; // 5 seconds retry delay
+const MAX_RETRY_ATTEMPTS = 3;
 
-  if (!response.ok) {
-    throw new Error(
-      `Weather API error: ${response.status} ${response.statusText}`,
-    );
+// Request cache to prevent duplicate API calls
+const requestCache = new Map<
+  string,
+  {
+    data: any;
+    timestamp: number;
+    promise?: Promise<any>;
+  }
+>();
+
+// Rate limiting queue for requests that hit rate limits
+const requestQueue: Array<{
+  url: string;
+  resolve: (data: any) => void;
+  reject: (error: Error) => void;
+  retryCount: number;
+}> = [];
+
+let isProcessingQueue = false;
+
+async function fetchWithUserAgent(
+  url: string,
+  options: {
+    skipCache?: boolean;
+    skipRateLimit?: boolean;
+  } = {},
+): Promise<any> {
+  const cacheKey = url;
+  const now = Date.now();
+
+  // Check cache first (unless explicitly skipped)
+  if (!options.skipCache) {
+    const cached = requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
+      console.log(`Returning cached data for ${url}`);
+      return cached.data;
+    }
   }
 
-  return response.json();
+  // Check if there's already a pending request for this URL
+  const cachedRequest = requestCache.get(cacheKey);
+  if (cachedRequest?.promise) {
+    console.log(`Returning pending request for ${url}`);
+    return cachedRequest.promise;
+  }
+
+  // Create and cache the promise
+  const promise = (async () => {
+    // Rate limiting check (unless explicitly skipped)
+    if (!options.skipRateLimit) {
+      const lastRequest = Array.from(requestCache.values())
+        .filter((c) => c.timestamp > now - MIN_REQUEST_INTERVAL)
+        .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+      if (lastRequest && now - lastRequest.timestamp < MIN_REQUEST_INTERVAL) {
+        console.log(`Rate limiting request for ${url}, adding to queue`);
+        return new Promise((resolve, reject) => {
+          requestQueue.push({
+            url,
+            resolve,
+            reject,
+            retryCount: 0,
+          });
+          processQueue();
+        });
+      }
+    }
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          Accept: "application/geo+json",
+        },
+      });
+
+      if (!response.ok) {
+        // Handle rate limit errors (429)
+        if (response.status === 429) {
+          console.warn(`Rate limit hit for ${url}, queuing retry`);
+          return new Promise((resolve, reject) => {
+            requestQueue.push({
+              url,
+              resolve,
+              reject,
+              retryCount: 0,
+            });
+            processQueue();
+          });
+        }
+        throw new Error(
+          `Weather API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+
+      // Cache the successful response
+      requestCache.set(cacheKey, {
+        data,
+        timestamp: now,
+      });
+
+      return data;
+    } catch (error) {
+      console.error(`API request failed for ${url}:`, error);
+      throw error;
+    }
+  })();
+
+  // Cache the promise (even if it will be queued)
+  requestCache.set(cacheKey, {
+    data: null,
+    timestamp: now,
+    promise,
+  });
+
+  return promise;
+}
+
+// Process the request queue with rate limit delays
+async function processQueue() {
+  if (isProcessingQueue || requestQueue.length === 0) {
+    return;
+  }
+
+  isProcessingQueue = true;
+
+  while (requestQueue.length > 0) {
+    const request = requestQueue.shift()!;
+
+    try {
+      // Wait for rate limit delay if this is a retry
+      if (request.retryCount > 0) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, RATE_LIMIT_RETRY_DELAY),
+        );
+      }
+
+      const apiResponse = await fetch(request.url, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          Accept: "application/geo+json",
+        },
+      });
+
+      const data = await apiResponse.json();
+
+      if (apiResponse.ok) {
+        request.resolve(data);
+      } else if (
+        apiResponse.status === 429 &&
+        request.retryCount < MAX_RETRY_ATTEMPTS
+      ) {
+        // Retry rate limited requests
+        request.retryCount++;
+        requestQueue.unshift(request); // Put back at front of queue
+      } else {
+        request.reject(
+          new Error(
+            `Weather API error: ${apiResponse.status} ${apiResponse.statusText}`,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error(`Queue request failed for ${request.url}:`, error);
+      if (request.retryCount < MAX_RETRY_ATTEMPTS) {
+        request.retryCount++;
+        requestQueue.unshift(request); // Put back at front of queue
+      } else {
+        request.reject(error as Error);
+      }
+    }
+  }
+
+  isProcessingQueue = false;
 }
 
 export async function getWeatherPoint(
@@ -178,4 +344,19 @@ export async function getMonthlyForecast(
     console.error("Error calculating monthly forecast:", error);
     throw error;
   }
+}
+
+// Export rate limiting utilities for testing and debugging
+export const rateLimitConfig = {
+  MIN_REQUEST_INTERVAL,
+  RATE_LIMIT_RETRY_DELAY,
+  MAX_RETRY_ATTEMPTS,
+};
+
+export function clearRequestCache(): void {
+  requestCache.clear();
+}
+
+export function getCacheSize(): number {
+  return requestCache.size;
 }
