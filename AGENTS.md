@@ -47,14 +47,20 @@ The application displays all weather information in a single scrollable page wit
 12. **IMPORTANT**: Always check if dev server is running before starting another one
 
 ## Branch and PR workflow
-- **Branch naming**: `issue-{number}-brief-description` (e.g., `issue-14-button-styling`)
-- **Commit messages**: Include issue number and clear description (e.g., "Fix issue #14: Improve button styling")
+- **Branch naming**: `issue-{number}-brief-description` (e.g., `issue-5-better-initial-loading`)
+- **Commit messages**: Include issue number and clear description (e.g., "Fix issue #5: Implement better initial loading experience")
 - **PR creation**: Create PR from branch to main, reference issue number in description
 - **DO NOT MERGE**: User handles all PR merges
 - **Issue tracking**: Close issues and comment when completed
 - **Priority document**: Update `priority_enhancements.md` to mark completed issues
 - **Local testing**: After completing changes, always offer to run locally to test changes
 - **Dev server**: Never forcefully start dev server - provide clear instructions for user to start it
+
+## Progress tracking
+- **Phase 1 Complete**: All Quick Wins finished (issues #4, #14, #16)
+- **Phase 2 Started**: Core UX Improvements (issue #5 completed)
+- **Next priorities**: Issue #3 (Mobile Hourly Forecast), Issue #6 (Enhanced Search Results)
+- **Documentation**: Always update priority_enhancements.md and close issues with completion comments
 
 ## Code style
 - TypeScript strict mode enabled
