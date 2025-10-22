@@ -53,6 +53,8 @@ The application displays all weather information in a single scrollable page wit
 - **DO NOT MERGE**: User handles all PR merges
 - **Issue tracking**: Close issues and comment when completed
 - **Priority document**: Update `priority_enhancements.md` to mark completed issues
+- **Local testing**: After completing changes, always offer to run locally to test changes
+- **Dev server**: Never forcefully start dev server - provide clear instructions for user to start it
 
 ## Code style
 - TypeScript strict mode enabled
