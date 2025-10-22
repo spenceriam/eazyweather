@@ -15,7 +15,8 @@ export function SearchResults({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+        <span className="text-sm text-gray-500">Searching...</span>
       </div>
     );
   }

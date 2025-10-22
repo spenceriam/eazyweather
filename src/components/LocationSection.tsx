@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin, Search, Clock, X } from "lucide-react";
 import {
   reverseGeocode,
@@ -31,6 +31,7 @@ export function LocationSection({
   const [searchHistory, setSearchHistory] = useState<LocationResult[]>([]);
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load search history on mount
   useEffect(() => {
@@ -47,6 +48,12 @@ export function LocationSection({
   async function handleSearchChange(query: string) {
     setSearchQuery(query);
 
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If query is too short, hide results immediately
     if (query.trim().length < 2) {
       setShowSearchResults(false);
       setSearchResults([]);
@@ -54,19 +61,26 @@ export function LocationSection({
       return;
     }
 
+    // Set loading state immediately for better UX
     setIsLoading(true);
     setError(null);
+    setShowSearchResults(true); // Show loading state immediately
 
-    try {
-      const results = await geocodeLocationMultiple(query);
-      setSearchResults(results);
-      setShowSearchResults(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to find location");
-      setShowSearchResults(false);
-    } finally {
-      setIsLoading(false);
-    }
+    // Debounce search - wait 600ms after user stops typing for better responsiveness
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await geocodeLocationMultiple(query);
+        setSearchResults(results);
+        setShowSearchResults(true);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to find location",
+        );
+        setShowSearchResults(false);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 800);
   }
 
   async function handleSearchSubmit(e: React.FormEvent) {
@@ -107,6 +121,15 @@ export function LocationSection({
       handleSearchClear();
     }
   }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function handleUseCurrentLocation() {
     setIsLoading(true);
@@ -178,8 +201,10 @@ export function LocationSection({
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Start typing to search locations..."
+                    placeholder="Type to search locations..."
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoComplete="off"
+                    spellCheck="false"
                     disabled={isLoading}
                     autoFocus
                   />
@@ -196,7 +221,7 @@ export function LocationSection({
 
                 {/* Search Results Dropdown */}
                 {showSearchResults && (
-                  <div className="absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg z-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-lg bg-white shadow-lg z-50 max-h-80 overflow-y-auto">
                     <SearchResults
                       results={searchResults}
                       onSelect={handleSearchResultSelect}
