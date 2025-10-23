@@ -139,20 +139,19 @@ function App() {
   const [monthlyForecast, setMonthlyForecast] =
     useState<MonthlyForecastType | null>(null);
 
-  const loadWeatherData = useCallback(async () => {
-    if (!coordinates) return;
+  const loadWeatherData = useCallback(
+    async (skipRateLimit = false) => {
+      if (!coordinates) return;
 
-    // Use refresh service to handle the refresh
-    await refreshService.requestManualRefresh(async () => {
       setIsLoading(true);
       setError(null);
 
       try {
         const [current, sevenDay, hourly, monthly] = await Promise.all([
-          getCurrentConditions(coordinates),
-          get7DayForecast(coordinates),
-          getHourlyForecast(coordinates),
-          getMonthlyForecast(coordinates),
+          getCurrentConditions(coordinates, { skipRateLimit }),
+          get7DayForecast(coordinates, { skipRateLimit }),
+          getHourlyForecast(coordinates, { skipRateLimit }),
+          getMonthlyForecast(coordinates, { skipRateLimit }),
         ]);
 
         setCurrentConditions(current);
@@ -179,6 +178,9 @@ function App() {
           };
           updateStructuredData(locationResult, current);
         }
+
+        // Reset refresh service after successful load
+        refreshService.updateConfig({ enableAutoRefresh: true });
       } catch (error) {
         console.error("Failed to load weather data:", error);
         trackApiError("weather");
@@ -188,8 +190,9 @@ function App() {
       } finally {
         setIsLoading(false);
       }
-    });
-  }, [coordinates, locationName]);
+    },
+    [coordinates, locationName],
+  );
 
   // Refresh service effects
   useEffect(() => {
@@ -205,8 +208,8 @@ function App() {
       }
     };
 
-    // Set up auto-refresh
-    if (coordinates) {
+    // Set up auto-refresh after initial location setup
+    if (coordinates && locationName !== "Chicago, Illinois") {
       refreshService.startAutoRefresh();
     }
 
@@ -226,7 +229,7 @@ function App() {
       clearInterval(intervalId);
       refreshService.destroy();
     };
-  }, [coordinates, loadWeatherData]);
+  }, [coordinates, locationName, loadWeatherData]);
 
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
@@ -342,6 +345,9 @@ function App() {
         saveLocation(locationResult);
         updatePageTitle(locationResult.displayName);
       }
+
+      // Load weather data for new location
+      await loadWeatherData(true); // skipRateLimit=true for location changes
     } catch (error) {
       console.log("Location selection failed:", error);
       trackLocationError("initial_selection");

@@ -196,18 +196,20 @@ async function processQueue() {
 
 export async function getWeatherPoint(
   coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
 ): Promise<WeatherPoint> {
   const url = `${BASE_URL}/points/${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
-  return fetchWithUserAgent(url);
+  return fetchWithUserAgent(url, options);
 }
 
 export async function getCurrentConditions(
   coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
 ): Promise<CurrentConditions | null> {
   try {
-    const point = await getWeatherPoint(coords);
+    const point = await getWeatherPoint(coords, options);
     const stationsUrl = point.properties.observationStations;
-    const stationsData = await fetchWithUserAgent(stationsUrl);
+    const stationsData = await fetchWithUserAgent(stationsUrl, options);
 
     if (!stationsData.features || stationsData.features.length === 0) {
       return null;
@@ -215,7 +217,7 @@ export async function getCurrentConditions(
 
     const stationId = stationsData.features[0].properties.stationIdentifier;
     const observationUrl = `${BASE_URL}/stations/${stationId}/observations/latest`;
-    const observation = await fetchWithUserAgent(observationUrl);
+    const observation = await fetchWithUserAgent(observationUrl, options);
 
     const props = observation.properties;
 
@@ -240,11 +242,12 @@ export async function getCurrentConditions(
 
 export async function get7DayForecast(
   coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
 ): Promise<ForecastPeriod[]> {
   try {
-    const point = await getWeatherPoint(coords);
+    const point = await getWeatherPoint(coords, options);
     const forecastUrl = point.properties.forecast;
-    const forecastData = await fetchWithUserAgent(forecastUrl);
+    const forecastData = await fetchWithUserAgent(forecastUrl, options);
 
     return forecastData.properties.periods.slice(0, 14);
   } catch (error) {
@@ -255,11 +258,12 @@ export async function get7DayForecast(
 
 export async function getHourlyForecast(
   coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
 ): Promise<HourlyForecast[]> {
   try {
-    const point = await getWeatherPoint(coords);
+    const point = await getWeatherPoint(coords, options);
     const hourlyUrl = point.properties.forecastHourly;
-    const hourlyData = await fetchWithUserAgent(hourlyUrl);
+    const hourlyData = await fetchWithUserAgent(hourlyUrl, options);
 
     return hourlyData.properties.periods.slice(0, 48);
   } catch (error) {
@@ -270,9 +274,10 @@ export async function getHourlyForecast(
 
 export async function getMonthlyForecast(
   coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
 ): Promise<MonthlyForecast> {
   try {
-    const sevenDayForecast = await get7DayForecast(coords);
+    const sevenDayForecast = await get7DayForecast(coords, options);
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
