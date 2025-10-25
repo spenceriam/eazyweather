@@ -156,13 +156,27 @@ export function CurrentConditions({
 
                 <div className="flex flex-col">
                   <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-                    Dew Point
+                    Real Feel
                   </span>
                   <span className="text-2xl font-medium text-gray-800">
-                    {Math.round(
-                      tempF - (100 - conditions.relativeHumidity) / 5,
-                    )}
-                    °
+                    {(() => {
+                      // Use heat index if available (summer), wind chill if available (winter), otherwise regular temp
+                      if (conditions.heatIndex) {
+                        return `${Math.round(
+                          conditions.temperatureUnit === "C"
+                            ? (conditions.heatIndex * 9) / 5 + 32
+                            : conditions.heatIndex,
+                        )}°`;
+                      } else if (conditions.windChill) {
+                        return `${Math.round(
+                          conditions.temperatureUnit === "C"
+                            ? (conditions.windChill * 9) / 5 + 32
+                            : conditions.windChill,
+                        )}°`;
+                      } else {
+                        return `${tempF}°`;
+                      }
+                    })()}
                   </span>
                 </div>
               </div>

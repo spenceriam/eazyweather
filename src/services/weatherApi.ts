@@ -456,6 +456,8 @@ export async function getAllWeatherData(
         textDescription: props.textDescription || "Unknown",
         icon: props.icon || "",
         timestamp: props.timestamp,
+        heatIndex: props.heatIndex?.value,
+        windChill: props.windChill?.value,
       };
     }
 

@@ -24,6 +24,8 @@ export interface CurrentConditions {
   textDescription: string;
   icon: string;
   timestamp: string;
+  heatIndex?: number;
+  windChill?: number;
 }
 
 export interface ForecastPeriod {
