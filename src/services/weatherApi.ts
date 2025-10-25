@@ -468,9 +468,8 @@ export async function getAllWeatherData(
           : undefined, // Convert m/s to mph
         precipitationLastHour: props.precipitationLastHour?.value,
         snowDepth: props.snowDepth?.value, // Already in inches
-        cloudCeiling: props.cloudCeilingHeight?.value
-          ? props.cloudCeilingHeight.value * 3.28084
-          : undefined, // Convert meters to feet
+        sunriseTime: props.sunriseTime,
+        sunsetTime: props.sunsetTime,
         uvIndex: props.uvIndex?.value,
       };
     }
@@ -478,6 +477,32 @@ export async function getAllWeatherData(
     // Process forecast data
     const forecast = forecastData.properties.periods.slice(0, 14);
     const hourly = hourlyData.properties.periods.slice(0, 48);
+
+    // Add sunrise/sunset from forecast data to current conditions
+    if (current && forecast.length > 0) {
+      // Find today's daytime period for sunrise and nighttime period for sunset
+      const todayPeriods = forecast.filter((period) => {
+        const periodDate = new Date(period.startTime).toDateString();
+        const today = new Date().toDateString();
+        return periodDate === today;
+      });
+
+      if (todayPeriods.length > 0) {
+        // Sunrise is start of first daytime period
+        const dayPeriod = todayPeriods.find((p) => p.isDaytime);
+        if (dayPeriod) {
+          current.sunriseTime = dayPeriod.startTime;
+        }
+
+        // Sunset is end of last daytime period
+        const lastDayPeriod = [...todayPeriods]
+          .reverse()
+          .find((p) => p.isDaytime);
+        if (lastDayPeriod) {
+          current.sunsetTime = lastDayPeriod.endTime;
+        }
+      }
+    }
 
     // Calculate monthly forecast
     const currentDate = new Date();

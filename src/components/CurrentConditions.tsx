@@ -334,15 +334,32 @@ export function CurrentConditions({
     return null;
   };
 
-  const getCloudCeiling = () => {
-    if (conditions.cloudCeiling && conditions.cloudCeiling > 0) {
-      return `${Math.round(conditions.cloudCeiling)} ft`;
+  const getSunrise = () => {
+    if (conditions.sunriseTime) {
+      const sunrise = new Date(conditions.sunriseTime);
+      return sunrise.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: !is24Hour,
+      });
     }
-    return "Unlimited";
+    return "N/A";
+  };
+
+  const getSunset = () => {
+    if (conditions.sunsetTime) {
+      const sunset = new Date(conditions.sunsetTime);
+      return sunset.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: !is24Hour,
+      });
+    }
+    return "N/A";
   };
 
   const getUVIndex = () => {
-    if (conditions.uvIndex !== undefined && conditions.uvIndex >= 0) {
+    if (conditions.uvIndex !== undefined) {
       const index = Math.round(conditions.uvIndex);
       if (index <= 2) return `${index} (Low)`;
       if (index <= 5) return `${index} (Moderate)`;
@@ -350,7 +367,7 @@ export function CurrentConditions({
       if (index <= 10) return `${index} (Very High)`;
       return `${index} (Extreme)`;
     }
-    return "Low";
+    return "N/A";
   };
 
   const trends = getWeatherTrends();
@@ -436,9 +453,15 @@ export function CurrentConditions({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Cloud ceiling</span>
+                  <span className="text-gray-500">Sunrise</span>
                   <span className="font-medium text-gray-800">
-                    {getCloudCeiling()}
+                    {getSunrise()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Sunset</span>
+                  <span className="font-medium text-gray-800">
+                    {getSunset()}
                   </span>
                 </div>
                 {getSnowDepth() && (

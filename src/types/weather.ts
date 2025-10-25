@@ -31,7 +31,8 @@ export interface CurrentConditions {
   windGust?: number;
   precipitationLastHour?: number;
   snowDepth?: number;
-  cloudCeiling?: number;
+  sunriseTime?: string;
+  sunsetTime?: string;
   uvIndex?: number;
 }
 
