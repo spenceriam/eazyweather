@@ -1,13 +1,12 @@
 import type {
   Coordinates,
-  import {
-    WeatherPoint,
-    CurrentConditions,
-    ForecastPeriod,
-    HourlyForecast,
-    MonthlyForecast,
-    MonthlyDay,
-  } from "../types/weather";
+  WeatherPoint,
+  CurrentConditions,
+  ForecastPeriod,
+  HourlyForecast,
+  MonthlyForecast,
+  MonthlyDay,
+} from "../types/weather";
 import { BASE_URL } from "./config";
 
 const BASE_URL = "https://api.weather.gov";
@@ -472,7 +471,6 @@ export async function getAllWeatherData(
         snowDepth: props.snowDepth?.value, // Already in inches
         sunriseTime: props.sunriseTime,
         sunsetTime: props.sunsetTime,
-
       };
     }
 
