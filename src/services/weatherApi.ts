@@ -408,7 +408,7 @@ export async function getAllWeatherData(
 ): Promise<{
   current: CurrentConditions | null;
   forecast: ForecastPeriod[];
-  hourly: HourlyForecast[];
+  hourly: HourlyForecastType[];
   monthly: MonthlyForecast;
 }> {
   try {
@@ -444,6 +444,7 @@ export async function getAllWeatherData(
       });
 
       const props = observation.properties;
+
       current = {
         temperature: props.temperature.value,
         temperatureUnit:
@@ -467,8 +468,9 @@ export async function getAllWeatherData(
           : undefined, // Convert m/s to mph
         precipitationLastHour: props.precipitationLastHour?.value,
         snowDepth: props.snowDepth?.value, // Already in inches
-        sunriseTime: props.sunriseTime,
-        sunsetTime: props.sunsetTime,
+        cloudCeiling: props.cloudCeilingHeight?.value
+          ? props.cloudCeilingHeight.value * 3.28084
+          : undefined, // Convert meters to feet
         uvIndex: props.uvIndex?.value,
       };
     }
