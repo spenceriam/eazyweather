@@ -88,7 +88,7 @@ export function CurrentConditions({
                       <span>Updated:</span>
                       <button
                         onClick={toggleTimeFormat}
-                        className="font-sans text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                        className="font-sans text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
                         style={{
                           width: "4.5rem",
                           height: "1.25rem",
@@ -156,17 +156,13 @@ export function CurrentConditions({
 
                 <div className="flex flex-col">
                   <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-                    Updated
+                    Dew Point
                   </span>
-                  <span className="text-lg font-medium text-gray-800">
-                    {new Date(conditions.timestamp).toLocaleTimeString(
-                      "en-US",
-                      {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      },
+                  <span className="text-2xl font-medium text-gray-800">
+                    {Math.round(
+                      tempF - (100 - conditions.relativeHumidity) / 5,
                     )}
+                    °
                   </span>
                 </div>
               </div>
@@ -180,21 +176,21 @@ export function CurrentConditions({
 
 function getWindDirection(degrees: number): string {
   const directions = [
-    "N",
-    "NNE",
-    "NE",
-    "ENE",
-    "E",
-    "ESE",
-    "SE",
-    "SSE",
-    "S",
-    "SSW",
-    "SW",
-    "WSW",
-    "WNW",
-    "NW",
-    "NNW",
+    "North",
+    "North by Northeast",
+    "Northeast",
+    "East by Northeast",
+    "East",
+    "East by Southeast",
+    "Southeast",
+    "South by Southeast",
+    "South",
+    "South by Southwest",
+    "Southwest",
+    "West by Southwest",
+    "West by Northwest",
+    "Northwest",
+    "North by Northwest",
   ];
 
   const index = Math.round(((degrees + 22.5) % 360) / 22.5);
