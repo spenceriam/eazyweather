@@ -461,6 +461,12 @@ export async function getAllWeatherData(
         timestamp: props.timestamp,
         heatIndex: props.heatIndex?.value,
         windChill: props.windChill?.value,
+        dewpoint: props.dewpoint?.value,
+        visibility: props.visibility?.value
+          ? props.visibility.value * 0.621371
+          : undefined, // Convert km to miles
+        barometricPressure: props.barometricPressure?.value,
+        uvIndex: props.uvIndex?.value,
       };
     }
 

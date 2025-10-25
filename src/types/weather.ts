@@ -27,6 +27,10 @@ export interface CurrentConditions {
   timestamp: string;
   heatIndex?: number;
   windChill?: number;
+  dewpoint?: number;
+  visibility?: number;
+  barometricPressure?: number;
+  uvIndex?: number;
 }
 
 export interface ForecastPeriod {
