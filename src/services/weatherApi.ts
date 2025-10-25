@@ -1,12 +1,14 @@
 import type {
   Coordinates,
-  WeatherPoint,
-  CurrentConditions,
-  ForecastPeriod,
-  HourlyForecast,
-  MonthlyForecast,
-  MonthlyDay,
-} from "../types/weather";
+  import {
+    WeatherPoint,
+    CurrentConditions,
+    ForecastPeriod,
+    HourlyForecast,
+    MonthlyForecast,
+    MonthlyDay,
+  } from "../types/weather";
+import { BASE_URL } from "./config";
 
 const BASE_URL = "https://api.weather.gov";
 const USER_AGENT = "(EazyWeather, eazyweather@example.com)";
@@ -470,7 +472,7 @@ export async function getAllWeatherData(
         snowDepth: props.snowDepth?.value, // Already in inches
         sunriseTime: props.sunriseTime,
         sunsetTime: props.sunsetTime,
-        uvIndex: props.uvIndex?.value,
+
       };
     }
 
@@ -478,30 +480,11 @@ export async function getAllWeatherData(
     const forecast = forecastData.properties.periods.slice(0, 14);
     const hourly = hourlyData.properties.periods.slice(0, 48);
 
-    // Add sunrise/sunset from forecast data to current conditions
-    if (current && forecast.length > 0) {
-      // Find today's daytime period for sunrise and nighttime period for sunset
-      const todayPeriods = forecast.filter((period) => {
-        const periodDate = new Date(period.startTime).toDateString();
-        const today = new Date().toDateString();
-        return periodDate === today;
-      });
-
-      if (todayPeriods.length > 0) {
-        // Sunrise is start of first daytime period
-        const dayPeriod = todayPeriods.find((p) => p.isDaytime);
-        if (dayPeriod) {
-          current.sunriseTime = dayPeriod.startTime;
-        }
-
-        // Sunset is end of last daytime period
-        const lastDayPeriod = [...todayPeriods]
-          .reverse()
-          .find((p) => p.isDaytime);
-        if (lastDayPeriod) {
-          current.sunsetTime = lastDayPeriod.endTime;
-        }
-      }
+    // Add calculated sunrise/sunset to current conditions
+    if (current && coordinates) {
+      const { sunrise, sunset } = calculateSunriseSunset(coordinates);
+      current.sunriseTime = sunrise;
+      current.sunsetTime = sunset;
     }
 
     // Calculate monthly forecast
@@ -564,6 +547,67 @@ export async function getAllWeatherData(
           isAvailable: false,
         });
       }
+    }
+
+    // Calculate sunrise and sunset times from coordinates
+    function calculateSunriseSunset(coords: Coordinates): {
+      sunrise: string;
+      sunset: string;
+    } {
+      const now = new Date();
+      const dayOfYear = Math.floor(
+        (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      // Approximate sunrise/sunset calculation
+      const latRad = (coords.latitude * Math.PI) / 180;
+      const declination =
+        23.45 *
+        Math.sin(((dayOfYear + 284) * 2 * Math.PI) / 365) *
+        (Math.PI / 180);
+
+      // Sunrise time (in hours from midnight)
+      const sunriseHour =
+        12 -
+        (1 / 15) *
+          Math.acos(
+            (-Math.tan(latRad) * Math.tan(declination)) /
+              Math.sqrt(
+                1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2),
+              ),
+          );
+
+      // Sunset time (in hours from midnight)
+      const sunsetHour =
+        12 +
+        (1 / 15) *
+          Math.acos(
+            (-Math.tan(latRad) * Math.tan(declination)) /
+              Math.sqrt(
+                1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2),
+              ),
+          );
+
+      // Convert to Date objects
+      const sunrise = new Date(now);
+      sunrise.setHours(
+        Math.floor(sunriseHour),
+        Math.floor((sunriseHour % 1) * 60),
+        0,
+      );
+
+      const sunset = new Date(now);
+      sunset.setHours(
+        Math.floor(sunsetHour),
+        Math.floor((sunsetHour % 1) * 60),
+        0,
+      );
+
+      return {
+        sunrise: sunrise.toISOString(),
+        sunset: sunset.toISOString(),
+      };
     }
 
     const monthly: MonthlyForecast = {

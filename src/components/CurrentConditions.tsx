@@ -358,18 +358,6 @@ export function CurrentConditions({
     return "N/A";
   };
 
-  const getUVIndex = () => {
-    if (conditions.uvIndex !== undefined) {
-      const index = Math.round(conditions.uvIndex);
-      if (index <= 2) return `${index} (Low)`;
-      if (index <= 5) return `${index} (Moderate)`;
-      if (index <= 7) return `${index} (High)`;
-      if (index <= 10) return `${index} (Very High)`;
-      return `${index} (Extreme)`;
-    }
-    return "N/A";
-  };
-
   const trends = getWeatherTrends();
 
   return (
@@ -447,9 +435,11 @@ export function CurrentConditions({
               {/* Right column */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">UV index</span>
+                  <span className="text-gray-500">Precip (1hr)</span>
                   <span className="font-medium text-gray-800">
-                    {getUVIndex()}
+                    {conditions.precipitationLastHour
+                      ? `${Math.round(conditions.precipitationLastHour * 100)} in`
+                      : "None"}
                   </span>
                 </div>
                 <div className="flex justify-between">
