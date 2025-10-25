@@ -55,9 +55,9 @@ async function fetchWithUserAgent(
     }
   }
 
-  // Check if there's already a pending request for this URL
+  // Check if there's already a pending request for this URL (unless skipping cache)
   const cachedRequest = requestCache.get(cacheKey);
-  if (cachedRequest?.promise) {
+  if (!options.skipCache && cachedRequest?.promise) {
     console.log(`Returning pending request for ${url}`);
     return cachedRequest.promise;
   }
@@ -71,7 +71,9 @@ async function fetchWithUserAgent(
         .sort((a, b) => b.timestamp - a.timestamp)[0];
 
       if (lastRequest && now - lastRequest.timestamp < MIN_REQUEST_INTERVAL) {
-        console.log(`Rate limiting request for ${url}, adding to queue`);
+        console.log(
+          `Rate limiting request for ${url}, adding to queue (${MIN_REQUEST_INTERVAL - (now - lastRequest.timestamp)}ms remaining)`,
+        );
         return new Promise((resolve, reject) => {
           requestQueue.push({
             url,
@@ -113,11 +115,13 @@ async function fetchWithUserAgent(
 
       const data = await response.json();
 
-      // Cache the successful response
-      requestCache.set(cacheKey, {
-        data,
-        timestamp: now,
-      });
+      // Cache the successful response (unless skipping cache)
+      if (!options.skipCache) {
+        requestCache.set(cacheKey, {
+          data,
+          timestamp: now,
+        });
+      }
 
       return data;
     } catch (error) {
@@ -126,17 +130,19 @@ async function fetchWithUserAgent(
     }
   })();
 
-  // Cache the promise (even if it will be queued)
-  requestCache.set(cacheKey, {
-    data: null,
-    timestamp: now,
-    promise,
-  });
+  // Cache the promise (even if it will be queued) unless skipping cache
+  if (!options.skipCache) {
+    requestCache.set(cacheKey, {
+      data: null,
+      timestamp: now,
+      promise,
+    });
+  }
 
   return promise;
 }
 
-// Process the request queue with rate limit delays
+// Process request queue with rate limit delays
 async function processQueue() {
   if (isProcessingQueue || requestQueue.length === 0) {
     return;
@@ -146,15 +152,35 @@ async function processQueue() {
 
   while (requestQueue.length > 0) {
     const request = requestQueue.shift()!;
+    console.log(`Processing queued request for ${request.url}`);
 
     try {
+      // Always wait minimum interval between queued requests
+      const lastRequest = Array.from(requestCache.values()).sort(
+        (a, b) => b.timestamp - a.timestamp,
+      )[0];
+
+      if (lastRequest) {
+        const timeSinceLastRequest = Date.now() - lastRequest.timestamp;
+        if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+          console.log(
+            `Waiting ${MIN_REQUEST_INTERVAL - timeSinceLastRequest}ms before next request`,
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest),
+          );
+        }
+      }
+
       // Wait for rate limit delay if this is a retry
       if (request.retryCount > 0) {
+        console.log(`Retry attempt ${request.retryCount} for ${request.url}`);
         await new Promise((resolve) =>
           setTimeout(resolve, RATE_LIMIT_RETRY_DELAY),
         );
       }
 
+      console.log(`Making API call for ${request.url}`);
       const apiResponse = await fetch(request.url, {
         headers: {
           "User-Agent": USER_AGENT,
@@ -163,14 +189,21 @@ async function processQueue() {
       });
 
       const data = await apiResponse.json();
+      console.log(`API response for ${request.url}: ${apiResponse.status}`);
 
+      // Update cache with successful response
       if (apiResponse.ok) {
+        requestCache.set(request.url, {
+          data,
+          timestamp: Date.now(),
+        });
         request.resolve(data);
       } else if (
         apiResponse.status === 429 &&
         request.retryCount < MAX_RETRY_ATTEMPTS
       ) {
         // Retry rate limited requests
+        console.log(`Rate limited, retrying ${request.url}`);
         request.retryCount++;
         requestQueue.unshift(request); // Put back at front of queue
       } else {
@@ -209,7 +242,10 @@ export async function getCurrentConditions(
   try {
     const point = await getWeatherPoint(coords, options);
     const stationsUrl = point.properties.observationStations;
-    const stationsData = await fetchWithUserAgent(stationsUrl, options);
+    const stationsData = await fetchWithUserAgent(stationsUrl, {
+      ...options,
+      skipRateLimit: true, // Skip rate limiting since we already got the point
+    });
 
     if (!stationsData.features || stationsData.features.length === 0) {
       return null;
@@ -217,7 +253,10 @@ export async function getCurrentConditions(
 
     const stationId = stationsData.features[0].properties.stationIdentifier;
     const observationUrl = `${BASE_URL}/stations/${stationId}/observations/latest`;
-    const observation = await fetchWithUserAgent(observationUrl, options);
+    const observation = await fetchWithUserAgent(observationUrl, {
+      ...options,
+      skipRateLimit: true, // Skip rate limiting for observations
+    });
 
     const props = observation.properties;
 
@@ -247,7 +286,11 @@ export async function get7DayForecast(
   try {
     const point = await getWeatherPoint(coords, options);
     const forecastUrl = point.properties.forecast;
-    const forecastData = await fetchWithUserAgent(forecastUrl, options);
+    const forecastData = await fetchWithUserAgent(forecastUrl, {
+      ...options,
+      skipCache: true, // Don't use cache for forecast data
+      skipRateLimit: true, // Skip rate limiting since we already got the point
+    });
 
     return forecastData.properties.periods.slice(0, 14);
   } catch (error) {
@@ -263,7 +306,11 @@ export async function getHourlyForecast(
   try {
     const point = await getWeatherPoint(coords, options);
     const hourlyUrl = point.properties.forecastHourly;
-    const hourlyData = await fetchWithUserAgent(hourlyUrl, options);
+    const hourlyData = await fetchWithUserAgent(hourlyUrl, {
+      ...options,
+      skipCache: true, // Don't use cache for forecast data
+      skipRateLimit: true, // Skip rate limiting since we already got the point
+    });
 
     return hourlyData.properties.periods.slice(0, 48);
   } catch (error) {
@@ -277,7 +324,10 @@ export async function getMonthlyForecast(
   options: { skipRateLimit?: boolean } = {},
 ): Promise<MonthlyForecast> {
   try {
-    const sevenDayForecast = await get7DayForecast(coords, options);
+    const sevenDayForecast = await get7DayForecast(coords, {
+      ...options,
+      skipCache: true, // Don't use cache for forecast data
+    });
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
@@ -347,6 +397,148 @@ export async function getMonthlyForecast(
     };
   } catch (error) {
     console.error("Error calculating monthly forecast:", error);
+    throw error;
+  }
+}
+
+// Comprehensive function to get all weather data with a single point API call
+export async function getAllWeatherData(
+  coords: Coordinates,
+  options: { skipRateLimit?: boolean } = {},
+): Promise<{
+  current: CurrentConditions | null;
+  forecast: ForecastPeriod[];
+  hourly: HourlyForecast[];
+  monthly: MonthlyForecast;
+}> {
+  try {
+    // Get the weather point once
+    const point = await getWeatherPoint(coords, options);
+
+    // Make all API calls in parallel with the point data
+    const [stationsData, forecastData, hourlyData] = await Promise.all([
+      fetchWithUserAgent(point.properties.observationStations, {
+        ...options,
+        skipRateLimit: true, // Skip rate limiting since we already got the point
+      }),
+      fetchWithUserAgent(point.properties.forecast, {
+        ...options,
+        skipCache: true, // Don't use cache for forecast data
+        skipRateLimit: true, // Skip rate limiting since we already got the point
+      }),
+      fetchWithUserAgent(point.properties.forecastHourly, {
+        ...options,
+        skipCache: true, // Don't use cache for forecast data
+        skipRateLimit: true, // Skip rate limiting since we already got the point
+      }),
+    ]);
+
+    // Process current conditions
+    let current: CurrentConditions | null = null;
+    if (stationsData.features && stationsData.features.length > 0) {
+      const stationId = stationsData.features[0].properties.stationIdentifier;
+      const observationUrl = `${BASE_URL}/stations/${stationId}/observations/latest`;
+      const observation = await fetchWithUserAgent(observationUrl, {
+        ...options,
+        skipRateLimit: true, // Skip rate limiting for observations
+      });
+
+      const props = observation.properties;
+      current = {
+        temperature: props.temperature.value,
+        temperatureUnit:
+          props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
+        relativeHumidity: props.relativeHumidity.value,
+        windSpeed: props.windSpeed.value
+          ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
+          : "Calm",
+        windDirection: props.windDirection.value || 0,
+        textDescription: props.textDescription || "Unknown",
+        icon: props.icon || "",
+        timestamp: props.timestamp,
+      };
+    }
+
+    // Process forecast data
+    const forecast = forecastData.properties.periods.slice(0, 14);
+    const hourly = hourlyData.properties.periods.slice(0, 48);
+
+    // Calculate monthly forecast
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const days: MonthlyDay[] = [];
+
+    // Calculate average temperature from available forecast data
+    const availableTemps = forecast.map((period) => period.temperature);
+    const avgTemp =
+      availableTemps.length > 0
+        ? Math.round(
+            availableTemps.reduce((sum, temp) => sum + temp, 0) /
+              availableTemps.length,
+          )
+        : 65; // fallback average
+
+    // Get most common condition from available forecast
+    const conditionCounts = forecast.reduce(
+      (acc, period) => {
+        acc[period.shortForecast] = (acc[period.shortForecast] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const mostCommonCondition =
+      Object.keys(conditionCounts).length > 0
+        ? Object.keys(conditionCounts).reduce((a, b) =>
+            conditionCounts[a] > conditionCounts[b] ? a : b,
+          )
+        : "Partly Cloudy";
+
+    const mostCommonIcon = forecast.length > 0 ? forecast[0].icon : "";
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const forecastDay = forecast.find((period) => {
+        const periodDate = new Date(period.startTime);
+        return periodDate.getDate() === day;
+      });
+
+      if (forecastDay) {
+        days.push({
+          date: day,
+          temperature: forecastDay.temperature,
+          condition: forecastDay.shortForecast,
+          icon: forecastDay.icon,
+          isAvailable: true,
+        });
+      } else {
+        // Use calculated averages for days beyond 7-day forecast
+        days.push({
+          date: day,
+          temperature: avgTemp,
+          condition: mostCommonCondition,
+          icon: mostCommonIcon,
+          isAvailable: false,
+        });
+      }
+    }
+
+    const monthly: MonthlyForecast = {
+      month: currentMonth,
+      year: currentYear,
+      days,
+    };
+
+    return {
+      current,
+      forecast,
+      hourly,
+      monthly,
+    };
+  } catch (error) {
+    console.error("Error fetching all weather data:", error);
     throw error;
   }
 }

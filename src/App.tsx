@@ -15,6 +15,7 @@ import {
   get7DayForecast,
   getHourlyForecast,
   getMonthlyForecast,
+  getAllWeatherData,
 } from "./services/weatherApi";
 import {
   reverseGeocode,
@@ -140,19 +141,19 @@ function App() {
     useState<MonthlyForecastType | null>(null);
 
   const loadWeatherData = useCallback(
-    async (skipRateLimit = false) => {
+    async (skipRateLimit = false, isAutoRefresh = false) => {
       if (!coordinates) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const [current, sevenDay, hourly, monthly] = await Promise.all([
-          getCurrentConditions(coordinates, { skipRateLimit }),
-          get7DayForecast(coordinates, { skipRateLimit }),
-          getHourlyForecast(coordinates, { skipRateLimit }),
-          getMonthlyForecast(coordinates, { skipRateLimit }),
-        ]);
+        const {
+          current,
+          forecast: sevenDay,
+          hourly,
+          monthly,
+        } = await getAllWeatherData(coordinates, { skipRateLimit });
 
         setCurrentConditions(current);
         setForecast(sevenDay);
@@ -201,19 +202,20 @@ function App() {
       setRefreshState(refreshService.getState());
     });
 
-    // Handle auto-refresh triggers
+    // Handle auto-refresh triggers - smarter timing that respects API cache
     const handleAutoRefresh = () => {
+      // Only refresh if auto-refresh is enabled and we have coordinates
       if (refreshService.shouldAutoRefresh() && coordinates) {
-        loadWeatherData();
+        loadWeatherData(true); // Pass true to indicate this is auto-refresh, not manual
       }
     };
 
-    // Set up auto-refresh after initial location setup
+    // Set up auto-refresh after initial location setup (only for non-Chicago default)
     if (coordinates && locationName !== "Chicago, Illinois") {
       refreshService.startAutoRefresh();
     }
 
-    // Custom auto-refresh handler
+    // Custom auto-refresh handler - optimized to check less frequently
     const intervalId = setInterval(() => {
       if (
         refreshService.getState().nextAutoRefreshTime &&
@@ -222,7 +224,7 @@ function App() {
       ) {
         handleAutoRefresh();
       }
-    }, 1000); // Check every second
+    }, 5000); // Check every 5 seconds instead of every second
 
     return () => {
       unsubscribe();
@@ -397,11 +399,7 @@ function App() {
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
-        <Header
-          locationName={locationName}
-          onRefresh={handleManualRefresh}
-          refreshState={refreshState}
-        />
+        <Header locationName={locationName} />
 
         <main>
           {/* Location section - full width */}
@@ -425,7 +423,11 @@ function App() {
             ) : (
               <>
                 {currentConditions ? (
-                  <CurrentConditions conditions={currentConditions} />
+                  <CurrentConditions
+                    conditions={currentConditions}
+                    onRefresh={handleManualRefresh}
+                    isRefreshing={refreshState.isRefreshing}
+                  />
                 ) : (
                   <section id="current" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-16">
