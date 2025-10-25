@@ -10,13 +10,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
 
-import {
-  getCurrentConditions,
-  get7DayForecast,
-  getHourlyForecast,
-  getMonthlyForecast,
-  getAllWeatherData,
-} from "./services/weatherApi";
+import { getAllWeatherData } from "./services/weatherApi";
 import {
   reverseGeocode,
   getBrowserLocation,
@@ -141,7 +135,7 @@ function App() {
     useState<MonthlyForecastType | null>(null);
 
   const loadWeatherData = useCallback(
-    async (skipRateLimit = false, isAutoRefresh = false) => {
+    async (skipRateLimit = false) => {
       if (!coordinates) return;
 
       setIsLoading(true);
@@ -314,7 +308,7 @@ function App() {
       saveLocation(location);
       updatePageTitle(location.displayName);
       updateStructuredData(location, currentConditions);
-    } catch (error) {
+    } catch {
       trackApiError("location");
       setError("Failed to find location");
     } finally {
@@ -427,6 +421,11 @@ function App() {
                     conditions={currentConditions}
                     onRefresh={handleManualRefresh}
                     isRefreshing={refreshState.isRefreshing}
+                    lastUpdated={
+                      refreshState.lastRefreshTime
+                        ? new Date(refreshState.lastRefreshTime).toISOString()
+                        : undefined
+                    }
                   />
                 ) : (
                   <section id="current" className="bg-gray-100">

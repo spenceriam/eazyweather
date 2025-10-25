@@ -7,12 +7,14 @@ interface CurrentConditionsProps {
   conditions: CurrentConditionsType;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  lastUpdated?: string;
 }
 
 export function CurrentConditions({
   conditions,
   onRefresh,
   isRefreshing,
+  lastUpdated,
 }: CurrentConditionsProps) {
   const [is24Hour, setIs24Hour] = useState(false);
 
@@ -37,7 +39,7 @@ export function CurrentConditions({
           hour12: true,
         });
 
-    // For 24-hour, format without leading zeros: "18:20" instead of "00:05:20"
+    // For 24-hour, format without leading zeros: "18:20" instead of "18:20"
     if (is24Hour) {
       const [hours, minutes] = timeString.split(":");
       const hourNum = parseInt(hours, 10);
@@ -76,24 +78,45 @@ export function CurrentConditions({
                   <div className="text-lg text-gray-600 capitalize mb-1">
                     {conditions.textDescription}
                   </div>
-
-                    {onRefresh && (
+                  {lastUpdated && (
+                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                      <span>Updated:</span>
                       <button
-                        onClick={onRefresh}
-                        disabled={isRefreshing}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          isRefreshing
-                            ? "Refreshing..."
-                            : "Refresh weather data"
-                        }
+                        onClick={toggleTimeFormat}
+                        className="font-sans text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                        style={{
+                          width: "4.5rem",
+                          height: "1.25rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "flex-start",
+                          boxSizing: "border-box",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                          verticalAlign: "middle",
+                          transform: "translateZ(0)",
+                        }}
                       >
-                        <RefreshCw
-                          className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
-                        />
+                        {formatTime(lastUpdated)}
                       </button>
-                    )}
-                  </div>
+                      {onRefresh && (
+                        <button
+                          onClick={onRefresh}
+                          disabled={isRefreshing}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            isRefreshing
+                              ? "Refreshing..."
+                              : "Refresh weather data"
+                          }
+                        >
+                          <RefreshCw
+                            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -108,70 +131,67 @@ export function CurrentConditions({
                   </span>
                 </div>
 
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Wind Speed
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {conditions.windSpeed}
+                  </span>
+                </div>
 
-  </div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-);
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Wind Direction
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {getWindDirection(conditions.windDirection)}
+                  </span>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
+                    Last Updated
+                  </span>
+                  <span className="text-2xl font-medium text-gray-800">
+                    {new Date(conditions.timestamp).toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      },
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function getWindDirection(degrees: number): string {
-const directions = [
-"N",
-"NNE",
-"NE",
-"ENE",
-"E",
-"ESE",
-"SE",
-"SSE",
-"S",
-"SSW",
-"SW",
-"WSW",
-"WNW",
-"NW",
-"NNW",
-];
+  const directions = [
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "WNW",
+    "NW",
+    "NNW",
+  ];
 
-const index = Math.round(((degrees + 22.5) % 360) / 22.5);
-return directions[index];
+  const index = Math.round(((degrees + 22.5) % 360) / 22.5);
+  return directions[index];
 }

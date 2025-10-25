@@ -22,7 +22,7 @@ class RefreshService {
 
   constructor(config: Partial<RefreshConfig> = {}) {
     this.config = {
-      autoRefreshInterval: 35 * 1000, // Sync with API cache timeout (30s) + 5s buffer
+      autoRefreshInterval: 35 * 60 * 1000, // 35 minutes to respect API cache timeout and rate limits
       enableAutoRefresh: true,
       onlyRefreshWhenVisible: true,
       ...config,
