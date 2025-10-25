@@ -567,10 +567,10 @@ export async function getAllWeatherData(
           const sunriseUTC = new Date(data.results.sunrise);
           const sunsetUTC = new Date(data.results.sunset);
 
-          // Convert to local ISO string with proper timezone handling
+          // Pass UTC times directly - let component handle local conversion
           return {
-            sunrise: sunriseUTC.toLocaleString(),
-            sunset: sunsetUTC.toLocaleString(),
+            sunrise: data.results.sunrise,
+            sunset: data.results.sunset,
           };
         } else {
           throw new Error(data.status || "Unknown API error");

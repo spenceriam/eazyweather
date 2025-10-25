@@ -341,6 +341,7 @@ export function CurrentConditions({
         hour: "numeric",
         minute: "2-digit",
         hour12: !is24Hour,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
     return "N/A";
@@ -353,6 +354,7 @@ export function CurrentConditions({
         hour: "numeric",
         minute: "2-digit",
         hour12: !is24Hour,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
     return "N/A";
