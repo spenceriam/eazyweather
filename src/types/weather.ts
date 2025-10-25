@@ -28,8 +28,11 @@ export interface CurrentConditions {
   heatIndex?: number;
   windChill?: number;
   dewpoint?: number;
-  visibility?: number;
-  barometricPressure?: number;
+  windGust?: number;
+  precipitationLastHour?: number;
+  snowDepth?: number;
+  sunriseTime?: string;
+  sunsetTime?: string;
   uvIndex?: number;
 }
 

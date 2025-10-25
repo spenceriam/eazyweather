@@ -462,10 +462,13 @@ export async function getAllWeatherData(
         heatIndex: props.heatIndex?.value,
         windChill: props.windChill?.value,
         dewpoint: props.dewpoint?.value,
-        visibility: props.visibility?.value
-          ? props.visibility.value * 0.621371
-          : undefined, // Convert km to miles
-        barometricPressure: props.barometricPressure?.value,
+        windGust: props.windGust?.value
+          ? props.windGust.value * 0.621371
+          : undefined, // Convert m/s to mph
+        precipitationLastHour: props.precipitationLastHour?.value,
+        snowDepth: props.snowDepth?.value, // Already in inches
+        sunriseTime: props.sunriseTime,
+        sunsetTime: props.sunsetTime,
         uvIndex: props.uvIndex?.value,
       };
     }

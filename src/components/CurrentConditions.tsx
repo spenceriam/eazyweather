@@ -311,16 +311,49 @@ export function CurrentConditions({
     return Math.round(tempF - (100 - conditions.relativeHumidity) / 5);
   };
 
-  const getVisibility = () => {
-    if (conditions.visibility) {
-      return `${Math.round(conditions.visibility)} mi`;
+  const getWindDisplay = () => {
+    let windText =
+      conditions.windSpeedValue > 0
+        ? `${Math.round(conditions.windSpeedValue)} mph`
+        : "Calm";
+
+    if (
+      conditions.windGust &&
+      conditions.windGust > conditions.windSpeedValue
+    ) {
+      windText += ` gusts ${Math.round(conditions.windGust)} mph`;
+    }
+
+    return windText;
+  };
+
+  const getSnowDepth = () => {
+    if (conditions.snowDepth && conditions.snowDepth > 0) {
+      return `${Math.round(conditions.snowDepth)} in`;
+    }
+    return null;
+  };
+
+  const getSunrise = () => {
+    if (conditions.sunriseTime) {
+      const sunrise = new Date(conditions.sunriseTime);
+      return sunrise.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: !is24Hour,
+      });
     }
     return "N/A";
   };
 
-  const getPressure = () => {
-    if (conditions.barometricPressure) {
-      return `${Math.round(conditions.barometricPressure * 0.02953)} in`;
+  const getSunset = () => {
+    if (conditions.sunsetTime) {
+      const sunset = new Date(conditions.sunsetTime);
+      return sunset.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: !is24Hour,
+      });
     }
     return "N/A";
   };
@@ -400,10 +433,13 @@ export function CurrentConditions({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Wind</span>
-                  <span className="font-medium text-gray-800">
-                    {conditions.windSpeedValue > 0
-                      ? `${Math.round(conditions.windSpeedValue)} mph`
-                      : "Calm"}
+                  <span className="font-medium text-gray-800 text-right">
+                    {getWindDisplay()}
+                    {conditions.windSpeedValue > 0 && (
+                      <span className="block text-xs text-gray-600">
+                        {getWindDirection(conditions.windDirection)}
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
@@ -417,17 +453,25 @@ export function CurrentConditions({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Visibility</span>
+                  <span className="text-gray-500">Sunrise</span>
                   <span className="font-medium text-gray-800">
-                    {getVisibility()}
+                    {getSunrise()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Pressure</span>
+                  <span className="text-gray-500">Sunset</span>
                   <span className="font-medium text-gray-800">
-                    {getPressure()}
+                    {getSunset()}
                   </span>
                 </div>
+                {getSnowDepth() && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Snow depth</span>
+                    <span className="font-medium text-gray-800">
+                      {getSnowDepth()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Updated</span>
                   <div className="flex items-center gap-2">
