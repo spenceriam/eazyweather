@@ -59,6 +59,11 @@ export function CurrentConditions({
     <section id="current" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Current Conditions
+            </h2>
+          </div>
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
               {/* Left side - Weather icon and temperature */}
@@ -151,9 +156,9 @@ export function CurrentConditions({
 
                 <div className="flex flex-col">
                   <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-                    Last Updated
+                    Updated
                   </span>
-                  <span className="text-2xl font-medium text-gray-800">
+                  <span className="text-lg font-medium text-gray-800">
                     {new Date(conditions.timestamp).toLocaleTimeString(
                       "en-US",
                       {
