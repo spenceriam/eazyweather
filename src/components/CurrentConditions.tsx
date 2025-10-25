@@ -138,18 +138,12 @@ export function CurrentConditions({
 
                 <div className="flex flex-col">
                   <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-                    Wind Speed
+                    Wind
                   </span>
                   <span className="text-2xl font-medium text-gray-800">
                     {conditions.windSpeed}
                   </span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-500 uppercase tracking-wide mb-1">
-                    Wind Direction
-                  </span>
-                  <span className="text-2xl font-medium text-gray-800">
+                  <span className="text-sm text-gray-600">
                     {getWindDirection(conditions.windDirection)}
                   </span>
                 </div>

@@ -452,6 +452,9 @@ export async function getAllWeatherData(
         windSpeed: props.windSpeed.value
           ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
           : "Calm",
+        windSpeedValue: props.windSpeed.value
+          ? props.windSpeed.value * 0.621371
+          : 0,
         windDirection: props.windDirection.value || 0,
         textDescription: props.textDescription || "Unknown",
         icon: props.icon || "",
