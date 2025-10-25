@@ -479,8 +479,8 @@ export async function getAllWeatherData(
     const hourly = hourlyData.properties.periods.slice(0, 48);
 
     // Add calculated sunrise/sunset to current conditions
-    if (current && coordinates) {
-      const { sunrise, sunset } = calculateSunriseSunset(coordinates);
+    if (current && coords) {
+      const { sunrise, sunset } = calculateSunriseSunset(coords);
       current.sunriseTime = sunrise;
       current.sunsetTime = sunset;
     }
