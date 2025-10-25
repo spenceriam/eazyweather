@@ -424,7 +424,7 @@ function App() {
                     lastUpdated={
                       refreshState.lastRefreshTime
                         ? new Date(refreshState.lastRefreshTime).toISOString()
-                        : undefined
+                        : currentConditions?.timestamp
                     }
                   />
                 ) : (
