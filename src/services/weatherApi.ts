@@ -563,9 +563,14 @@ export async function getAllWeatherData(
         const data = await response.json();
 
         if (data.status === "OK") {
+          // Convert UTC times to local timezone
+          const sunriseUTC = new Date(data.results.sunrise);
+          const sunsetUTC = new Date(data.results.sunset);
+
+          // Convert to local ISO string with proper timezone handling
           return {
-            sunrise: data.results.sunrise,
-            sunset: data.results.sunset,
+            sunrise: sunriseUTC.toLocaleString(),
+            sunset: sunsetUTC.toLocaleString(),
           };
         } else {
           throw new Error(data.status || "Unknown API error");
