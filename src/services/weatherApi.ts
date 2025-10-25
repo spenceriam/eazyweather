@@ -478,9 +478,9 @@ export async function getAllWeatherData(
     const forecast = forecastData.properties.periods.slice(0, 14);
     const hourly = hourlyData.properties.periods.slice(0, 48);
 
-    // Add calculated sunrise/sunset to current conditions
+    // Add sunrise/sunset to current conditions using API
     if (current && coords) {
-      const { sunrise, sunset } = calculateSunriseSunset(coords);
+      const { sunrise, sunset } = await getSunriseSunsetFromAPI(coords);
       current.sunriseTime = sunrise;
       current.sunsetTime = sunset;
     }
@@ -547,7 +547,37 @@ export async function getAllWeatherData(
       }
     }
 
-    // Calculate sunrise and sunset times from coordinates
+    // Get sunrise and sunset from sunrise-sunset.org API
+    async function getSunriseSunsetFromAPI(coords: Coordinates): Promise<{
+      sunrise: string;
+      sunset: string;
+    }> {
+      try {
+        const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&formatted=0`;
+        const response = await fetchWithUserAgent(url, { skipRateLimit: true });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === "OK") {
+          return {
+            sunrise: data.results.sunrise,
+            sunset: data.results.sunset,
+          };
+        } else {
+          throw new Error(data.status || "Unknown API error");
+        }
+      } catch (error) {
+        console.error("Error fetching sunrise/sunset:", error);
+        // Fallback to calculation
+        return calculateSunriseSunset(coords);
+      }
+    }
+
+    // Calculate sunrise and sunset times from coordinates (fallback)
     function calculateSunriseSunset(coords: Coordinates): {
       sunrise: string;
       sunset: string;
