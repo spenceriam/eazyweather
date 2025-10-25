@@ -426,6 +426,7 @@ function App() {
                         ? new Date(refreshState.lastRefreshTime).toISOString()
                         : currentConditions?.timestamp
                     }
+                    hourlyForecast={hourlyForecast}
                   />
                 ) : (
                   <section id="current" className="bg-gray-100">

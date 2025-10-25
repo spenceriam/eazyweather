@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { WeatherIcon } from "./icons/WeatherIcon";
-import type { CurrentConditions as CurrentConditionsType } from "../types/weather";
+import type {
+  CurrentConditions as CurrentConditionsType,
+  HourlyForecast as HourlyForecastType,
+} from "../types/weather";
 
 interface CurrentConditionsProps {
   conditions: CurrentConditionsType;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   lastUpdated?: string;
+  hourlyForecast?: HourlyForecastType[];
 }
 
 export function CurrentConditions({
@@ -15,6 +19,7 @@ export function CurrentConditions({
   onRefresh,
   isRefreshing,
   lastUpdated,
+  hourlyForecast,
 }: CurrentConditionsProps) {
   const [is24Hour, setIs24Hour] = useState(false);
 
@@ -55,6 +60,106 @@ export function CurrentConditions({
     setIs24Hour(!is24Hour);
   };
 
+  // Generate weather trend comment based on hourly forecast
+  const getWeatherTrend = () => {
+    if (!hourlyForecast || hourlyForecast.length === 0) return null;
+
+    const currentCondition = conditions.textDescription.toLowerCase();
+    const isRaining =
+      currentCondition.includes("rain") ||
+      currentCondition.includes("drizzle") ||
+      currentCondition.includes("shower");
+    const isSnowing =
+      currentCondition.includes("snow") ||
+      currentCondition.includes("flurries");
+    const isClear =
+      currentCondition.includes("clear") || currentCondition.includes("sunny");
+    const isCloudy =
+      currentCondition.includes("cloud") ||
+      currentCondition.includes("overcast");
+
+    // Check when rain/snow will end
+    if (isRaining || isSnowing) {
+      for (let i = 1; i < Math.min(12, hourlyForecast.length); i++) {
+        const nextHour = hourlyForecast[i];
+        const nextCondition = nextHour.shortForecast.toLowerCase();
+
+        if (
+          !nextCondition.includes("rain") &&
+          !nextCondition.includes("drizzle") &&
+          !nextCondition.includes("shower") &&
+          !nextCondition.includes("snow") &&
+          !nextCondition.includes("flurries")
+        ) {
+          const endTime = new Date(nextHour.startTime);
+          const timeString = is24Hour
+            ? endTime.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: false,
+              })
+            : endTime.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+
+          // Format 24-hour time without leading zeros
+          if (is24Hour) {
+            const [hours, minutes] = timeString.split(":");
+            const hourNum = parseInt(hours, 10);
+            const formattedHour = hourNum.toString();
+            return `${isRaining ? "Rain" : "Snow"} to end by ${formattedHour}:${minutes.padStart(2, "0")}`;
+          }
+
+          return `${isRaining ? "Rain" : "Snow"} to end by ${timeString}`;
+        }
+      }
+      return `${isRaining ? "Rain" : "Snow"} to continue`;
+    }
+
+    // Check when rain/snow will start
+    const nextHours = hourlyForecast.slice(
+      1,
+      Math.min(8, hourlyForecast.length),
+    );
+    for (const hour of nextHours) {
+      const condition = hour.shortForecast.toLowerCase();
+      if (
+        condition.includes("rain") ||
+        condition.includes("drizzle") ||
+        condition.includes("shower") ||
+        condition.includes("snow") ||
+        condition.includes("flurries")
+      ) {
+        const startTime = new Date(hour.startTime);
+        const timeString = is24Hour
+          ? startTime.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: false,
+            })
+          : startTime.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+        // Format 24-hour time without leading zeros
+        if (is24Hour) {
+          const [hours, minutes] = timeString.split(":");
+          const hourNum = parseInt(hours, 10);
+          const formattedHour = hourNum.toString();
+          return `${condition.includes("snow") ? "Snow" : "Rain"} beginning ${formattedHour}:${minutes.padStart(2, "0")}`;
+        }
+
+        return `${condition.includes("snow") ? "Snow" : "Rain"} beginning ${timeString}`;
+      }
+    }
+
+    return null;
+  };
+
   return (
     <section id="current" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -83,6 +188,11 @@ export function CurrentConditions({
                   <div className="text-lg text-gray-600 capitalize mb-1">
                     {conditions.textDescription}
                   </div>
+                  {getWeatherTrend() && (
+                    <div className="text-sm text-gray-500">
+                      {getWeatherTrend()}
+                    </div>
+                  )}
                   {lastUpdated && (
                     <div className="text-sm text-gray-500 flex items-center gap-2">
                       <span>Updated:</span>
