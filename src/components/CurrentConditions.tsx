@@ -337,11 +337,12 @@ export function CurrentConditions({
   const getSunrise = () => {
     if (conditions.sunriseTime) {
       const sunrise = new Date(conditions.sunriseTime);
+
+      // API returns local time format directly, no conversion needed
       return sunrise.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
         hour12: !is24Hour,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
     return "N/A";
@@ -354,7 +355,6 @@ export function CurrentConditions({
         hour: "numeric",
         minute: "2-digit",
         hour12: !is24Hour,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
     return "N/A";

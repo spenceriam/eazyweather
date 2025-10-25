@@ -553,7 +553,9 @@ export async function getAllWeatherData(
       sunset: string;
     }> {
       try {
-        const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&formatted=0`;
+        // Try using timezone ID for more accurate local times
+        const today = new Date().toISOString().split("T")[0];
+        const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=America/Chicago`;
         const response = await fetchWithUserAgent(url, { skipRateLimit: true });
 
         if (!response.ok) {
@@ -563,14 +565,13 @@ export async function getAllWeatherData(
         const data = await response.json();
 
         if (data.status === "OK") {
-          // Convert UTC times to local timezone
-          const sunriseUTC = new Date(data.results.sunrise);
-          const sunsetUTC = new Date(data.results.sunset);
+          // Parse the API response correctly
+          const sunriseTime = data.results.sunrise;
+          const sunsetTime = data.results.sunset;
 
-          // Pass UTC times directly - let component handle local conversion
           return {
-            sunrise: data.results.sunrise,
-            sunset: data.results.sunset,
+            sunrise: sunriseTime,
+            sunset: sunsetTime,
           };
         } else {
           throw new Error(data.status || "Unknown API error");
