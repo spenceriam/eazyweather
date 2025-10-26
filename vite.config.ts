@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 const packageJson = JSON.parse(readFileSync("./package.json", "utf8"));
 const VERSION = packageJson.version;
 
-// Generate build timestamp
+// Generate build timestamp (triggering Vercel build with git access)
 const BUILD_DATE = new Date().toISOString().slice(0, 19).replace("T", " ");
 
 // Get current commit hash for version tracking with better error handling
