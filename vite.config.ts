@@ -10,7 +10,7 @@ const VERSION = packageJson.version;
 // Generate build timestamp
 const BUILD_DATE = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-// Get current commit hash for version tracking
+// Get current commit hash for version tracking (repo now public)
 const COMMIT_HASH = execSync("git rev-parse --short HEAD").toString().trim();
 
 // https://vitejs.dev/config/
