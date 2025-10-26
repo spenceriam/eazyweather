@@ -19,12 +19,9 @@ export function Footer() {
             </div>
             <div className="text-center md:text-right text-gray-500">
               <p>
-                EazyWeather v{import.meta.env.__APP_VERSION__ || "1.0"}
-                <span className="text-xs text-gray-400 ml-1">
-                  •{" "}
-                  {import.meta.env.__BUILD_DATE__ ||
-                    new Date().toISOString().slice(0, 19).replace("T", " ")}
-                </span>
+                EazyWeather v{import.meta.env.__APP_VERSION__ || "1.0"} •{" "}
+                {import.meta.env.__BUILD_DATE__ ||
+                  new Date().toISOString().slice(0, 19).replace("T", " ")}
               </p>
             </div>
           </div>
