@@ -271,6 +271,26 @@ export async function getCurrentConditions(
 
     const props = observation.properties;
 
+    // Get hourly forecast as fallback for text description if needed
+    let textDescription = props.textDescription;
+    if (!textDescription) {
+      try {
+        const hourlyForecast = await getHourlyForecast(coords, options);
+        if (hourlyForecast && hourlyForecast.length > 0) {
+          textDescription = hourlyForecast[0].shortForecast;
+          console.log(
+            "Using hourly forecast fallback for current conditions:",
+            textDescription,
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "Failed to get hourly forecast fallback for current conditions:",
+          error,
+        );
+      }
+    }
+
     return {
       temperature: props.temperature.value,
       temperatureUnit:
@@ -280,7 +300,7 @@ export async function getCurrentConditions(
         ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
         : "Calm",
       windDirection: props.windDirection.value || 0,
-      textDescription: props.textDescription || "Unknown",
+      textDescription: textDescription || "Unknown",
       icon: props.icon || "",
       timestamp: props.timestamp,
     };
@@ -462,6 +482,22 @@ export async function getAllWeatherData(
 
       const props = observation.properties;
 
+      // Get hourly forecast as fallback for text description if needed
+      let textDescription = props.textDescription;
+      if (
+        !textDescription &&
+        hourlyData &&
+        hourlyData.properties &&
+        hourlyData.properties.periods &&
+        hourlyData.properties.periods.length > 0
+      ) {
+        textDescription = hourlyData.properties.periods[0].shortForecast;
+        console.log(
+          "Using hourly forecast fallback for current conditions:",
+          textDescription,
+        );
+      }
+
       current = {
         temperature: props.temperature.value,
         temperatureUnit:
@@ -474,7 +510,7 @@ export async function getAllWeatherData(
           ? props.windSpeed.value * 0.621371
           : 0,
         windDirection: props.windDirection.value || 0,
-        textDescription: props.textDescription || "Unknown",
+        textDescription: textDescription || "Unknown",
         icon: props.icon || "",
         timestamp: props.timestamp,
         heatIndex: props.heatIndex?.value,
@@ -788,8 +824,22 @@ export const rateLimitConfig = {
   MAX_RETRY_ATTEMPTS,
 };
 
-export function clearRequestCache(): void {
+export function clearRequestCache() {
   requestCache.clear();
+  console.log("🧹 Request cache cleared");
+}
+
+// Check for cache-clearing URL parameter for testing
+if (
+  typeof window !== "undefined" &&
+  window.location.search.includes("clear=cache")
+) {
+  console.log("🧹 Clearing cache due to URL parameter");
+  clearRequestCache();
+  // Clean up the URL without page reload
+  const url = new URL(window.location);
+  url.searchParams.delete("clear");
+  window.history.replaceState({}, "", url);
 }
 
 export function getCacheSize(): number {
