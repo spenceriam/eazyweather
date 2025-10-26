@@ -201,6 +201,20 @@ function App() {
     // Listen for refresh state changes
     const unsubscribe = refreshService.addListener(() => {
       setRefreshState(refreshService.getState());
+
+      // Handle immediate refresh when page becomes visible and data is stale
+      const state = refreshService.getState();
+      if (
+        document.visibilityState === "visible" &&
+        refreshService.isDataStale() &&
+        !state.isRefreshing &&
+        coordinates
+      ) {
+        console.log(
+          "Page visible with stale data, triggering immediate refresh",
+        );
+        loadWeatherData(true); // Pass true to indicate this is auto-refresh, not manual
+      }
     });
 
     // Handle auto-refresh triggers - smarter timing that respects API cache
