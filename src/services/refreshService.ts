@@ -173,19 +173,14 @@ class RefreshService {
   private handleVisibilityChange(): void {
     if (this.config.onlyRefreshWhenVisible) {
       if (this.isPageVisible()) {
-        // Page became visible, check if we need to refresh
-        const now = Date.now();
-        const timeSinceLastRefresh = this.state.lastRefreshTime
-          ? now - this.state.lastRefreshTime
-          : Infinity;
-
-        // If it's been longer than the interval, refresh now
-        if (timeSinceLastRefresh >= this.config.autoRefreshInterval) {
-          this.notifyListeners(); // Trigger immediate refresh
-          this.startAutoRefresh(); // Restart auto-refresh schedule
+        // Page became visible, check if data is stale
+        if (this.isDataStale()) {
+          this.triggerImmediateRefresh();
         }
+        // Always restart auto-refresh schedule when page is visible
+        this.startAutoRefresh();
       } else {
-        // Page hidden, pause auto-refresh
+        // Page hidden, pause auto-refresh to respect battery/privacy
         this.stopAutoRefresh();
       }
     }
@@ -239,6 +234,25 @@ class RefreshService {
       (!this.config.onlyRefreshWhenVisible || this.isPageVisible()) &&
       !this.state.isRefreshing
     );
+  }
+
+  // Check if data is stale and needs refresh
+  isDataStale(): boolean {
+    if (!this.state.lastRefreshTime) {
+      return true; // No refresh ever happened
+    }
+
+    const now = Date.now();
+    const timeSinceLastRefresh = now - this.state.lastRefreshTime;
+    return timeSinceLastRefresh >= this.config.autoRefreshInterval;
+  }
+
+  // Force immediate refresh when page becomes visible
+  private triggerImmediateRefresh(): void {
+    console.log(
+      "Data is stale, triggering immediate refresh on page visibility",
+    );
+    this.notifyListeners();
   }
 }
 
