@@ -1,3 +1,10 @@
+/**
+ * EazyWeather - Simple, ad-free weather
+ * Copyright (c) 2025 Spencer Francisco
+ * Licensed under MIT License
+ * Contact: https://x.com/spencer_i_am
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
