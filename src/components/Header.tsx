@@ -1,10 +1,11 @@
 import { Cloud } from "lucide-react";
+import type { RefreshState } from "../services/refreshService";
 
 interface HeaderProps {
   locationName: string;
 }
 
-export function Header({ locationName }: HeaderProps) {
+export function Header({ locationName, onRefresh, refreshState }: HeaderProps) {
   const navItems = [
     { id: "current", label: "Current" },
     { id: "hourly", label: "Hourly" },
@@ -23,11 +24,10 @@ export function Header({ locationName }: HeaderProps) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-gray-700">
-              <span className="text-sm font-medium">{locationName}</span>
-            </div>
-
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">
+              {locationName}
+            </span>
             <nav className="flex gap-2 flex-wrap">
               {navItems.map((item) => (
                 <a

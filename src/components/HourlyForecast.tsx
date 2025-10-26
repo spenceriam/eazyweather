@@ -4,14 +4,105 @@ import type { HourlyForecast as HourlyForecastType } from "../types/weather";
 
 interface HourlyForecastProps {
   forecast: HourlyForecastType[];
+  timezone?: string;
 }
 
-export function HourlyForecast({ forecast }: HourlyForecastProps) {
+export function HourlyForecast({ forecast, timezone }: HourlyForecastProps) {
   const [show24Hours, setShow24Hours] = useState(true);
 
   const displayForecast = show24Hours
     ? forecast.slice(0, 24)
     : forecast.slice(24, 48);
+
+  const [is24Hour, setIs24Hour] = useState(false);
+
+  const getTimezoneAbbreviation = (tz: string): string => {
+    if (!tz) return "";
+
+    // Handle common US timezone abbreviations
+    switch (tz) {
+      case "America/New_York":
+      case "America/Detroit":
+      case "America/Montreal":
+      case "America/Toronto":
+        return isDaylightSaving() ? "EDT" : "EST";
+      case "America/Chicago":
+      case "America/Winnipeg":
+      case "America/Mexico_City":
+        return isDaylightSaving() ? "CDT" : "CST";
+      case "America/Denver":
+      case "America/Phoenix":
+      case "America/Boise":
+        return isDaylightSaving() ? "MDT" : "MST";
+      case "America/Los_Angeles":
+      case "America/Vancouver":
+      case "America/Tijuana":
+        return isDaylightSaving() ? "PDT" : "PST";
+      default:
+        // For other timezones, try to extract from name or use UTC offset
+        if (tz.includes("America/")) {
+          return isDaylightSaving() ? "EDT" : "EST"; // Default fallback
+        }
+        return tz;
+    }
+  };
+
+  const isDaylightSaving = (): boolean => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11 (Jan=0, Dec=11)
+    const date = now.getDate();
+
+    // Simple DST detection for US (second Sunday in March to first Sunday in November)
+    if (month > 2 && month < 10) return true; // April to October
+    if (month < 2 || month > 10) return false; // January, February, December
+
+    if (month === 2) {
+      // March
+      const firstDay = new Date(now.getFullYear(), 2, 1).getDay();
+      const secondSunday = 8 + ((7 - firstDay) % 7);
+      return date >= secondSunday;
+    } else {
+      // November
+      const firstDay = new Date(now.getFullYear(), 10, 1).getDay();
+      const firstSunday = 1 + ((7 - firstDay) % 7);
+      return date < firstSunday;
+    }
+  };
+
+  const formatTime = (timestamp: string, includeTimezone: boolean = false) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(timestamp);
+
+    const timeString = is24Hour
+      ? date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+    // Format 24-hour time without leading zeros
+    let formattedTime: string;
+    if (is24Hour) {
+      const [hours, minutes] = timeString.split(":");
+      const hourNum = parseInt(hours, 10);
+      const formattedHour = hourNum.toString();
+      formattedTime = `${formattedHour}:${minutes.padStart(2, "0")}`;
+    } else {
+      formattedTime = timeString;
+    }
+
+    if (includeTimezone && timezone) {
+      const tzAbbr = getTimezoneAbbreviation(timezone);
+      return `${formattedTime} ${tzAbbr}`;
+    }
+
+    return formattedTime;
+  };
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -35,12 +126,9 @@ export function HourlyForecast({ forecast }: HourlyForecastProps) {
 
           <div className="space-y-3">
             {displayForecast.map((hour, index) => {
-              const time = new Date(hour.startTime);
-              const timeStr = time.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                hour12: true,
-              });
-              const dateStr = time.toLocaleDateString("en-US", {
+              const date = new Date(hour.startTime);
+              const timeStr = formatTime(hour.startTime, true);
+              const dateStr = date.toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
               });

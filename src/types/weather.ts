@@ -20,10 +20,23 @@ export interface CurrentConditions {
   temperatureUnit: string;
   relativeHumidity: number;
   windSpeed: string;
+  windSpeedValue?: number;
   windDirection: number;
   textDescription: string;
   icon: string;
   timestamp: string;
+  heatIndex?: number;
+  windChill?: number;
+  dewpoint?: number;
+  windGust?: number;
+  precipitationLastHour?: number;
+  snowDepth?: number;
+  sunriseTime?: string;
+  sunsetTime?: string;
+  uvIndex?: number;
+  todayHigh?: number;
+  todayLow?: number;
+  timezone?: string;
 }
 
 export interface ForecastPeriod {

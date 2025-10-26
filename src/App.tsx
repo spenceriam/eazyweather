@@ -9,12 +9,8 @@ import { LocationSection } from "./components/LocationSection";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
-import {
-  getCurrentConditions,
-  get7DayForecast,
-  getHourlyForecast,
-  getMonthlyForecast,
-} from "./services/weatherApi";
+
+import { getAllWeatherData } from "./services/weatherApi";
 import {
   reverseGeocode,
   getBrowserLocation,
@@ -29,6 +25,7 @@ import {
   trackWeatherView,
   trackApiError,
 } from "./services/analytics";
+import { refreshService } from "./services/refreshService";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -44,6 +41,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showInitialModal, setShowInitialModal] = useState(true);
+
+  // Refresh state
+  const [refreshState, setRefreshState] = useState(refreshService.getState());
 
   // Update page title for SEO
   function updatePageTitle(location: string) {
@@ -134,53 +134,98 @@ function App() {
   const [monthlyForecast, setMonthlyForecast] =
     useState<MonthlyForecastType | null>(null);
 
-  const loadWeatherData = useCallback(async () => {
-    if (!coordinates) return;
+  const loadWeatherData = useCallback(
+    async (skipRateLimit = false) => {
+      if (!coordinates) return;
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const [current, sevenDay, hourly, monthly] = await Promise.all([
-        getCurrentConditions(coordinates),
-        get7DayForecast(coordinates),
-        getHourlyForecast(coordinates),
-        getMonthlyForecast(coordinates),
-      ]);
+      try {
+        const {
+          current,
+          forecast: sevenDay,
+          hourly,
+          monthly,
+        } = await getAllWeatherData(coordinates, { skipRateLimit });
 
-      setCurrentConditions(current);
-      setForecast(sevenDay);
-      setHourlyForecast(hourly);
-      setMonthlyForecast(monthly);
+        setCurrentConditions(current);
+        setForecast(sevenDay);
+        setHourlyForecast(hourly);
+        setMonthlyForecast(monthly);
 
-      // Track weather views
-      if (current) trackWeatherView("current");
-      if (hourly.length > 0) trackWeatherView("hourly");
-      if (sevenDay.length > 0) trackWeatherView("daily");
-      if (monthly) trackWeatherView("monthly");
+        // Track weather views
+        if (current) trackWeatherView("current");
+        if (hourly.length > 0) trackWeatherView("hourly");
+        if (sevenDay.length > 0) trackWeatherView("daily");
+        if (monthly) trackWeatherView("monthly");
 
-      // Update structured data when weather data loads
-      if (current && coordinates) {
-        // Parse location name to extract city and state
-        const locationParts = locationName.split(",");
-        const locationResult = {
-          coordinates,
-          displayName: locationName,
-          city: locationParts[0]?.trim() || "",
-          state: locationParts[1]?.trim() || "",
-          country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
-        };
-        updateStructuredData(locationResult, current);
+        // Update structured data when weather data loads
+        if (current && coordinates) {
+          // Parse location name to extract city and state
+          const locationParts = locationName.split(",");
+          const locationResult = {
+            coordinates,
+            displayName: locationName,
+            city: locationParts[0]?.trim() || "",
+            state: locationParts[1]?.trim() || "",
+            country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
+          };
+          updateStructuredData(locationResult, current);
+        }
+
+        // Reset refresh service after successful load
+        refreshService.updateConfig({ enableAutoRefresh: true });
+      } catch (error) {
+        console.error("Failed to load weather data:", error);
+        trackApiError("weather");
+        setError(
+          "Failed to load weather data. The location may not be supported by the National Weather Service.",
+        );
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      trackApiError("weather");
-      setError(
-        "Failed to load weather data. The location may not be supported by the National Weather Service.",
-      );
-    } finally {
-      setIsLoading(false);
+    },
+    [coordinates, locationName],
+  );
+
+  // Refresh service effects
+  useEffect(() => {
+    // Listen for refresh state changes
+    const unsubscribe = refreshService.addListener(() => {
+      setRefreshState(refreshService.getState());
+    });
+
+    // Handle auto-refresh triggers - smarter timing that respects API cache
+    const handleAutoRefresh = () => {
+      // Only refresh if auto-refresh is enabled and we have coordinates
+      if (refreshService.shouldAutoRefresh() && coordinates) {
+        loadWeatherData(true); // Pass true to indicate this is auto-refresh, not manual
+      }
+    };
+
+    // Set up auto-refresh after initial location setup (only for non-Chicago default)
+    if (coordinates && locationName !== "Chicago, Illinois") {
+      refreshService.startAutoRefresh();
     }
-  }, [coordinates, locationName]);
+
+    // Custom auto-refresh handler - optimized to check less frequently
+    const intervalId = setInterval(() => {
+      if (
+        refreshService.getState().nextAutoRefreshTime &&
+        Date.now() >= refreshService.getState().nextAutoRefreshTime! &&
+        refreshService.shouldAutoRefresh()
+      ) {
+        handleAutoRefresh();
+      }
+    }, 5000); // Check every 5 seconds instead of every second
+
+    return () => {
+      unsubscribe();
+      clearInterval(intervalId);
+      refreshService.destroy();
+    };
+  }, [coordinates, locationName, loadWeatherData]);
 
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
@@ -228,7 +273,7 @@ function App() {
     } catch (locationError) {
       console.log("Location initialization failed:", locationError);
       trackLocationError("initialization");
-      // Default to Chicago as fallback
+      // Default to Chicago as fallback (41.8781°N, 87.6298°W)
       const chicagoCoords: Coordinates = {
         latitude: 41.8781,
         longitude: -87.6298,
@@ -263,7 +308,7 @@ function App() {
       saveLocation(location);
       updatePageTitle(location.displayName);
       updateStructuredData(location, currentConditions);
-    } catch (error) {
+    } catch {
       trackApiError("location");
       setError("Failed to find location");
     } finally {
@@ -296,10 +341,13 @@ function App() {
         saveLocation(locationResult);
         updatePageTitle(locationResult.displayName);
       }
+
+      // Load weather data for new location
+      await loadWeatherData(true); // skipRateLimit=true for location changes
     } catch (error) {
       console.log("Location selection failed:", error);
       trackLocationError("initial_selection");
-      // Fall back to Chicago
+      // Fall back to Chicago (41.8781°N, 87.6298°W)
       const chicagoCoords: Coordinates = {
         latitude: 41.8781,
         longitude: -87.6298,
@@ -333,6 +381,13 @@ function App() {
     );
   }
 
+  // Manual refresh handler
+  const handleManualRefresh = () => {
+    if (coordinates) {
+      loadWeatherData();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-200">
       {/* Darker sides background */}
@@ -362,7 +417,18 @@ function App() {
             ) : (
               <>
                 {currentConditions ? (
-                  <CurrentConditions conditions={currentConditions} />
+                  <CurrentConditions
+                    conditions={currentConditions}
+                    onRefresh={handleManualRefresh}
+                    isRefreshing={refreshState.isRefreshing}
+                    lastUpdated={
+                      refreshState.lastRefreshTime
+                        ? new Date(refreshState.lastRefreshTime).toISOString()
+                        : currentConditions?.timestamp
+                    }
+                    hourlyForecast={hourlyForecast}
+                    timezone={currentConditions.timezone}
+                  />
                 ) : (
                   <section id="current" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-16">
@@ -379,7 +445,10 @@ function App() {
                 )}
 
                 {hourlyForecast.length > 0 ? (
-                  <HourlyForecast forecast={hourlyForecast} />
+                  <HourlyForecast
+                    forecast={hourlyForecast}
+                    timezone={currentConditions.timezone}
+                  />
                 ) : (
                   <section id="hourly" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-8">
