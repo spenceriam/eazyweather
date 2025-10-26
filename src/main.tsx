@@ -1,3 +1,10 @@
+/**
+ * EazyWeather - Simple, ad-free weather
+ * Copyright (c) 2025 Spencer Francisco
+ * Licensed under MIT License
+ * Contact: https://x.com/spencer_i_am
+ */
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";

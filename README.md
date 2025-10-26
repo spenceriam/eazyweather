@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # EazyWeather
 
 A modern, responsive weather application that delivers real-time weather information with an intuitive interface.
@@ -37,3 +39,6 @@ The application builds to the `dist/` directory for deployment.
 ---
 
 *Weather data provided by the National Weather Service*
+
+© 2025 Spencer Francisco. EazyWeather is open source under MIT License.  
+Contact: [@spencer_i_am](https://x.com/spencer_i_am)
