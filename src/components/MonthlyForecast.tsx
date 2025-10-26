@@ -42,7 +42,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
           <div className="bg-white rounded-lg shadow-md p-4 mb-6">
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                <div className="w-4 h-4 bg-brand-lighter border border-brand-light rounded"></div>
                 <span className="text-gray-600">Available Forecast</span>
               </div>
               <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                   key={day.date}
                   className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${
                     day.isAvailable
-                      ? "bg-blue-50 hover:bg-blue-100"
+                      ? "bg-brand-lighter hover:bg-brand-lighter"
                       : "bg-gray-50 hover:bg-gray-100"
                   } transition-colors`}
                 >

@@ -118,7 +118,7 @@ export function HourlyForecast({ forecast, timezone }: HourlyForecastProps) {
             </h2>
             <button
               onClick={() => setShow24Hours(!show24Hours)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors"
             >
               {show24Hours ? "Show Next 24 Hours" : "Show First 24 Hours"}
             </button>

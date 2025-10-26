@@ -127,7 +127,7 @@ export function LocationSection({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           {/* Current Location Display */}
           <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-blue-500" />
+            <MapPin className="w-5 h-5 text-brand" />
             <div>
               <h2 className="text-xl font-semibold text-gray-800">
                 {locationName}
@@ -139,7 +139,7 @@ export function LocationSection({
           {!isSearching ? (
             <button
               onClick={() => setIsSearching(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors whitespace-nowrap"
+              className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
             >
               <Search className="w-4 h-4" />
               Change Location
@@ -153,7 +153,7 @@ export function LocationSection({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Enter city, state or country (e.g., New York, NY)"
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     disabled={isLoading}
                     autoFocus
                   />
@@ -175,7 +175,7 @@ export function LocationSection({
                       <button
                         key={index}
                         onClick={() => handleSearchResultSelect(location)}
-                        className="w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-brand"
                       >
                         <div className="font-medium text-gray-900">
                           {location.displayName}
@@ -194,7 +194,7 @@ export function LocationSection({
                   <button
                     type="submit"
                     disabled={isLoading || !searchQuery.trim()}
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? "Searching..." : "Search"}
                   </button>
