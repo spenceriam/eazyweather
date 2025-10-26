@@ -80,7 +80,11 @@ export function Footer() {
                   <span>•</span>
                   <span>
                     {__BUILD_DATE__ ||
-                      new Date().toISOString().slice(0, 19).replace("T", " ")}
+                      new Date()
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace("T", " ")}{" "}
+                    UTC
                   </span>
                 </div>
               </div>
@@ -191,7 +195,11 @@ export function Footer() {
                   <span>•</span>
                   <span>
                     {__BUILD_DATE__ ||
-                      new Date().toISOString().slice(0, 19).replace("T", " ")}
+                      new Date()
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace("T", " ")}{" "}
+                    UTC
                   </span>
                 </div>
               </div>
