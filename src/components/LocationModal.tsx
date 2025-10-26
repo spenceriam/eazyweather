@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, MapPin, Search } from 'lucide-react';
+import { useState } from "react";
+import { X, MapPin, Search } from "lucide-react";
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -7,8 +7,12 @@ interface LocationModalProps {
   onLocationSelect: (query: string, useGPS: boolean) => void;
 }
 
-export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationModalProps) {
-  const [locationInput, setLocationInput] = useState('');
+export function LocationModal({
+  isOpen,
+  onClose,
+  onLocationSelect,
+}: LocationModalProps) {
+  const [locationInput, setLocationInput] = useState("");
 
   if (!isOpen) return null;
 
@@ -16,19 +20,21 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
     e.preventDefault();
     if (locationInput.trim()) {
       onLocationSelect(locationInput.trim(), false);
-      setLocationInput('');
+      setLocationInput("");
     }
   };
 
   const handleGPS = () => {
-    onLocationSelect('', true);
+    onLocationSelect("", true);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Change Location</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Change Location
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -40,7 +46,7 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
         <div className="p-6">
           <button
             onClick={handleGPS}
-            className="w-full flex items-center justify-center gap-3 bg-blue-500 text-white px-4 py-3 rounded-md hover:bg-blue-600 transition-colors mb-6"
+            className="w-full flex items-center justify-center gap-3 bg-brand text-white px-4 py-3 rounded-md hover:bg-brand-dark transition-colors mb-6"
           >
             <MapPin className="w-5 h-5" />
             <span className="font-medium">Use My Current Location</span>
@@ -51,13 +57,18 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or enter location</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or enter location
+              </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="location"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 City, State or Postal Code
               </label>
               <div className="relative">
@@ -67,7 +78,7 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
                   value={locationInput}
                   onChange={(e) => setLocationInput(e.target.value)}
                   placeholder="e.g., New York, NY or 10001"
-                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 />
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
@@ -94,7 +105,7 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
               <button
                 type="submit"
                 disabled={!locationInput.trim()}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Search
               </button>

@@ -579,7 +579,7 @@ export function CurrentConditions({
                 <button
                   onClick={onRefresh}
                   disabled={isRefreshing}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 text-gray-400 hover:text-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title={
                     isRefreshing ? "Refreshing..." : "Refresh weather data"
                   }

@@ -15,7 +15,7 @@ export function SearchResults({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand mr-2"></div>
         <span className="text-sm text-gray-500">Searching...</span>
       </div>
     );
@@ -35,11 +35,11 @@ export function SearchResults({
         <button
           key={index}
           onClick={() => onSelect(location)}
-          className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 hover:border-brand-light focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
         >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
-              <MapPin className="w-4 h-4 text-blue-500" />
+              <MapPin className="w-4 h-4 text-brand" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-medium text-gray-900 truncate">

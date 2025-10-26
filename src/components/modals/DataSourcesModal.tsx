@@ -1,18 +1,26 @@
 import { Modal } from "../ui/Modal";
 
-export function DataSourcesModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function DataSourcesModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const dataSources = [
     {
       type: "Weather data",
       source: "National Weather Service",
       url: "https://www.weather.gov",
-      description: "Current conditions, forecasts, and weather alerts from official US government weather service",
+      description:
+        "Current conditions, forecasts, and weather alerts from official US government weather service",
     },
     {
       type: "Sunrise & sunset data",
       source: "Sunrise-Sunset.org",
       url: "https://sunrise-sunset.org",
-      description: "Precise sunrise and sunset times calculated from geographic coordinates",
+      description:
+        "Precise sunrise and sunset times calculated from geographic coordinates",
     },
   ];
 
@@ -27,7 +35,7 @@ export function DataSourcesModal({ isOpen, onClose }: { isOpen: boolean; onClose
                 href={source.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-600 underline text-sm"
+                className="text-brand hover:text-brand-dark underline text-sm"
               >
                 {source.source}
               </a>
@@ -38,7 +46,8 @@ export function DataSourcesModal({ isOpen, onClose }: { isOpen: boolean; onClose
 
         <div className="pt-4 border-t border-gray-200">
           <p className="text-sm text-gray-500">
-            Data is aggregated from multiple official sources to provide comprehensive weather information.
+            Data is aggregated from multiple official sources to provide
+            comprehensive weather information.
           </p>
         </div>
       </div>
