@@ -824,8 +824,22 @@ export const rateLimitConfig = {
   MAX_RETRY_ATTEMPTS,
 };
 
-export function clearRequestCache(): void {
+export function clearRequestCache() {
   requestCache.clear();
+  console.log("🧹 Request cache cleared");
+}
+
+// Check for cache-clearing URL parameter for testing
+if (
+  typeof window !== "undefined" &&
+  window.location.search.includes("clear=cache")
+) {
+  console.log("🧹 Clearing cache due to URL parameter");
+  clearRequestCache();
+  // Clean up the URL without page reload
+  const url = new URL(window.location);
+  url.searchParams.delete("clear");
+  window.history.replaceState({}, "", url);
 }
 
 export function getCacheSize(): number {
