@@ -10,7 +10,10 @@ export function Footer() {
 
   return (
     <>
-      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-200">
+      <footer
+        className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-200"
+        style={{ backgroundColor: "#f9f6ee" }}
+      >
         {/* Desktop: Enhanced three-column layout with existing functionality */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-4 py-3">
@@ -19,7 +22,7 @@ export function Footer() {
               <div className="text-left">
                 <button
                   onClick={() => setIsDataSourcesOpen(true)}
-                  className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                  className="text-brand hover:text-brand-dark underline transition-colors"
                 >
                   Website Data Sources
                 </button>
@@ -34,7 +37,7 @@ export function Footer() {
                     href="https://lionmystic.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                    className="text-brand hover:text-brand-dark underline transition-colors"
                   >
                     Lion Mystic
                   </a>
@@ -43,7 +46,7 @@ export function Footer() {
                     href="https://x.com/spencer_i_am"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
                     aria-label="Follow Spencer Francisco on X.com"
                   >
                     <svg
@@ -63,7 +66,7 @@ export function Footer() {
                     href={`https://github.com/spenceriam/eazyweather/commit/${__COMMIT_HASH__ || ""}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
                     aria-label="View commit on GitHub"
                   >
                     <svg
@@ -94,14 +97,14 @@ export function Footer() {
                 <div className="flex items-center justify-end gap-2 text-sm text-gray-600">
                   <button
                     onClick={() => setIsPrivacyOpen(true)}
-                    className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                    className="text-brand hover:text-brand-dark underline transition-colors"
                   >
                     Privacy Policy
                   </button>
                   <span>•</span>
                   <button
                     onClick={() => setIsTermsOpen(true)}
-                    className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                    className="text-brand hover:text-brand-dark underline transition-colors"
                   >
                     Terms of Use
                   </button>
@@ -118,21 +121,21 @@ export function Footer() {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setIsDataSourcesOpen(true)}
-                className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                className="text-brand hover:text-brand-dark underline transition-colors"
               >
                 Website Data Sources
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsPrivacyOpen(true)}
-                  className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                  className="text-brand hover:text-brand-dark underline transition-colors"
                 >
                   Privacy Policy
                 </button>
                 <span>•</span>
                 <button
                   onClick={() => setIsTermsOpen(true)}
-                  className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                  className="text-brand hover:text-brand-dark underline transition-colors"
                 >
                   Terms of Use
                 </button>
@@ -149,7 +152,7 @@ export function Footer() {
                     href="https://lionmystic.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 underline transition-colors"
+                    className="text-brand hover:text-brand-dark underline transition-colors"
                   >
                     Lion Mystic
                   </a>
@@ -158,7 +161,7 @@ export function Footer() {
                     href="https://x.com/spencer_i_am"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
                     aria-label="Follow Spencer Francisco on X.com"
                   >
                     <svg
@@ -178,7 +181,7 @@ export function Footer() {
                     href={`https://github.com/spenceriam/eazyweather/commit/${__COMMIT_HASH__ || ""}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
                     aria-label="View commit on GitHub"
                   >
                     <svg
