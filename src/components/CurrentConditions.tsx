@@ -430,14 +430,14 @@ export function CurrentConditions({
 
   const getSunrise = () => {
     if (conditions.sunriseTime) {
-      return formatTime(conditions.sunriseTime, true);
+      return formatTime(conditions.sunriseTime, false);
     }
     return "N/A";
   };
 
   const getSunset = () => {
     if (conditions.sunsetTime) {
-      return formatTime(conditions.sunsetTime, true);
+      return formatTime(conditions.sunsetTime, false);
     }
     return "N/A";
   };
