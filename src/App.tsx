@@ -396,7 +396,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200">
+    <div className="min-h-screen bg-gray-200 pb-24 md:pb-20">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
