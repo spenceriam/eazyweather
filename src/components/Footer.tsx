@@ -20,6 +20,7 @@ export function Footer() {
             <div className="text-center md:text-right text-gray-500">
               <p>
                 EazyWeather v{import.meta.env.__APP_VERSION__ || "1.0"} •{" "}
+                {import.meta.env.__COMMIT_HASH__ || "unknown"} •{" "}
                 {import.meta.env.__BUILD_DATE__ ||
                   new Date().toISOString().slice(0, 19).replace("T", " ")}
               </p>
