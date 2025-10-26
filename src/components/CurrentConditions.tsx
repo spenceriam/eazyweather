@@ -12,6 +12,7 @@ interface CurrentConditionsProps {
   isRefreshing?: boolean;
   lastUpdated?: string;
   hourlyForecast?: HourlyForecastType[];
+  timezone?: string;
 }
 
 export function CurrentConditions({
@@ -20,6 +21,7 @@ export function CurrentConditions({
   isRefreshing,
   lastUpdated,
   hourlyForecast,
+  timezone,
 }: CurrentConditionsProps) {
   const [is24Hour, setIs24Hour] = useState(false);
 
@@ -30,8 +32,63 @@ export function CurrentConditions({
 
   const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
 
-  const formatTime = (timestamp: string) => {
+  const getTimezoneAbbreviation = (tz: string): string => {
+    if (!tz) return "";
+
+    // Handle common US timezone abbreviations
+    switch (tz) {
+      case "America/New_York":
+      case "America/Detroit":
+      case "America/Montreal":
+      case "America/Toronto":
+        return isDaylightSaving() ? "EDT" : "EST";
+      case "America/Chicago":
+      case "America/Winnipeg":
+      case "America/Mexico_City":
+        return isDaylightSaving() ? "CDT" : "CST";
+      case "America/Denver":
+      case "America/Phoenix":
+      case "America/Boise":
+        return isDaylightSaving() ? "MDT" : "MST";
+      case "America/Los_Angeles":
+      case "America/Vancouver":
+      case "America/Tijuana":
+        return isDaylightSaving() ? "PDT" : "PST";
+      default:
+        // For other timezones, try to extract from name or use UTC offset
+        if (tz.includes("America/")) {
+          return isDaylightSaving() ? "EDT" : "EST"; // Default fallback
+        }
+        return tz;
+    }
+  };
+
+  const isDaylightSaving = (): boolean => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11 (Jan=0, Dec=11)
+    const date = now.getDate();
+
+    // Simple DST detection for US (second Sunday in March to first Sunday in November)
+    if (month > 2 && month < 10) return true; // April to October
+    if (month < 2 || month > 10) return false; // January, February, December
+
+    if (month === 2) {
+      // March
+      const firstDay = new Date(now.getFullYear(), 2, 1).getDay();
+      const secondSunday = 8 + ((7 - firstDay) % 7);
+      return date >= secondSunday;
+    } else {
+      // November
+      const firstDay = new Date(now.getFullYear(), 10, 1).getDay();
+      const firstSunday = 1 + ((7 - firstDay) % 7);
+      return date < firstSunday;
+    }
+  };
+
+  const formatTime = (timestamp: string, includeTimezone: boolean = false) => {
+    if (!timestamp) return "N/A";
     const date = new Date(timestamp);
+
     const timeString = is24Hour
       ? date.toLocaleTimeString("en-US", {
           hour: "2-digit",
@@ -44,16 +101,23 @@ export function CurrentConditions({
           hour12: true,
         });
 
-    // For 24-hour, format without leading zeros: "18:20" instead of "18:20"
+    // Format 24-hour time without leading zeros
+    let formattedTime: string;
     if (is24Hour) {
       const [hours, minutes] = timeString.split(":");
       const hourNum = parseInt(hours, 10);
       const formattedHour = hourNum.toString();
-      const formattedTime = `${formattedHour}:${minutes.padStart(2, "0")}`;
-      return formattedTime;
+      formattedTime = `${formattedHour}:${minutes.padStart(2, "0")}`;
     } else {
-      return timeString;
+      formattedTime = timeString;
     }
+
+    if (includeTimezone && timezone) {
+      const tzAbbr = getTimezoneAbbreviation(timezone);
+      return `${formattedTime} ${tzAbbr}`;
+    }
+
+    return formattedTime;
   };
 
   const toggleTimeFormat = () => {
@@ -62,6 +126,50 @@ export function CurrentConditions({
 
   // Generate weather trend comments based on hourly forecast
   const getWeatherTrends = () => {
+    if (!hourlyForecast || hourlyForecast.length === 0) return [];
+
+    // Helper function to find when condition starts
+    const findConditionStart = (
+      conditionType: string,
+      conditionName: string,
+      verb: string = "beginning",
+      startIndex: number = 1,
+    ): string | null => {
+      const searchHours = hourlyForecast.slice(
+        startIndex,
+        Math.min(startIndex + 12, hourlyForecast.length),
+      );
+
+      for (const hour of searchHours) {
+        const condition = hour.shortForecast.toLowerCase();
+        if (conditionType.split(",").some((type) => condition.includes(type))) {
+          return `${conditionName} ${verb} ${formatTime(hour.startTime, true)}`;
+        }
+      }
+      return null;
+    };
+
+    // Helper function to find when condition ends
+    const findConditionEnd = (
+      conditionTypes: string[],
+      conditionName: string,
+      startIndex: number = 1,
+    ): string | null => {
+      for (
+        let i = startIndex!;
+        i < Math.min(startIndex + 12, hourlyForecast.length);
+        i++
+      ) {
+        const nextHour = hourlyForecast[i];
+        const nextCondition = nextHour.shortForecast.toLowerCase();
+
+        if (!conditionTypes.some((type) => nextCondition.includes(type))) {
+          return `${conditionName} to end by ${formatTime(nextHour.startTime, true)}`;
+        }
+      }
+      return null;
+    };
+
     if (!hourlyForecast || hourlyForecast.length === 0) return [];
 
     const trends: string[] = [];
@@ -76,179 +184,163 @@ export function CurrentConditions({
     const isFoggy =
       currentCondition.includes("fog") || currentCondition.includes("mist");
 
-    // Check when rain/snow will end
-    if (isRaining || isSnowing) {
-      for (let i = 1; i < Math.min(12, hourlyForecast.length); i++) {
-        const nextHour = hourlyForecast[i];
-        const nextCondition = nextHour.shortForecast.toLowerCase();
+    // Get weather events within next 12 hours
+    const rainEvents: { start?: string; end?: string } = {};
+    const snowEvents: { start?: string; end?: string } = {};
+    const fogEvents: { start?: string; end?: string } = {};
 
-        if (
-          !nextCondition.includes("rain") &&
-          !nextCondition.includes("drizzle") &&
-          !nextCondition.includes("shower") &&
-          !nextCondition.includes("snow") &&
-          !nextCondition.includes("flurries")
-        ) {
-          const endTime = new Date(nextHour.startTime);
-          const timeString = is24Hour
-            ? endTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : endTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
-
-          // Format 24-hour time without leading zeros
-          if (is24Hour) {
-            const [hours, minutes] = timeString.split(":");
-            const hourNum = parseInt(hours, 10);
-            const formattedHour = hourNum.toString();
-            trends.push(
-              `${isRaining ? "Rain" : "Snow"} to end by ${formattedHour}:${minutes.padStart(2, "0")}`,
-            );
-          } else {
-            trends.push(
-              `${isRaining ? "Rain" : "Snow"} to end by ${timeString}`,
-            );
-          }
-          break;
-        }
-      }
-      if (trends.length === 0) {
-        trends.push(`${isRaining ? "Rain" : "Snow"} to continue`);
-      }
-    }
-
-    // Check for fog/mist clearing
-    if (isFoggy) {
-      for (let i = 1; i < Math.min(8, hourlyForecast.length); i++) {
-        const nextHour = hourlyForecast[i];
-        const nextCondition = nextHour.shortForecast.toLowerCase();
-
-        if (!nextCondition.includes("fog") && !nextCondition.includes("mist")) {
-          const endTime = new Date(nextHour.startTime);
-          const timeString = is24Hour
-            ? endTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : endTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
-
-          if (is24Hour) {
-            const [hours, minutes] = timeString.split(":");
-            const hourNum = parseInt(hours, 10);
-            const formattedHour = hourNum.toString();
-            trends.push(
-              `Fog to clear by ${formattedHour}:${minutes.padStart(2, "0")}`,
-            );
-          } else {
-            trends.push(`Fog to clear by ${timeString}`);
-          }
-          break;
-        }
-      }
-    }
-
-    // Check when rain/snow will start
-    if (!isRaining && !isSnowing && !isFoggy) {
-      const nextHours = hourlyForecast.slice(
-        1,
-        Math.min(8, hourlyForecast.length),
+    // Find rain events
+    const searchHours = hourlyForecast.slice(
+      1,
+      Math.min(13, hourlyForecast.length),
+    );
+    for (const hour of searchHours) {
+      const condition = hour.shortForecast.toLowerCase();
+      const hasRain = ["rain", "drizzle", "shower"].some((type) =>
+        condition.includes(type),
       );
-      for (const hour of nextHours) {
-        const condition = hour.shortForecast.toLowerCase();
-        if (
-          condition.includes("rain") ||
-          condition.includes("drizzle") ||
-          condition.includes("shower")
-        ) {
-          const startTime = new Date(hour.startTime);
-          const timeString = is24Hour
-            ? startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
 
-          if (is24Hour) {
-            const [hours, minutes] = timeString.split(":");
-            const hourNum = parseInt(hours, 10);
-            const formattedHour = hourNum.toString();
-            trends.push(
-              `Rain beginning ${formattedHour}:${minutes.padStart(2, "0")}`,
-            );
-          } else {
-            trends.push(`Rain beginning ${timeString}`);
-          }
-          break;
+      if (hasRain && !rainEvents.start) {
+        rainEvents.start = formatTime(hour.startTime, true);
+      } else if (!hasRain && rainEvents.start && !rainEvents.end) {
+        rainEvents.end = formatTime(hour.startTime, true);
+      }
+    }
+
+    // Find snow events
+    for (const hour of searchHours) {
+      const condition = hour.shortForecast.toLowerCase();
+      const hasSnow = ["snow", "flurries"].some((type) =>
+        condition.includes(type),
+      );
+
+      if (hasSnow && !snowEvents.start) {
+        snowEvents.start = formatTime(hour.startTime, true);
+      } else if (!hasSnow && snowEvents.start && !snowEvents.end) {
+        snowEvents.end = formatTime(hour.startTime, true);
+      }
+    }
+
+    // Find fog events
+    for (const hour of searchHours) {
+      const condition = hour.shortForecast.toLowerCase();
+      const hasFog = ["fog", "mist"].some((type) => condition.includes(type));
+
+      if (hasFog && !fogEvents.start) {
+        fogEvents.start = formatTime(hour.startTime, true);
+      } else if (!hasFog && fogEvents.start && !fogEvents.end) {
+        fogEvents.end = formatTime(hour.startTime, true);
+      }
+    }
+
+    // Display consolidated weather information
+    if (isRaining) {
+      trends.push(`Rain beginning ${rainEvents.start}`);
+
+      const rainEnd = findConditionEnd(
+        ["rain", "drizzle", "shower"],
+        "Rain",
+        1,
+      );
+      if (rainEnd) {
+        trends.push(rainEnd);
+      } else {
+        trends.push("Rain to continue");
+      }
+
+      // Check for next rain period
+      const nextRainStart = findConditionStart(
+        "rain,drizzle,shower",
+        "Rain",
+        "beginning",
+        2,
+      );
+      if (nextRainStart) {
+        trends.push(`Next rain beginning ${nextRainStart}`);
+      }
+    }
+
+    if (isSnowing) {
+      trends.push(`Snow beginning ${snowEvents.start}`);
+
+      const snowEnd = findConditionEnd(["snow", "flurries"], "Snow", 1);
+      if (snowEnd) {
+        trends.push(snowEnd);
+      } else {
+        trends.push("Snow to continue");
+      }
+
+      const nextSnowStart = findConditionStart(
+        "snow,flurries",
+        "Snow",
+        "beginning",
+        2,
+      );
+      if (nextSnowStart) {
+        trends.push(`Next snow beginning ${nextSnowStart}`);
+      }
+    }
+
+    if (isFoggy) {
+      trends.push(`Fog developing ${fogEvents.start}`);
+
+      const fogEnd = findConditionEnd(["fog", "mist"], "Fog", 1);
+      if (fogEnd) {
+        trends.push(fogEnd.replace("to end by", "to clear by"));
+      } else {
+        trends.push("Fog to continue");
+      }
+
+      const nextFogStart = findConditionStart(
+        "fog,mist",
+        "Fog",
+        "developing",
+        2,
+      );
+      if (nextFogStart) {
+        trends.push(`Next fog developing ${nextFogStart}`);
+      }
+    }
+
+    // If currently clear, show upcoming events
+    if (!isRaining && !isSnowing && !isFoggy) {
+      if (rainEvents.start) {
+        const rainEnd = findConditionEnd(
+          ["rain", "drizzle", "shower"],
+          "Rain",
+          1,
+        );
+        if (rainEnd) {
+          const endTime = rainEnd.replace("Rain to end by ", "");
+          trends.push(
+            `Rain beginning ${rainEvents.start} and ending ${endTime}`,
+          );
+        } else {
+          trends.push(`Rain beginning ${rainEvents.start}`);
         }
+      }
 
-        if (condition.includes("snow") || condition.includes("flurries")) {
-          const startTime = new Date(hour.startTime);
-          const timeString = is24Hour
-            ? startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
-
-          if (is24Hour) {
-            const [hours, minutes] = timeString.split(":");
-            const hourNum = parseInt(hours, 10);
-            const formattedHour = hourNum.toString();
-            trends.push(
-              `Snow beginning ${formattedHour}:${minutes.padStart(2, "0")}`,
-            );
-          } else {
-            trends.push(`Snow beginning ${timeString}`);
-          }
-          break;
+      if (snowEvents.start) {
+        const snowEnd = findConditionEnd(["snow", "flurries"], "Snow", 1);
+        if (snowEnd) {
+          const endTime = snowEnd.replace("Snow to end by ", "");
+          trends.push(
+            `Snow beginning ${snowEvents.start} and ending ${endTime}`,
+          );
+        } else {
+          trends.push(`Snow beginning ${snowEvents.start}`);
         }
+      }
 
-        if (condition.includes("fog") || condition.includes("mist")) {
-          const startTime = new Date(hour.startTime);
-          const timeString = is24Hour
-            ? startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: false,
-              })
-            : startTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              });
-
-          if (is24Hour) {
-            const [hours, minutes] = timeString.split(":");
-            const hourNum = parseInt(hours, 10);
-            const formattedHour = hourNum.toString();
-            trends.push(
-              `Fog developing ${formattedHour}:${minutes.padStart(2, "0")}`,
-            );
-          } else {
-            trends.push(`Fog developing ${timeString}`);
-          }
-          break;
+      if (fogEvents.start) {
+        const fogEnd = findConditionEnd(["fog", "mist"], "Fog", 1);
+        if (fogEnd) {
+          const endTime = fogEnd.replace("Fog to end by ", "");
+          trends.push(
+            `Fog developing ${fogEvents.start} and clearing ${endTime}`,
+          );
+        } else {
+          trends.push(`Fog developing ${fogEvents.start}`);
         }
       }
     }
@@ -312,16 +404,18 @@ export function CurrentConditions({
   };
 
   const getWindDisplay = () => {
-    let windText =
-      conditions.windSpeedValue > 0
-        ? `${Math.round(conditions.windSpeedValue)} mph`
-        : "Calm";
+    if (conditions.windSpeedValue === 0) {
+      return "Calm";
+    }
+
+    let windText = `${Math.round(conditions.windSpeedValue || 0)} mph ${getWindDirection(conditions.windDirection)}`;
 
     if (
       conditions.windGust &&
+      conditions.windSpeedValue &&
       conditions.windGust > conditions.windSpeedValue
     ) {
-      windText += ` gusts ${Math.round(conditions.windGust)} mph`;
+      windText += `, gusts ${Math.round(conditions.windGust)} mph`;
     }
 
     return windText;
@@ -336,26 +430,14 @@ export function CurrentConditions({
 
   const getSunrise = () => {
     if (conditions.sunriseTime) {
-      const sunrise = new Date(conditions.sunriseTime);
-
-      // API returns local time format directly, no conversion needed
-      return sunrise.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: !is24Hour,
-      });
+      return formatTime(conditions.sunriseTime, true);
     }
     return "N/A";
   };
 
   const getSunset = () => {
     if (conditions.sunsetTime) {
-      const sunset = new Date(conditions.sunsetTime);
-      return sunset.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: !is24Hour,
-      });
+      return formatTime(conditions.sunsetTime, true);
     }
     return "N/A";
   };
@@ -404,9 +486,15 @@ export function CurrentConditions({
               {/* Left column */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Real feel</span>
+                  <span className="text-gray-500">High / Low</span>
                   <span className="font-medium text-gray-800">
-                    {getRealFeel()}°
+                    {conditions.todayHigh && conditions.todayLow
+                      ? `${Math.round(conditions.todayHigh)}° / ${Math.round(conditions.todayLow)}°`
+                      : conditions.todayHigh
+                        ? `${Math.round(conditions.todayHigh)}°`
+                        : conditions.todayLow
+                          ? `${Math.round(conditions.todayLow)}°`
+                          : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -422,14 +510,9 @@ export function CurrentConditions({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Wind</span>
-                  <span className="font-medium text-gray-800 text-right">
-                    {getWindDisplay()}
-                    {conditions.windSpeedValue > 0 && (
-                      <span className="block text-xs text-gray-600">
-                        {getWindDirection(conditions.windDirection)}
-                      </span>
-                    )}
+                  <span className="text-gray-500">Sunrise</span>
+                  <span className="font-medium text-gray-800">
+                    {getSunrise()}
                   </span>
                 </div>
               </div>
@@ -437,17 +520,21 @@ export function CurrentConditions({
               {/* Right column */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Precip (1hr)</span>
+                  <span className="text-gray-500">Real feel</span>
                   <span className="font-medium text-gray-800">
-                    {conditions.precipitationLastHour
-                      ? `${Math.round(conditions.precipitationLastHour * 100)} in`
-                      : "None"}
+                    {getRealFeel()}°
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Sunrise</span>
+                  <span className="text-gray-500">UV Index</span>
                   <span className="font-medium text-gray-800">
-                    {getSunrise()}
+                    {conditions.uvIndex ?? 0} out of 11
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Wind</span>
+                  <span className="font-medium text-gray-800 text-right">
+                    {getWindDisplay()}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -464,46 +551,44 @@ export function CurrentConditions({
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Updated</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleTimeFormat}
-                      className="font-sans text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                      style={{
-                        width: "4.5rem",
-                        height: "1.25rem",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "flex-start",
-                        boxSizing: "border-box",
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                        verticalAlign: "middle",
-                        transform: "translateZ(0)",
-                      }}
-                    >
-                      {lastUpdated ? formatTime(lastUpdated) : "N/A"}
-                    </button>
-                    {onRefresh && (
-                      <button
-                        onClick={onRefresh}
-                        disabled={isRefreshing}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          isRefreshing
-                            ? "Refreshing..."
-                            : "Refresh weather data"
-                        }
-                      >
-                        <RefreshCw
-                          className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
-                        />
-                      </button>
-                    )}
-                  </div>
-                </div>
               </div>
+            </div>
+
+            {/* Updated time - centered at bottom */}
+            <div className="flex justify-center items-center gap-2 text-sm mt-4">
+              <span className="text-gray-500">Updated</span>
+              <button
+                onClick={toggleTimeFormat}
+                className="font-sans text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                style={{
+                  width: "6rem",
+                  height: "1.25rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  verticalAlign: "middle",
+                  transform: "translateZ(0)",
+                }}
+              >
+                {lastUpdated ? formatTime(lastUpdated, true) : "N/A"}
+              </button>
+              {onRefresh && (
+                <button
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={
+                    isRefreshing ? "Refreshing..." : "Refresh weather data"
+                  }
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                </button>
+              )}
             </div>
           </div>
         </div>

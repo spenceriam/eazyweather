@@ -33,6 +33,10 @@ export interface CurrentConditions {
   snowDepth?: number;
   sunriseTime?: string;
   sunsetTime?: string;
+  uvIndex?: number;
+  todayHigh?: number;
+  todayLow?: number;
+  timezone?: string;
 }
 
 export interface ForecastPeriod {

@@ -273,7 +273,7 @@ function App() {
     } catch (locationError) {
       console.log("Location initialization failed:", locationError);
       trackLocationError("initialization");
-      // Default to Chicago as fallback
+      // Default to Chicago as fallback (41.8781°N, 87.6298°W)
       const chicagoCoords: Coordinates = {
         latitude: 41.8781,
         longitude: -87.6298,
@@ -347,7 +347,7 @@ function App() {
     } catch (error) {
       console.log("Location selection failed:", error);
       trackLocationError("initial_selection");
-      // Fall back to Chicago
+      // Fall back to Chicago (41.8781°N, 87.6298°W)
       const chicagoCoords: Coordinates = {
         latitude: 41.8781,
         longitude: -87.6298,
@@ -427,6 +427,7 @@ function App() {
                         : currentConditions?.timestamp
                     }
                     hourlyForecast={hourlyForecast}
+                    timezone={currentConditions.timezone}
                   />
                 ) : (
                   <section id="current" className="bg-gray-100">
@@ -444,7 +445,10 @@ function App() {
                 )}
 
                 {hourlyForecast.length > 0 ? (
-                  <HourlyForecast forecast={hourlyForecast} />
+                  <HourlyForecast
+                    forecast={hourlyForecast}
+                    timezone={currentConditions.timezone}
+                  />
                 ) : (
                   <section id="hourly" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-8">

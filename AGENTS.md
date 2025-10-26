@@ -10,6 +10,14 @@
 ## Project overview
 EazyWeather is a single-page React + TypeScript weather application that displays comprehensive weather information in a scrollable layout with centered white content and darker sides. The app features advanced location services with reverse geocoding for proper City, State/Province/Country display, location search with 4-location cache history, and all weather data sourced from the National Weather Service API with no third-party weather services required.
 
+## Development workflow discipline
+- **CRITICAL**: NEVER commit or push changes without explicit user approval
+- **ALWAYS** ask for user confirmation before any git operations
+- **DEBUGGING**: Use console logs and testing to verify fixes before committing
+- **WORKFLOW**: Make changes → Test → Get user approval → Then (and only then) commit → Push
+- **Branch management**: Only commit to the correct issue branch
+- **Code quality**: Ensure all changes work and are properly tested before seeking approval
+
 ## Architecture
 - **Frontend**: React 18 with TypeScript, built with Vite
 - **Styling**: Tailwind CSS for responsive design with centered content layout
