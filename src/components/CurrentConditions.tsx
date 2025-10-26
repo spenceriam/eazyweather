@@ -256,7 +256,7 @@ export function CurrentConditions({
         2,
       );
       if (nextRainStart) {
-        trends.push(`Next rain beginning ${nextRainStart}`);
+        trends.push(`Next rain ${nextRainStart}`);
       }
     }
 
@@ -277,7 +277,7 @@ export function CurrentConditions({
         2,
       );
       if (nextSnowStart) {
-        trends.push(`Next snow beginning ${nextSnowStart}`);
+        trends.push(`Next snow ${nextSnowStart}`);
       }
     }
 
@@ -298,7 +298,7 @@ export function CurrentConditions({
         2,
       );
       if (nextFogStart) {
-        trends.push(`Next fog developing ${nextFogStart}`);
+        trends.push(`Next fog ${nextFogStart}`);
       }
     }
 
