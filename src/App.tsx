@@ -394,7 +394,7 @@ function App() {
     );
   }
 
-  if (error && !coordinates && !showSearch) {
+  if (error && !coordinates && !showSearch && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <ErrorMessage message={error} onRetry={initializeLocation} />
@@ -427,7 +427,7 @@ function App() {
 
           {/* Centered white content area */}
           <div className="bg-white">
-            {isLoading ? (
+            {isLoading || (error && !coordinates) ? (
               <div className="flex items-center justify-center py-16">
                 <LoadingSpinner />
               </div>
