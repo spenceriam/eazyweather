@@ -152,7 +152,7 @@ export function LocationSection({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter city, state or country (e.g., New York, NY)"
+                    placeholder="Enter city, state, country, or ZIP code (e.g., New York, NY or 90210)"
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     disabled={isLoading}
                     autoFocus

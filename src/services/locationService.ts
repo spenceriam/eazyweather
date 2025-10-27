@@ -8,6 +8,26 @@ export interface LocationResult {
   country: string;
 }
 
+// ZIP Code validation utilities
+function isValidZipCode(zip: string): boolean {
+  // US ZIP: 5 digits or ZIP+4: 5-4 digits
+  const zipPattern = /^\d{5}(-\d{4})?$/;
+  return zipPattern.test(zip);
+}
+
+function isZipCode(query: string): boolean {
+  return isValidZipCode(query.trim());
+}
+
+function normalizeZipCode(zip: string): string {
+  // For ZIP+4, use only the first 5 digits for better search results
+  const trimmed = zip.trim();
+  if (trimmed.includes("-")) {
+    return trimmed.split("-")[0];
+  }
+  return trimmed;
+}
+
 export async function getBrowserLocation(): Promise<Coordinates> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -187,8 +207,24 @@ export async function reverseGeocode(
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
+    let searchQuery = query.trim();
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
+
+    // Handle ZIP code searches
+    if (isZipCode(searchQuery)) {
+      if (!isValidZipCode(searchQuery)) {
+        throw new Error(
+          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
+        );
+      }
+
+      // Normalize ZIP code (use only 5 digits for better results)
+      const normalizedZip = normalizeZipCode(searchQuery);
+      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=1&addressdetails=1`;
+    }
+
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?${searchParams}`,
       {
         headers: {
           "User-Agent": "EazyWeather/1.0",
@@ -270,8 +306,24 @@ export async function geocodeLocationMultiple(
   query: string,
 ): Promise<LocationResult[]> {
   try {
+    let searchQuery = query.trim();
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
+
+    // Handle ZIP code searches
+    if (isZipCode(searchQuery)) {
+      if (!isValidZipCode(searchQuery)) {
+        throw new Error(
+          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
+        );
+      }
+
+      // Normalize ZIP code (use only 5 digits for better results)
+      const normalizedZip = normalizeZipCode(searchQuery);
+      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=5&addressdetails=1`;
+    }
+
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?${searchParams}`,
       {
         headers: {
           "User-Agent": "EazyWeather/1.0",
