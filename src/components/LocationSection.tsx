@@ -48,24 +48,30 @@ export function LocationSection({
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    console.log("🔎 Starting search for:", searchQuery);
     setIsLoading(true);
     setError(null);
 
     try {
       const results = await geocodeLocationMultiple(searchQuery);
+      console.log("📋 Search results:", results);
       if (results.length === 1) {
         // If only one result, select it automatically
+        console.log("✅ Single result, auto-selecting:", results[0]);
         handleLocationSuccess(results[0]);
         setSearchQuery("");
       } else {
         // Show multiple results for selection
+        console.log("📝 Multiple results, showing selection UI");
         setSearchResults(results);
         setShowSearchResults(true);
       }
     } catch (err) {
+      console.log("❌ Search failed:", err);
       setError(err instanceof Error ? err.message : "Failed to find location");
       setShowSearchResults(false);
     } finally {
+      console.log("🏁 Search completed, loading:", false);
       setIsLoading(false);
     }
   }
