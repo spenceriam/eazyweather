@@ -23,6 +23,7 @@ import {
   getBrowserLocation,
   saveLocation,
   getSavedLocation,
+  getChicagoFallback,
   type LocationResult,
 } from "./services/locationService";
 import {
@@ -294,13 +295,10 @@ function App() {
     } catch (locationError) {
       console.log("Location initialization failed:", locationError);
       trackLocationError("initialization");
-      // Default to Chicago as fallback (41.8781°N, 87.6298°W)
-      const chicagoCoords: Coordinates = {
-        latitude: 41.8781,
-        longitude: -87.6298,
-      };
-      setCoordinates(chicagoCoords);
-      setLocationName("Chicago, Illinois");
+      // Default to Chicago as fallback
+      const chicagoLocation = getChicagoFallback();
+      setCoordinates(chicagoLocation.coordinates);
+      setLocationName(chicagoLocation.displayName);
       updatePageTitle("Chicago, IL Weather - EazyWeather");
       setShowInitialModal(true);
       setIsLoading(false);
@@ -368,13 +366,10 @@ function App() {
     } catch (error) {
       console.log("Location selection failed:", error);
       trackLocationError("initial_selection");
-      // Fall back to Chicago (41.8781°N, 87.6298°W)
-      const chicagoCoords: Coordinates = {
-        latitude: 41.8781,
-        longitude: -87.6298,
-      };
-      setCoordinates(chicagoCoords);
-      setLocationName("Chicago, Illinois");
+      // Fall back to Chicago
+      const chicagoLocation = getChicagoFallback();
+      setCoordinates(chicagoLocation.coordinates);
+      setLocationName(chicagoLocation.displayName);
       updatePageTitle("Chicago, IL Weather - EazyWeather");
     } finally {
       setIsLoading(false);

@@ -7,6 +7,7 @@ import {
   saveLocation,
   saveLocationToHistory,
   getLocationHistory,
+  getChicagoFallback,
   type LocationResult,
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
@@ -108,7 +109,9 @@ export function LocationSection({
       const locationResult = await reverseGeocode(coords);
       handleLocationSuccess(locationResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get location");
+      console.log("Geolocation failed, falling back to Chicago:", err);
+      // Fall back to Chicago instead of showing error
+      handleLocationSuccess(getChicagoFallback());
     } finally {
       setIsLoading(false);
     }

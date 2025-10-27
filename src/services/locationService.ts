@@ -28,6 +28,20 @@ function normalizeZipCode(zip: string): string {
   return trimmed;
 }
 
+// Chicago fallback location for consistent behavior
+export function getChicagoFallback(): LocationResult {
+  return {
+    coordinates: {
+      latitude: 41.8781,
+      longitude: -87.6298,
+    },
+    displayName: "Chicago, Illinois",
+    city: "Chicago",
+    state: "Illinois",
+    country: "United States",
+  };
+}
+
 export async function getBrowserLocation(): Promise<Coordinates> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
