@@ -224,6 +224,9 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     let searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
 
+    // Store original query for display (preserve ZIP code format)
+    const originalQuery = searchQuery;
+
     // Handle ZIP code searches
     if (isZipCode(searchQuery)) {
       if (!isValidZipCode(searchQuery)) {
@@ -278,8 +281,11 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     // Format display name based on location type - same logic as reverse geocoding
     let displayName = "";
 
-    // For US and Canada, always require city + state/province
-    if (country === "United States" || country === "Canada") {
+    // If original query was a ZIP code, show the ZIP code
+    if (isZipCode(originalQuery)) {
+      displayName = originalQuery;
+    } else if (country === "United States" || country === "Canada") {
+      // For US and Canada, always require city + state/province
       if (city && state) {
         displayName = `${city}, ${state}`;
       } else if (city) {
@@ -287,7 +293,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
         displayName = city;
       } else {
         // No city found - use the original query
-        displayName = query;
+        displayName = originalQuery;
       }
     } else {
       // For international locations, prefer city + state/province, then city + country
@@ -299,7 +305,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
         displayName = city;
       } else {
         // No city found - use the original query
-        displayName = query;
+        displayName = originalQuery;
       }
     }
 
@@ -322,6 +328,9 @@ export async function geocodeLocationMultiple(
   try {
     let searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
+
+    // Store original query for display (preserve ZIP code format)
+    const originalQuery = searchQuery;
 
     // Handle ZIP code searches
     if (isZipCode(searchQuery)) {
@@ -377,8 +386,10 @@ export async function geocodeLocationMultiple(
       // Format full display name with complete context
       let displayName = "";
 
-      // Always include the most complete context available
-      if (city && state && country) {
+      // If original query was a ZIP code, show the ZIP code with city/state context
+      if (isZipCode(originalQuery)) {
+        displayName = `${originalQuery} - ${city && state ? `${city}, ${state}` : city || "Location"}`;
+      } else if (city && state && country) {
         displayName = `${city}, ${state}, ${country}`;
       } else if (city && country) {
         displayName = `${city}, ${country}`;
@@ -388,7 +399,7 @@ export async function geocodeLocationMultiple(
         displayName = city;
       } else {
         // Fallback to the display name from the API or original query
-        displayName = result.display_name || query;
+        displayName = result.display_name || originalQuery;
       }
 
       return {
