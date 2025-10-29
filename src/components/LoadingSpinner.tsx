@@ -15,7 +15,10 @@ export function LoadingSpinner() {
         <div className="absolute top-0 left-0 w-full h-full border-4 border-brand-lighter rounded-full"></div>
         <div className="absolute top-0 left-0 w-full h-full border-4 border-brand rounded-full border-t-transparent animate-spin"></div>
       </div>
-      <p className="text-gray-600 text-lg">Loading</p>
+      <p className="text-gray-600 text-lg">Loading weather data...</p>
+      <p className="text-gray-500 text-sm mt-2">
+        This may take a moment for new locations
+      </p>
     </div>
   );
 }

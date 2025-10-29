@@ -8,6 +8,40 @@ export interface LocationResult {
   country: string;
 }
 
+// ZIP Code validation utilities
+function isValidZipCode(zip: string): boolean {
+  // US ZIP: 5 digits or ZIP+4: 5-4 digits
+  const zipPattern = /^\d{5}(-\d{4})?$/;
+  return zipPattern.test(zip);
+}
+
+function isZipCode(query: string): boolean {
+  return isValidZipCode(query.trim());
+}
+
+function normalizeZipCode(zip: string): string {
+  // For ZIP+4, use only the first 5 digits for better search results
+  const trimmed = zip.trim();
+  if (trimmed.includes("-")) {
+    return trimmed.split("-")[0];
+  }
+  return trimmed;
+}
+
+// Chicago fallback location for consistent behavior
+export function getChicagoFallback(): LocationResult {
+  return {
+    coordinates: {
+      latitude: 41.8781,
+      longitude: -87.6298,
+    },
+    displayName: "Chicago, Illinois",
+    city: "Chicago",
+    state: "Illinois",
+    country: "United States",
+  };
+}
+
 export async function getBrowserLocation(): Promise<Coordinates> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -109,10 +143,12 @@ export async function reverseGeocode(
     );
 
     if (!response.ok) {
-      throw new Error(`Reverse geocoding failed: ${response.status}`);
+      console.log("❌ API response not ok:", response.status);
+      throw new Error(`Geocoding failed: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("📊 API response data:", data);
     console.log("Reverse geocoding response:", data);
 
     if (!data || !data.address) {
@@ -187,8 +223,30 @@ export async function reverseGeocode(
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
+    console.log("🔍 Starting geocodeLocation for:", query);
+    let searchQuery = query.trim();
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
+
+    // Store original query for display (preserve ZIP code format)
+    const originalQuery = searchQuery;
+    console.log("📝 Original query stored:", originalQuery);
+
+    // Handle ZIP code searches
+    if (isZipCode(searchQuery)) {
+      if (!isValidZipCode(searchQuery)) {
+        throw new Error(
+          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
+        );
+      }
+
+      // Normalize ZIP code (use only 5 digits for better results)
+      const normalizedZip = normalizeZipCode(searchQuery);
+      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=1&addressdetails=1`;
+    }
+
+    console.log("🌐 Making API call with params:", searchParams);
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?${searchParams}`,
       {
         headers: {
           "User-Agent": "EazyWeather/1.0",
@@ -207,11 +265,13 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     }
 
     const result = data[0];
+    console.log("📍 First result:", result);
     const address = result.address;
     const coords = {
       latitude: parseFloat(result.lat),
       longitude: parseFloat(result.lon),
     };
+    console.log("🗺️ Parsed coords:", coords, "address:", address);
 
     // Try multiple city-level fields, but never county
     const city =
@@ -228,8 +288,11 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     // Format display name based on location type - same logic as reverse geocoding
     let displayName = "";
 
-    // For US and Canada, always require city + state/province
-    if (country === "United States" || country === "Canada") {
+    // If original query was a ZIP code, show the ZIP code
+    if (isZipCode(originalQuery)) {
+      displayName = originalQuery;
+    } else if (country === "United States" || country === "Canada") {
+      // For US and Canada, always require city + state/province
       if (city && state) {
         displayName = `${city}, ${state}`;
       } else if (city) {
@@ -237,7 +300,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
         displayName = city;
       } else {
         // No city found - use the original query
-        displayName = query;
+        displayName = originalQuery;
       }
     } else {
       // For international locations, prefer city + state/province, then city + country
@@ -249,17 +312,19 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
         displayName = city;
       } else {
         // No city found - use the original query
-        displayName = query;
+        displayName = originalQuery;
       }
     }
 
-    return {
+    const locationResult = {
       coordinates: coords,
       displayName,
       city,
       state,
       country,
     };
+    console.log("✅ Final location result:", locationResult);
+    return locationResult;
   } catch (error) {
     console.error("Geocoding error:", error);
     throw new Error("Unable to find location. Please try a different search.");
@@ -270,8 +335,27 @@ export async function geocodeLocationMultiple(
   query: string,
 ): Promise<LocationResult[]> {
   try {
+    let searchQuery = query.trim();
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
+
+    // Store original query for display (preserve ZIP code format)
+    const originalQuery = searchQuery;
+
+    // Handle ZIP code searches
+    if (isZipCode(searchQuery)) {
+      if (!isValidZipCode(searchQuery)) {
+        throw new Error(
+          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
+        );
+      }
+
+      // Normalize ZIP code (use only 5 digits for better results)
+      const normalizedZip = normalizeZipCode(searchQuery);
+      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=5&addressdetails=1`;
+    }
+
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?${searchParams}`,
       {
         headers: {
           "User-Agent": "EazyWeather/1.0",
@@ -311,8 +395,10 @@ export async function geocodeLocationMultiple(
       // Format full display name with complete context
       let displayName = "";
 
-      // Always include the most complete context available
-      if (city && state && country) {
+      // If original query was a ZIP code, show the ZIP code with city/state context
+      if (isZipCode(originalQuery)) {
+        displayName = `${originalQuery} - ${city && state ? `${city}, ${state}` : city || "Location"}`;
+      } else if (city && state && country) {
         displayName = `${city}, ${state}, ${country}`;
       } else if (city && country) {
         displayName = `${city}, ${country}`;
@@ -322,7 +408,7 @@ export async function geocodeLocationMultiple(
         displayName = city;
       } else {
         // Fallback to the display name from the API or original query
-        displayName = result.display_name || query;
+        displayName = result.display_name || originalQuery;
       }
 
       return {

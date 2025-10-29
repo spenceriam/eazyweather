@@ -7,6 +7,7 @@ import {
   saveLocation,
   saveLocationToHistory,
   getLocationHistory,
+  getChicagoFallback,
   type LocationResult,
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
@@ -47,37 +48,47 @@ export function LocationSection({
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    console.log("🔎 Starting search for:", searchQuery);
     setIsLoading(true);
     setError(null);
 
     try {
       const results = await geocodeLocationMultiple(searchQuery);
+      console.log("📋 Search results:", results);
       if (results.length === 1) {
         // If only one result, select it automatically
+        console.log("✅ Single result, auto-selecting:", results[0]);
         handleLocationSuccess(results[0]);
         setSearchQuery("");
+        // Don't clear loading state - let parent component handle it
       } else {
         // Show multiple results for selection
+        console.log("📝 Multiple results, showing selection UI");
         setSearchResults(results);
         setShowSearchResults(true);
+        setIsLoading(false);
       }
     } catch (err) {
+      console.log("❌ Search failed:", err);
       setError(err instanceof Error ? err.message : "Failed to find location");
       setShowSearchResults(false);
-    } finally {
       setIsLoading(false);
     }
   }
 
   function handleLocationSuccess(locationResult: LocationResult) {
+    // Set loading immediately to prevent page flash
+    setIsLoading(true);
     onLocationUpdate(locationResult);
     saveLocation(locationResult);
     saveLocationToHistory(locationResult);
     setSearchHistory(getLocationHistory());
     setIsSearching(false);
+    // Don't clear loading state - let parent component handle it
   }
 
   function handleHistoryClick(location: LocationResult) {
+    setIsLoading(true);
     handleLocationSuccess(location);
   }
 
@@ -93,25 +104,28 @@ export function LocationSection({
   }
 
   function handleSearchResultSelect(locationResult: LocationResult) {
-    handleLocationSuccess(locationResult);
+    setIsLoading(true);
     setSearchQuery("");
     setShowSearchResults(false);
     setSearchResults([]);
+    handleLocationSuccess(locationResult);
   }
 
   async function handleUseCurrentLocation() {
     setIsLoading(true);
     setError(null);
+    setShowSearch(false);
 
     try {
       const coords = await getBrowserLocation();
       const locationResult = await reverseGeocode(coords);
       handleLocationSuccess(locationResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get location");
-    } finally {
-      setIsLoading(false);
+      console.log("Geolocation failed, falling back to Chicago:", err);
+      // Fall back to Chicago instead of showing error
+      handleLocationSuccess(getChicagoFallback());
     }
+    // Don't clear loading state - let parent component handle it
   }
 
   function handleSearchClear() {
@@ -152,7 +166,7 @@ export function LocationSection({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter city, state or country (e.g., New York, NY)"
+                    placeholder="Enter city, state, country, or ZIP code (e.g., New York, NY or 90210)"
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     disabled={isLoading}
                     autoFocus

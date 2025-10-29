@@ -443,8 +443,20 @@ export async function getAllWeatherData(
   monthly: MonthlyForecast;
 }> {
   try {
-    // Get weather point once
+    console.log("🌤️ Starting weather data fetch for:", coords);
+
+    // Get weather point once with longer timeout for ZIP code searches
     const point = await getWeatherPoint(coords, options);
+
+    if (!point || !point.properties) {
+      console.error("❌ Invalid weather point response:", point);
+      throw new Error("Weather service not available for this location");
+    }
+
+    console.log(
+      "✅ Weather point found:",
+      point.properties.relativeLocation?.properties?.city || "Unknown location",
+    );
 
     // Get timezone for location
     const timezone = await getTimezoneFromCoords(coords);
@@ -452,8 +464,9 @@ export async function getAllWeatherData(
       `🌍getAllWeatherData: Using coordinates ${coords.latitude}, ${coords.longitude} with timezone: ${timezone}`,
     );
 
-    // Make all API calls in parallel with point data
-    const [stationsData, forecastData, hourlyData] = await Promise.all([
+    // Make all API calls in parallel with point data, with individual error handling
+
+    const [stationsData, forecastData, hourlyData] = await Promise.allSettled([
       fetchWithUserAgent(point.properties.observationStations, {
         ...options,
         skipRateLimit: true, // Skip rate limiting since we already got the point
@@ -470,67 +483,162 @@ export async function getAllWeatherData(
       }),
     ]);
 
-    // Process current conditions
-    let current: CurrentConditions | null = null;
-    if (stationsData.features && stationsData.features.length > 0) {
-      const stationId = stationsData.features[0].properties.stationIdentifier;
-      const observationUrl = `${BASE_URL}/stations/${stationId}/observations/latest`;
-      const observation = await fetchWithUserAgent(observationUrl, {
-        ...options,
-        skipRateLimit: true, // Skip rate limiting for observations
-      });
+    // Extract results with error handling
+    const stationsResult =
+      stationsData.status === "fulfilled" ? stationsData.value : null;
+    const forecastResult =
+      forecastData.status === "fulfilled" ? forecastData.value : null;
+    const hourlyResult =
+      hourlyData.status === "fulfilled" ? hourlyData.value : null;
 
-      const props = observation.properties;
+    // Log any failures but continue processing
+    if (stationsData.status === "rejected") {
+      console.warn("⚠️ Stations API failed:", stationsData.reason);
+    }
+    if (forecastData.status === "rejected") {
+      console.warn("⚠️ Forecast API failed:", forecastData.reason);
+    }
+    if (hourlyData.status === "rejected") {
+      console.warn("⚠️ Hourly API failed:", hourlyData.reason);
+    }
 
-      // Get hourly forecast as fallback for text description if needed
-      let textDescription = props.textDescription;
-      if (
-        !textDescription &&
-        hourlyData &&
-        hourlyData.properties &&
-        hourlyData.properties.periods &&
-        hourlyData.properties.periods.length > 0
-      ) {
-        textDescription = hourlyData.properties.periods[0].shortForecast;
-        console.log(
-          "Using hourly forecast fallback for current conditions:",
-          textDescription,
-        );
-      }
+    console.log("📊 Weather API results summary:", {
+      stations: stationsData.status === "fulfilled" ? "✅" : "❌",
+      forecast: forecastData.status === "fulfilled" ? "✅" : "❌",
+      hourly: hourlyData.status === "fulfilled" ? "✅" : "❌",
+    });
 
-      current = {
-        temperature: props.temperature.value,
-        temperatureUnit:
-          props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
-        relativeHumidity: props.relativeHumidity.value,
-        windSpeed: props.windSpeed.value
-          ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
-          : "Calm",
-        windSpeedValue: props.windSpeed.value
-          ? props.windSpeed.value * 0.621371
-          : 0,
-        windDirection: props.windDirection.value || 0,
-        textDescription: textDescription || "Unknown",
-        icon: props.icon || "",
-        timestamp: props.timestamp,
-        heatIndex: props.heatIndex?.value,
-        windChill: props.windChill?.value,
-        dewpoint: props.dewpoint?.value,
-        windGust: props.windGust?.value
-          ? props.windGust.value * 0.621371
-          : undefined, // Convert m/s to mph
-        precipitationLastHour: props.precipitationLastHour?.value,
-        snowDepth: props.snowDepth?.value, // Already in inches
-        sunriseTime: props.sunriseTime,
-        sunsetTime: props.sunsetTime,
-        uvIndex: 0, // Weather.gov API doesn't provide UV index in observations, default to 0
-        timezone: timezone, // Include timezone for time formatting
+    // Log detailed API results for debugging
+    console.log("🔍 Detailed API results for location:", coords);
+    console.log(
+      "📍 Stations result:",
+      stationsData.status === "fulfilled" ? "SUCCESS" : "FAILED",
+    );
+    console.log(
+      "🌤️ Forecast result:",
+      forecastData.status === "fulfilled" ? "SUCCESS" : "FAILED",
+    );
+    console.log(
+      "⏰ Hourly result:",
+      hourlyData.status === "fulfilled" ? "SUCCESS" : "FAILED",
+    );
+
+    // If all APIs failed, return empty data instead of throwing
+    if (!stationsResult && !forecastResult && !hourlyResult) {
+      console.warn("⚠️ All weather APIs failed, returning empty data");
+      return {
+        current: null,
+        forecast: [],
+        hourly: [],
+        monthly: {
+          month: new Date().getMonth(),
+          year: new Date().getFullYear(),
+          days: [],
+        },
       };
     }
 
-    // Process forecast data
-    const forecast = forecastData.properties.periods.slice(0, 14);
-    const hourly = hourlyData.properties.periods.slice(0, 48);
+    // Process current conditions
+    let current: CurrentConditions | null = null;
+    if (
+      stationsResult &&
+      stationsResult.features &&
+      stationsResult.features.length > 0
+    ) {
+      try {
+        const stationId =
+          stationsResult.features[0].properties.stationIdentifier;
+        const observationUrl = `${BASE_URL}/stations/${stationId}/observations/latest`;
+        const observation = await fetchWithUserAgent(observationUrl, {
+          ...options,
+          skipRateLimit: true, // Skip rate limiting for observations
+        });
+
+        const props = observation.properties;
+
+        // Get hourly forecast as fallback for text description if needed
+        let textDescription = props.textDescription;
+        if (
+          !textDescription &&
+          hourlyData &&
+          hourlyData.properties &&
+          hourlyData.properties.periods &&
+          hourlyData.properties.periods.length > 0
+        ) {
+          textDescription = hourlyData.properties.periods[0].shortForecast;
+          console.log(
+            "Using hourly forecast fallback for current conditions:",
+            textDescription,
+          );
+        }
+
+        current = {
+          temperature: props.temperature.value,
+          temperatureUnit:
+            props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
+          relativeHumidity: props.relativeHumidity.value,
+          windSpeed: props.windSpeed.value
+            ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
+            : "Calm",
+          windSpeedValue: props.windSpeed.value
+            ? props.windSpeed.value * 0.621371
+            : 0,
+          windDirection: props.windDirection.value || 0,
+          textDescription: textDescription || "Unknown",
+          icon: props.icon || "",
+          timestamp: props.timestamp,
+          heatIndex: props.heatIndex?.value,
+          windChill: props.windChill?.value,
+          dewpoint: props.dewpoint?.value,
+          windGust: props.windGust?.value
+            ? props.windGust.value * 0.621371
+            : undefined, // Convert m/s to mph
+          precipitationLastHour: props.precipitationLastHour?.value,
+          snowDepth: props.snowDepth?.value, // Already in inches
+          sunriseTime: props.sunriseTime,
+          sunsetTime: props.sunsetTime,
+          uvIndex: 0, // Weather.gov API doesn't provide UV index in observations, default to 0
+          timezone: timezone, // Include timezone for time formatting
+        };
+      } catch (obsError) {
+        console.warn("⚠️ Current conditions observation failed:", obsError);
+        // Continue without current conditions - we'll still show forecast data
+      }
+    }
+
+    // Process forecast data with fallbacks
+    const forecast =
+      forecastResult &&
+      forecastResult.properties &&
+      forecastResult.properties.periods
+        ? forecastResult.properties.periods.slice(0, 14)
+        : [];
+
+    const hourly =
+      hourlyResult && hourlyResult.properties && hourlyResult.properties.periods
+        ? hourlyResult.properties.periods.slice(0, 48)
+        : [];
+
+    // Log what data we were able to retrieve
+    console.log(`📊 Weather data summary:
+      - Current conditions: ${current ? "✅" : "❌"}
+      - 7-day forecast: ${forecast.length > 0 ? `✅ (${forecast.length} periods)` : "❌"}
+      - Hourly forecast: ${hourly.length > 0 ? `✅ (${hourly.length} periods)` : "❌"}
+    `);
+
+    // No critical failure - always return what we have
+    console.log(`📊 Final weather data summary:
+      - Current conditions: ${current ? "✅" : "❌"}
+      - 7-day forecast: ${forecast.length > 0 ? `✅ (${forecast.length} periods)` : "❌"}
+      - Hourly forecast: ${hourly.length > 0 ? `✅ (${hourly.length} periods)` : "❌"}
+    `);
+
+    // If we have partial data, that's better than no data
+    if (current || forecast.length > 0 || hourly.length > 0) {
+      console.log("✅ Returning partial weather data - better than nothing!");
+    } else {
+      console.log("❌ No weather data available at all");
+    }
 
     // Get today's high and low from forecast
     let todayHigh: number | undefined;
@@ -572,11 +680,16 @@ export async function getAllWeatherData(
       current.todayLow = todayLow;
     }
 
-    // Add sunrise/sunset to current conditions using API
+    // Add sunrise/sunset to current conditions using API (with error handling)
     if (current && coords) {
-      const { sunrise, sunset } = await getSunriseSunsetFromAPI(coords);
-      current.sunriseTime = sunrise;
-      current.sunsetTime = sunset;
+      try {
+        const { sunrise, sunset } = await getSunriseSunsetFromAPI(coords);
+        current.sunriseTime = sunrise;
+        current.sunsetTime = sunset;
+      } catch (sunError) {
+        console.warn("⚠️ Sunrise/sunset calculation failed:", sunError);
+        // Continue without sunrise/sunset data
+      }
     }
 
     // Calculate monthly forecast
