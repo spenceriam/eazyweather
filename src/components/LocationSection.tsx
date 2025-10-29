@@ -60,31 +60,35 @@ export function LocationSection({
         console.log("✅ Single result, auto-selecting:", results[0]);
         handleLocationSuccess(results[0]);
         setSearchQuery("");
+        // Don't clear loading state - let parent component handle it
       } else {
         // Show multiple results for selection
         console.log("📝 Multiple results, showing selection UI");
         setSearchResults(results);
         setShowSearchResults(true);
+        setIsLoading(false);
       }
     } catch (err) {
       console.log("❌ Search failed:", err);
       setError(err instanceof Error ? err.message : "Failed to find location");
       setShowSearchResults(false);
-    } finally {
-      console.log("🏁 Search completed, loading:", false);
       setIsLoading(false);
     }
   }
 
   function handleLocationSuccess(locationResult: LocationResult) {
+    // Set loading immediately to prevent page flash
+    setIsLoading(true);
     onLocationUpdate(locationResult);
     saveLocation(locationResult);
     saveLocationToHistory(locationResult);
     setSearchHistory(getLocationHistory());
     setIsSearching(false);
+    // Don't clear loading state - let parent component handle it
   }
 
   function handleHistoryClick(location: LocationResult) {
+    setIsLoading(true);
     handleLocationSuccess(location);
   }
 
@@ -100,15 +104,17 @@ export function LocationSection({
   }
 
   function handleSearchResultSelect(locationResult: LocationResult) {
-    handleLocationSuccess(locationResult);
+    setIsLoading(true);
     setSearchQuery("");
     setShowSearchResults(false);
     setSearchResults([]);
+    handleLocationSuccess(locationResult);
   }
 
   async function handleUseCurrentLocation() {
     setIsLoading(true);
     setError(null);
+    setShowSearch(false);
 
     try {
       const coords = await getBrowserLocation();
@@ -118,9 +124,8 @@ export function LocationSection({
       console.log("Geolocation failed, falling back to Chicago:", err);
       // Fall back to Chicago instead of showing error
       handleLocationSuccess(getChicagoFallback());
-    } finally {
-      setIsLoading(false);
     }
+    // Don't clear loading state - let parent component handle it
   }
 
   function handleSearchClear() {

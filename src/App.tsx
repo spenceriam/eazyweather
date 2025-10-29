@@ -49,10 +49,10 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showInitialModal, setShowInitialModal] = useState(true);
+  const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
-
   // Update page title for SEO
   function updatePageTitle(location: string) {
     const baseTitle = "EazyWeather - Free Local Weather Forecast";
@@ -146,7 +146,10 @@ function App() {
     async (skipRateLimit = false) => {
       if (!coordinates) return;
 
-      setIsLoading(true);
+      // Only set loading if weather hasn't loaded yet
+      if (!hasWeatherLoaded) {
+        setIsLoading(true);
+      }
       setError(null);
 
       try {
@@ -162,39 +165,57 @@ function App() {
         setHourlyForecast(hourly);
         setMonthlyForecast(monthly);
 
-        // Track weather views
-        if (current) trackWeatherView("current");
-        if (hourly.length > 0) trackWeatherView("hourly");
-        if (sevenDay.length > 0) trackWeatherView("daily");
-        if (monthly) trackWeatherView("monthly");
+        // Check if we got any meaningful data
+        const hasData = current || sevenDay.length > 0 || hourly.length > 0;
 
-        // Update structured data when weather data loads
-        if (current && coordinates) {
-          // Parse location name to extract city and state
-          const locationParts = locationName.split(",");
-          const locationResult = {
-            coordinates,
-            displayName: locationName,
-            city: locationParts[0]?.trim() || "",
-            state: locationParts[1]?.trim() || "",
-            country: locationParts.length > 2 ? locationParts[2]?.trim() : "US",
-          };
-          updateStructuredData(locationResult, current);
+        if (!hasData) {
+          console.error("❌ No weather data received");
+          trackApiError("weather");
+          setError(
+            "Weather data unavailable for this location. Try searching for a nearby city.",
+          );
+        } else {
+          console.log("✅ Weather data loaded successfully");
+          setError(null);
+
+          // Track weather views only if we have data
+          if (current) trackWeatherView("current");
+          if (hourly.length > 0) trackWeatherView("hourly");
+          if (sevenDay.length > 0) trackWeatherView("daily");
+          if (monthly) trackWeatherView("monthly");
+
+          // Update structured data when weather data loads
+          if (current && coordinates) {
+            // Parse location name to extract city and state
+            const locationParts = locationName.split(",");
+            const locationResult = {
+              coordinates,
+              displayName: locationName,
+              city: locationParts[0]?.trim() || "",
+              state: locationParts[1]?.trim() || "",
+              country:
+                locationParts.length > 2 ? locationParts[2]?.trim() : "US",
+            };
+            updateStructuredData(locationResult, current);
+          }
+
+          // Reset refresh service after successful load
+          refreshService.updateConfig({ enableAutoRefresh: true });
+
+          // Mark weather as loaded
+          if (!hasWeatherLoaded) {
+            setHasWeatherLoaded(true);
+            setIsLoading(false);
+          }
         }
-
-        // Reset refresh service after successful load
-        refreshService.updateConfig({ enableAutoRefresh: true });
-      } catch (error) {
-        console.error("Failed to load weather data:", error);
-        trackApiError("weather");
-        setError(
-          "Failed to load weather data. The location may not be supported by the National Weather Service.",
-        );
       } finally {
-        setIsLoading(false);
+        // Only clear loading if weather has loaded
+        if (hasWeatherLoaded) {
+          setIsLoading(false);
+        }
       }
     },
-    [coordinates, locationName],
+    [coordinates, locationName, hasWeatherLoaded],
   );
 
   // Refresh service effects
@@ -282,7 +303,7 @@ function App() {
         return;
       }
 
-      // Default to Chicago coordinates
+      // Default to Chicago coordinates to load weather immediately
       const chicagoCoords: Coordinates = {
         latitude: 41.8781,
         longitude: -87.6298,
@@ -291,7 +312,7 @@ function App() {
       setLocationName("Chicago, Illinois");
       updatePageTitle("Chicago, IL Weather - EazyWeather");
       setShowInitialModal(true);
-      setIsLoading(false);
+      // Don't set loading state - let weather load silently for Chicago default
     } catch (locationError) {
       console.log("Location initialization failed:", locationError);
       trackLocationError("initialization");
@@ -301,7 +322,7 @@ function App() {
       setLocationName(chicagoLocation.displayName);
       updatePageTitle("Chicago, IL Weather - EazyWeather");
       setShowInitialModal(true);
-      setIsLoading(false);
+      // Don't set loading state - let weather load silently for Chicago default
     }
   }, []);
 
@@ -310,6 +331,7 @@ function App() {
   }, [initializeLocation]);
 
   useEffect(() => {
+    // Load weather data if we have coordinates
     if (coordinates) {
       loadWeatherData();
     }
@@ -326,11 +348,13 @@ function App() {
       setLocationName(location.displayName);
       saveLocation(location);
       updatePageTitle(location.displayName);
-      updateStructuredData(location, currentConditions);
-    } catch {
+
+      // Load weather data immediately to prevent flash
+      await loadWeatherData();
+    } catch (error) {
+      console.error("Location change error:", error);
       trackApiError("location");
-      setError("Failed to find location");
-    } finally {
+      setError("Failed to set location");
       setIsLoading(false);
     }
   }
@@ -376,14 +400,15 @@ function App() {
     }
   }
 
-  function handleInitialModalClose() {
+  async function handleInitialModalClose() {
     setShowInitialModal(false);
-    // User chose to use Chicago, which is already set as default
+    // User chose to use Chicago - weather is already loaded, just close modal
+    // No need to load weather data again
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-gray-50 z-50 flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
