@@ -176,6 +176,11 @@ export function CurrentConditions({
     const formattedTime = formatTime(timestamp, includeTimezone);
     const daysDiff = getDaysDifference(timestamp);
 
+    // Minimal logging only when rendering end times (when timezone is included)
+    if (includeTimezone && formattedTime.includes("PM")) {
+      console.log("END TIME:", { timestamp, daysDiff, formattedTime });
+    }
+
     if (daysDiff === 1) {
       // Tomorrow
       return `tomorrow at ${formattedTime}`;
