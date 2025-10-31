@@ -129,29 +129,18 @@ export function CurrentConditions({
     const date = new Date(timestamp);
     const today = new Date();
 
-    // Create copies and reset to midnight for accurate comparison
-    const dateAtMidnight = new Date(date);
-    dateAtMidnight.setHours(0, 0, 0, 0);
-
-    const todayAtMidnight = new Date(today);
-    todayAtMidnight.setHours(0, 0, 0, 0);
-
-    return dateAtMidnight.getTime() === todayAtMidnight.getTime();
+    // Use toDateString() which returns date in local timezone (e.g., "Thu Oct 31 2025")
+    // This is the most reliable way to compare calendar dates
+    return date.toDateString() === today.toDateString();
   };
 
   const isTomorrow = (timestamp: string): boolean => {
     const date = new Date(timestamp);
-    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Create copies and reset to midnight for accurate comparison
-    const dateAtMidnight = new Date(date);
-    dateAtMidnight.setHours(0, 0, 0, 0);
-
-    const tomorrowAtMidnight = new Date(today);
-    tomorrowAtMidnight.setDate(tomorrowAtMidnight.getDate() + 1);
-    tomorrowAtMidnight.setHours(0, 0, 0, 0);
-
-    return dateAtMidnight.getTime() === tomorrowAtMidnight.getTime();
+    // Use toDateString() which returns date in local timezone
+    return date.toDateString() === tomorrow.toDateString();
   };
 
   const getDayOfWeek = (timestamp: string): string => {
