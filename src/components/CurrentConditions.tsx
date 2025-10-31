@@ -218,7 +218,7 @@ export function CurrentConditions({
     const findConditionStart = (
       conditionTypes: string[],
       startIndex: number = 1,
-    ): string | null => {
+    ): { timestamp: string; index: number } | null => {
       for (
         let i = startIndex;
         i < Math.min(startIndex + 12, hourlyForecast.length);
@@ -227,7 +227,7 @@ export function CurrentConditions({
         const hour = hourlyForecast[i];
         const condition = hour.shortForecast.toLowerCase();
         if (conditionTypes.some((type) => condition.includes(type))) {
-          return hour.startTime;
+          return { timestamp: hour.startTime, index: i };
         }
       }
       return null;
@@ -263,9 +263,11 @@ export function CurrentConditions({
       }
     } else {
       // Not currently raining - check if rain is expected
-      const rainStart = findConditionStart(["rain", "drizzle", "shower"]);
-      if (rainStart) {
-        const rainEnd = findConditionEnd(["rain", "drizzle", "shower"]);
+      const rainStartResult = findConditionStart(["rain", "drizzle", "shower"]);
+      if (rainStartResult) {
+        const rainStart = rainStartResult.timestamp;
+        // Search for end starting AFTER the rain starts
+        const rainEnd = findConditionEnd(["rain", "drizzle", "shower"], rainStartResult.index + 1);
         const startFormatted = isToday(rainStart)
           ? `later starting at ${formatTime(rainStart, true)}`
           : `${formatTimeWithDay(rainStart, true).replace("at ", "starting at ")}`;
@@ -291,9 +293,11 @@ export function CurrentConditions({
       }
     } else {
       // Not currently snowing - check if snow is expected
-      const snowStart = findConditionStart(["snow", "flurries"]);
-      if (snowStart) {
-        const snowEnd = findConditionEnd(["snow", "flurries"]);
+      const snowStartResult = findConditionStart(["snow", "flurries"]);
+      if (snowStartResult) {
+        const snowStart = snowStartResult.timestamp;
+        // Search for end starting AFTER the snow starts
+        const snowEnd = findConditionEnd(["snow", "flurries"], snowStartResult.index + 1);
         const startFormatted = isToday(snowStart)
           ? `later starting at ${formatTime(snowStart, true)}`
           : `${formatTimeWithDay(snowStart, true).replace("at ", "starting at ")}`;
@@ -319,9 +323,11 @@ export function CurrentConditions({
       }
     } else {
       // Not currently foggy - check if fog is expected
-      const fogStart = findConditionStart(["fog", "mist"]);
-      if (fogStart) {
-        const fogEnd = findConditionEnd(["fog", "mist"]);
+      const fogStartResult = findConditionStart(["fog", "mist"]);
+      if (fogStartResult) {
+        const fogStart = fogStartResult.timestamp;
+        // Search for end starting AFTER the fog starts
+        const fogEnd = findConditionEnd(["fog", "mist"], fogStartResult.index + 1);
         const startFormatted = isToday(fogStart)
           ? `later starting at ${formatTime(fogStart, true)}`
           : `${formatTimeWithDay(fogStart, true).replace("at ", "starting at ")}`;
