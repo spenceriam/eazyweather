@@ -26,13 +26,6 @@ import {
   getChicagoFallback,
   type LocationResult,
 } from "./services/locationService";
-import {
-  trackLocationDetected,
-  trackLocationChanged,
-  trackLocationError,
-  trackWeatherView,
-  trackApiError,
-} from "./services/analytics";
 import { refreshService } from "./services/refreshService";
 import type {
   Coordinates,
@@ -170,19 +163,12 @@ function App() {
 
         if (!hasData) {
           console.error("❌ No weather data received");
-          trackApiError("weather");
           setError(
             "Weather data unavailable for this location. Try searching for a nearby city.",
           );
         } else {
           console.log("✅ Weather data loaded successfully");
           setError(null);
-
-          // Track weather views only if we have data
-          if (current) trackWeatherView("current");
-          if (hourly.length > 0) trackWeatherView("hourly");
-          if (sevenDay.length > 0) trackWeatherView("daily");
-          if (monthly) trackWeatherView("monthly");
 
           // Update structured data when weather data loads
           if (current && coordinates) {
@@ -278,7 +264,6 @@ function App() {
     try {
       const saved = getSavedLocation();
       if (saved) {
-        trackLocationDetected("saved");
         setCoordinates(saved.coordinates);
         setShowInitialModal(false);
         // If saved location still shows "Your Location" or coordinates, try to reverse geocode it
@@ -315,7 +300,6 @@ function App() {
       // Don't set loading state - let weather load silently for Chicago default
     } catch (locationError) {
       console.log("Location initialization failed:", locationError);
-      trackLocationError("initialization");
       // Default to Chicago as fallback
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
@@ -343,7 +327,6 @@ function App() {
     setShowSearch(false);
 
     try {
-      trackLocationChanged("search");
       setCoordinates(location.coordinates);
       setLocationName(location.displayName);
       saveLocation(location);
@@ -353,7 +336,6 @@ function App() {
       await loadWeatherData();
     } catch (error) {
       console.error("Location change error:", error);
-      trackApiError("location");
       setError("Failed to set location");
       setIsLoading(false);
     }
@@ -369,7 +351,6 @@ function App() {
         // Use GPS location
         const coords = await getBrowserLocation();
         const locationResult = await reverseGeocode(coords);
-        trackLocationDetected("browser");
         setCoordinates(coords);
         setLocationName(locationResult.displayName);
         saveLocation(locationResult);
@@ -378,7 +359,6 @@ function App() {
         // Use searched location
         const { geocodeLocation } = await import("./services/locationService");
         const locationResult = await geocodeLocation(query);
-        trackLocationChanged("search");
         setCoordinates(locationResult.coordinates);
         setLocationName(locationResult.displayName);
         saveLocation(locationResult);
@@ -389,7 +369,6 @@ function App() {
       await loadWeatherData(true); // skipRateLimit=true for location changes
     } catch (error) {
       console.log("Location selection failed:", error);
-      trackLocationError("initial_selection");
       // Fall back to Chicago
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
