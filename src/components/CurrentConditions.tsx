@@ -238,9 +238,10 @@ export function CurrentConditions({
       conditionTypes: string[],
       startIndex: number = 1,
     ): string | null => {
+      // Search up to 36 hours ahead to catch multi-day events
       for (
         let i = startIndex;
-        i < Math.min(startIndex + 12, hourlyForecast.length);
+        i < Math.min(startIndex + 36, hourlyForecast.length);
         i++
       ) {
         const hour = hourlyForecast[i];
