@@ -597,7 +597,6 @@ export async function getAllWeatherData(
           snowDepth: props.snowDepth?.value, // Already in inches
           sunriseTime: props.sunriseTime,
           sunsetTime: props.sunsetTime,
-          uvIndex: 0, // Weather.gov API doesn't provide UV index in observations, default to 0
           timezone: timezone, // Include timezone for time formatting
         };
       } catch (obsError) {
