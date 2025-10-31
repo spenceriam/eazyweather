@@ -178,12 +178,12 @@ export function LocationPinModal({
         </div>
 
         {/* Map Container */}
-        <div className="flex-1 relative" style={{ minHeight: "450px" }}>
+        <div className="flex-1 relative min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px]">
           <MapContainer
             key={mapKey}
             center={mapCenter}
             zoom={15}
-            style={{ height: "100%", width: "100%", minHeight: "450px" }}
+            style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
           >
             <TileLayer
