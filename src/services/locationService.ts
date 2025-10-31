@@ -492,3 +492,42 @@ export function getLocationHistory(): LocationResult[] {
     return [];
   }
 }
+
+// Manual pin location functions
+export function saveManualPin(locationResult: LocationResult): void {
+  localStorage.setItem(
+    "eazyweather_manual_pin",
+    JSON.stringify({
+      ...locationResult,
+      isManualPin: true,
+      timestamp: Date.now(),
+    }),
+  );
+}
+
+export function getManualPin(): LocationResult | null {
+  try {
+    const saved = localStorage.getItem("eazyweather_manual_pin");
+    if (!saved) return null;
+
+    const data = JSON.parse(saved);
+
+    return {
+      coordinates: data.coordinates,
+      displayName: data.displayName,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearManualPin(): void {
+  localStorage.removeItem("eazyweather_manual_pin");
+}
+
+export function hasManualPin(): boolean {
+  return localStorage.getItem("eazyweather_manual_pin") !== null;
+}
