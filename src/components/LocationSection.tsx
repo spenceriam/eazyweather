@@ -38,7 +38,7 @@ export function LocationSection({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [isManualPin, setIsManualPin] = useState(false);
-  const [usedGPS, setUsedGPS] = useState(false);
+  const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -127,16 +127,16 @@ export function LocationSection({
 
     try {
       const coords = await getBrowserLocation();
-      const locationResult = await reverseGeocode(coords);
-      handleLocationSuccess(locationResult);
-      setUsedGPS(true); // Mark that GPS was used, show refine option
+      // Store GPS coordinates and open modal for refinement
+      setPendingGPSCoordinates(coords);
+      setShowPinModal(true);
+      setIsSearching(false);
+      setIsLoading(false);
     } catch (err) {
       console.log("Geolocation failed, falling back to Chicago:", err);
-      // Fall back to Chicago instead of showing error
-      handleLocationSuccess(getChicagoFallback());
-      setUsedGPS(false);
+      setError("Unable to get your location. Please search manually or allow location access.");
+      setIsLoading(false);
     }
-    // Don't clear loading state - let parent component handle it
   }
 
   function handlePinLocation(coords: Coordinates, displayName: string) {
@@ -152,7 +152,13 @@ export function LocationSection({
     saveLocation(locationResult);
     setIsManualPin(true);
     setIsLoading(true);
+    setPendingGPSCoordinates(null); // Clear pending GPS coords
     onLocationUpdate(locationResult);
+  }
+
+  function handleClosePinModal() {
+    setShowPinModal(false);
+    setPendingGPSCoordinates(null);
   }
 
   function handleClearManualPin() {
@@ -286,25 +292,6 @@ export function LocationSection({
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-
-                {/* Show Refine Location button after GPS is used */}
-                {usedGPS && !isLoading && (
-                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-gray-700 mb-2">
-                      Not quite right? Refine your location by pinning it on a map.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowPinModal(true);
-                        setIsSearching(false);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                    >
-                      <MapPin className="w-4 h-4" />
-                      Refine Location on Map
-                    </button>
-                  </div>
-                )}
               </form>
 
               {/* Search History */}
@@ -353,9 +340,9 @@ export function LocationSection({
       {/* Location Pin Modal */}
       <LocationPinModal
         isOpen={showPinModal}
-        onClose={() => setShowPinModal(false)}
+        onClose={handleClosePinModal}
         onLocationSelect={handlePinLocation}
-        initialCoordinates={coordinates || undefined}
+        initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
       />
     </section>
   );
