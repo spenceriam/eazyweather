@@ -402,17 +402,18 @@ export function CurrentConditions({
       return "Calm";
     }
 
-    let windText = `${Math.round(conditions.windSpeedValue || 0)} mph ${getWindDirection(conditions.windDirection)}`;
+    return `${Math.round(conditions.windSpeedValue || 0)} mph ${getWindDirection(conditions.windDirection)}`;
+  };
 
+  const getWindGust = () => {
     if (
       conditions.windGust &&
       conditions.windSpeedValue &&
       conditions.windGust > conditions.windSpeedValue
     ) {
-      windText += `, gusts ${Math.round(conditions.windGust)} mph`;
+      return `${Math.round(conditions.windGust)} mph`;
     }
-
-    return windText;
+    return null;
   };
 
   const getSnowDepth = () => {
@@ -520,17 +521,19 @@ export function CurrentConditions({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">UV Index</span>
-                  <span className="font-medium text-gray-800">
-                    {conditions.uvIndex ?? 0} out of 11
-                  </span>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-gray-500">Wind</span>
                   <span className="font-medium text-gray-800 text-right">
                     {getWindDisplay()}
                   </span>
                 </div>
+                {getWindGust() && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Wind gust</span>
+                    <span className="font-medium text-gray-800">
+                      {getWindGust()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Sunset</span>
                   <span className="font-medium text-gray-800">
