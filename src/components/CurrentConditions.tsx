@@ -128,22 +128,23 @@ export function CurrentConditions({
   const isToday = (timestamp: string): boolean => {
     const date = new Date(timestamp);
     const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
+
+    // Compare dates by setting both to start of day (midnight) in local timezone
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    return dateOnly.getTime() === todayOnly.getTime();
   };
 
   const isTomorrow = (timestamp: string): boolean => {
     const date = new Date(timestamp);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return (
-      date.getDate() === tomorrow.getDate() &&
-      date.getMonth() === tomorrow.getMonth() &&
-      date.getFullYear() === tomorrow.getFullYear()
-    );
+    const today = new Date();
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    // Compare dates by setting to start of day (midnight) in local timezone
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    return dateOnly.getTime() === tomorrow.getTime();
   };
 
   const getDayOfWeek = (timestamp: string): string => {
