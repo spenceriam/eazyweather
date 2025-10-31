@@ -178,7 +178,7 @@ export function CurrentConditions({
 
     // Minimal logging only when rendering end times (when timezone is included)
     if (includeTimezone && formattedTime.includes("PM")) {
-      console.log("END TIME:", { timestamp, daysDiff, formattedTime });
+      console.log(`END TIME: daysDiff=${daysDiff}, time=${formattedTime}, timestamp=${timestamp}`);
     }
 
     if (daysDiff === 1) {
