@@ -25,6 +25,7 @@ import {
   saveLocation,
   getSavedLocation,
   getManualPin,
+  saveManualPin,
   getChicagoFallback,
   type LocationResult,
 } from "./services/locationService";
@@ -358,9 +359,7 @@ function App() {
     }
   }
 
-  function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
-    const { saveManualPin } = require("./services/locationService");
-
+  async function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
     const locationResult: LocationResult = {
       coordinates: coords,
       displayName,
@@ -368,6 +367,8 @@ function App() {
       state: "",
       country: "",
     };
+
+    console.log("Pin confirmed:", locationResult);
 
     saveManualPin(locationResult);
     saveLocation(locationResult);
@@ -379,7 +380,13 @@ function App() {
     setIsLoading(true);
 
     // Load weather data
-    loadWeatherData(true);
+    try {
+      await loadWeatherData(true);
+    } catch (error) {
+      console.error("Error loading weather data:", error);
+      setError("Failed to load weather data");
+      setIsLoading(false);
+    }
   }
 
   function handlePinModalClose() {
