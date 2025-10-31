@@ -247,7 +247,7 @@ export function LocationSection({
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     type="submit"
                     disabled={isLoading || !searchQuery.trim()}
@@ -259,10 +259,21 @@ export function LocationSection({
                     type="button"
                     onClick={handleUseCurrentLocation}
                     disabled={isLoading}
-                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     Use My Location
                   </button>
+                  {isManualPin && (
+                    <button
+                      type="button"
+                      onClick={handleClearManualPin}
+                      disabled={isLoading}
+                      className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      title="Clear manual pin and use automatic location"
+                    >
+                      Clear Pin
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -279,21 +290,6 @@ export function LocationSection({
                   </button>
                 </div>
               </form>
-
-              {/* Clear Pin Button */}
-              {isManualPin && (
-                <div className="mt-4">
-                  <button
-                    onClick={handleClearManualPin}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-                    title="Clear manual pin and use automatic location"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear Pin
-                  </button>
-                </div>
-              )}
-
               {/* Search History */}
               {searchHistory.length > 0 && (
                 <div className="mt-4">
