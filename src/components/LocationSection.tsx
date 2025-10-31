@@ -38,6 +38,7 @@ export function LocationSection({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [isManualPin, setIsManualPin] = useState(false);
+  const [usedGPS, setUsedGPS] = useState(false);
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -128,10 +129,12 @@ export function LocationSection({
       const coords = await getBrowserLocation();
       const locationResult = await reverseGeocode(coords);
       handleLocationSuccess(locationResult);
+      setUsedGPS(true); // Mark that GPS was used, show refine option
     } catch (err) {
       console.log("Geolocation failed, falling back to Chicago:", err);
       // Fall back to Chicago instead of showing error
       handleLocationSuccess(getChicagoFallback());
+      setUsedGPS(false);
     }
     // Don't clear loading state - let parent component handle it
   }
@@ -187,14 +190,7 @@ export function LocationSection({
 
           {/* Search Controls */}
           {!isSearching ? (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowPinModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors whitespace-nowrap"
-              >
-                <MapPin className="w-4 h-4" />
-                Pin My Location
-              </button>
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setIsSearching(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
@@ -290,6 +286,25 @@ export function LocationSection({
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+
+                {/* Show Refine Location button after GPS is used */}
+                {usedGPS && !isLoading && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-gray-700 mb-2">
+                      Not quite right? Refine your location by pinning it on a map.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowPinModal(true);
+                        setIsSearching(false);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Refine Location on Map
+                    </button>
+                  </div>
+                )}
               </form>
 
               {/* Search History */}

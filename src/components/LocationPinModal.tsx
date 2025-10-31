@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { Icon, LatLng } from "leaflet";
-import { X, MapPin, Loader2, Navigation } from "lucide-react";
+import { X, MapPin, Loader2, Crosshair } from "lucide-react";
 import { Coordinates } from "../types/weather";
 import { reverseGeocode, getBrowserLocation } from "../services/locationService";
 
@@ -73,7 +73,7 @@ export function LocationPinModal({
 }: LocationPinModalProps) {
   const [mapCenter, setMapCenter] = useState<LatLng>(
     new LatLng(
-      initialCoordinates?.latitude || 42.3084, // Default to McHenry, IL area
+      initialCoordinates?.latitude || 42.3084,
       initialCoordinates?.longitude || -88.2667
     )
   );
@@ -81,6 +81,7 @@ export function LocationPinModal({
   const [locationName, setLocationName] = useState<string>("Loading...");
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isGettingCurrentLocation, setIsGettingCurrentLocation] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
 
   // Update location name when marker position changes
   useEffect(() => {
@@ -115,16 +116,19 @@ export function LocationPinModal({
       );
       setMapCenter(newPos);
       setMarkerPosition(newPos);
+      // Force map re-render with new center
+      setMapKey((prev) => prev + 1);
     }
   }, [isOpen, initialCoordinates]);
 
-  const handleUseCurrentLocation = async () => {
+  const handleCenterOnLocation = async () => {
     setIsGettingCurrentLocation(true);
     try {
       const coords = await getBrowserLocation();
       const newPos = new LatLng(coords.latitude, coords.longitude);
       setMapCenter(newPos);
       setMarkerPosition(newPos);
+      setMapKey((prev) => prev + 1);
     } catch (error) {
       console.error("Error getting current location:", error);
       alert(
@@ -148,39 +152,39 @@ export function LocationPinModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-blue-500" />
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-              Pin Your Location
+            <h2 className="text-xl font-semibold text-gray-800">
+              Refine Your Location
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
         {/* Instructions */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            Click or drag the pin to set your exact location. This helps ensure accurate weather
-            for your specific area.
+        <div className="p-4 bg-blue-50 border-b border-gray-200">
+          <p className="text-sm text-gray-700">
+            Drag the red pin or click anywhere on the map to set your exact location. This helps ensure accurate weather for your specific area.
           </p>
         </div>
 
         {/* Map Container */}
-        <div className="flex-1 relative min-h-[400px]">
+        <div className="flex-1 relative" style={{ minHeight: "450px" }}>
           <MapContainer
+            key={mapKey}
             center={mapCenter}
             zoom={13}
-            style={{ height: "100%", width: "100%" }}
-            className="z-0"
+            style={{ height: "100%", width: "100%", minHeight: "450px" }}
+            scrollWheelZoom={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -189,34 +193,34 @@ export function LocationPinModal({
             <DraggableMarker position={markerPosition} setPosition={setMarkerPosition} />
           </MapContainer>
 
-          {/* Current Location Button (overlaid on map) */}
+          {/* Re-center Button (overlaid on map) */}
           <button
-            onClick={handleUseCurrentLocation}
+            onClick={handleCenterOnLocation}
             disabled={isGettingCurrentLocation}
-            className="absolute top-4 right-4 z-[1000] bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="absolute top-4 right-4 z-[1000] bg-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 border border-gray-300"
           >
             {isGettingCurrentLocation ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
             ) : (
-              <Navigation className="w-4 h-4" />
+              <Crosshair className="w-4 h-4 text-gray-700" />
             )}
-            <span className="text-sm font-medium">Use My Location</span>
+            <span className="text-sm font-medium text-gray-700">Re-center Map</span>
           </button>
         </div>
 
         {/* Footer with location preview and actions */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
+        <div className="p-4 border-t border-gray-200 space-y-4 bg-gray-50">
           {/* Location Preview */}
           <div className="flex items-center gap-2 text-sm">
             <MapPin className="w-4 h-4 text-gray-500" />
-            <span className="text-gray-600 dark:text-gray-400">Selected location:</span>
+            <span className="text-gray-600">Pinned location:</span>
             {isLoadingLocation ? (
               <span className="text-gray-500 italic flex items-center gap-2">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Loading...
               </span>
             ) : (
-              <span className="font-medium text-gray-800 dark:text-white">{locationName}</span>
+              <span className="font-medium text-gray-800">{locationName}</span>
             )}
           </div>
 
@@ -224,7 +228,7 @@ export function LocationPinModal({
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -234,7 +238,7 @@ export function LocationPinModal({
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <MapPin className="w-4 h-4" />
-              Confirm Location
+              Confirm Pin
             </button>
           </div>
         </div>
