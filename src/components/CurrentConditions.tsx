@@ -124,56 +124,81 @@ export function CurrentConditions({
     setIs24Hour(!is24Hour);
   };
 
+  // Temporal helper functions for day context
+  const getDaysDifference = (timestamp: string): number => {
+    const date = new Date(timestamp);
+    const today = new Date();
+
+    // Get the date strings (e.g., "2025-10-31") which are timezone-independent
+    // This avoids all timezone calculation issues
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Parse both as UTC midnight to avoid any timezone issues
+    const dateUTC = new Date(dateStr + 'T00:00:00Z');
+    const todayUTC = new Date(todayStr + 'T00:00:00Z');
+
+    // Calculate difference in days
+    const diffInMs = dateUTC.getTime() - todayUTC.getTime();
+    const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+
+    return diffInDays;
+  };
+
+  const isToday = (timestamp: string): boolean => {
+    return getDaysDifference(timestamp) === 0;
+  };
+
+  const isTomorrow = (timestamp: string): boolean => {
+    return getDaysDifference(timestamp) === 1;
+  };
+
+  const getDayOfWeek = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    return days[date.getDay()];
+  };
+
+  const formatTimeWithDay = (
+    timestamp: string,
+    includeTimezone: boolean = false,
+  ): string => {
+    if (!timestamp) return "N/A";
+
+    const formattedTime = formatTime(timestamp, includeTimezone);
+    const daysDiff = getDaysDifference(timestamp);
+
+    if (daysDiff === 1) {
+      // Tomorrow
+      return `tomorrow at ${formattedTime}`;
+    } else if (daysDiff === 0) {
+      // Today
+      return formattedTime;
+    } else if (daysDiff > 1) {
+      // 2+ days in the future
+      return `on ${getDayOfWeek(timestamp)} at ${formattedTime}`;
+    } else {
+      // In the past (shouldn't happen, but handle it)
+      return formattedTime;
+    }
+  };
+
   // Generate weather trend comments based on hourly forecast
   const getWeatherTrends = () => {
     if (!hourlyForecast || hourlyForecast.length === 0) return [];
 
-    // Helper function to find when condition starts
-    const findConditionStart = (
-      conditionType: string,
-      conditionName: string,
-      verb: string = "beginning",
-      startIndex: number = 1,
-    ): string | null => {
-      const searchHours = hourlyForecast.slice(
-        startIndex,
-        Math.min(startIndex + 12, hourlyForecast.length),
-      );
-
-      for (const hour of searchHours) {
-        const condition = hour.shortForecast.toLowerCase();
-        if (conditionType.split(",").some((type) => condition.includes(type))) {
-          return `${conditionName} ${verb} ${formatTime(hour.startTime, true)}`;
-        }
-      }
-      return null;
-    };
-
-    // Helper function to find when condition ends
-    const findConditionEnd = (
-      conditionTypes: string[],
-      conditionName: string,
-      startIndex: number = 1,
-    ): string | null => {
-      for (
-        let i = startIndex!;
-        i < Math.min(startIndex + 12, hourlyForecast.length);
-        i++
-      ) {
-        const nextHour = hourlyForecast[i];
-        const nextCondition = nextHour.shortForecast.toLowerCase();
-
-        if (!conditionTypes.some((type) => nextCondition.includes(type))) {
-          return `${conditionName} to end by ${formatTime(nextHour.startTime, true)}`;
-        }
-      }
-      return null;
-    };
-
-    if (!hourlyForecast || hourlyForecast.length === 0) return [];
-
     const trends: string[] = [];
     const currentCondition = conditions.textDescription.toLowerCase();
+
+    // Detect current conditions
     const isRaining =
       currentCondition.includes("rain") ||
       currentCondition.includes("drizzle") ||
@@ -184,163 +209,132 @@ export function CurrentConditions({
     const isFoggy =
       currentCondition.includes("fog") || currentCondition.includes("mist");
 
-    // Get weather events within next 12 hours
-    const rainEvents: { start?: string; end?: string } = {};
-    const snowEvents: { start?: string; end?: string } = {};
-    const fogEvents: { start?: string; end?: string } = {};
-
-    // Find rain events
-    const searchHours = hourlyForecast.slice(
-      1,
-      Math.min(13, hourlyForecast.length),
-    );
-    for (const hour of searchHours) {
-      const condition = hour.shortForecast.toLowerCase();
-      const hasRain = ["rain", "drizzle", "shower"].some((type) =>
-        condition.includes(type),
-      );
-
-      if (hasRain && !rainEvents.start) {
-        rainEvents.start = formatTime(hour.startTime, true);
-      } else if (!hasRain && rainEvents.start && !rainEvents.end) {
-        rainEvents.end = formatTime(hour.startTime, true);
+    // Helper to find when a condition starts in the forecast
+    const findConditionStart = (
+      conditionTypes: string[],
+      startIndex: number = 1,
+    ): { timestamp: string; index: number } | null => {
+      for (
+        let i = startIndex;
+        i < Math.min(startIndex + 12, hourlyForecast.length);
+        i++
+      ) {
+        const hour = hourlyForecast[i];
+        const condition = hour.shortForecast.toLowerCase();
+        if (conditionTypes.some((type) => condition.includes(type))) {
+          return { timestamp: hour.startTime, index: i };
+        }
       }
-    }
+      return null;
+    };
 
-    // Find snow events
-    for (const hour of searchHours) {
-      const condition = hour.shortForecast.toLowerCase();
-      const hasSnow = ["snow", "flurries"].some((type) =>
-        condition.includes(type),
-      );
-
-      if (hasSnow && !snowEvents.start) {
-        snowEvents.start = formatTime(hour.startTime, true);
-      } else if (!hasSnow && snowEvents.start && !snowEvents.end) {
-        snowEvents.end = formatTime(hour.startTime, true);
+    // Helper to find when a condition ends in the forecast
+    const findConditionEnd = (
+      conditionTypes: string[],
+      startIndex: number = 1,
+    ): string | null => {
+      // Search up to 36 hours ahead to catch multi-day events
+      for (
+        let i = startIndex;
+        i < Math.min(startIndex + 36, hourlyForecast.length);
+        i++
+      ) {
+        const hour = hourlyForecast[i];
+        const condition = hour.shortForecast.toLowerCase();
+        if (!conditionTypes.some((type) => condition.includes(type))) {
+          return hour.startTime;
+        }
       }
-    }
+      return null;
+    };
 
-    // Find fog events
-    for (const hour of searchHours) {
-      const condition = hour.shortForecast.toLowerCase();
-      const hasFog = ["fog", "mist"].some((type) => condition.includes(type));
-
-      if (hasFog && !fogEvents.start) {
-        fogEvents.start = formatTime(hour.startTime, true);
-      } else if (!hasFog && fogEvents.start && !fogEvents.end) {
-        fogEvents.end = formatTime(hour.startTime, true);
-      }
-    }
-
-    // Display consolidated weather information
+    // Process rain conditions
     if (isRaining) {
-      trends.push(`Rain beginning ${rainEvents.start}`);
-
-      const rainEnd = findConditionEnd(
-        ["rain", "drizzle", "shower"],
-        "Rain",
-        1,
-      );
+      // Currently raining - show end time only
+      const rainEnd = findConditionEnd(["rain", "drizzle", "shower"]);
       if (rainEnd) {
-        trends.push(rainEnd);
+        trends.push(`Rain to end ${formatTimeWithDay(rainEnd, true)}`);
       } else {
         trends.push("Rain to continue");
       }
+    } else {
+      // Not currently raining - check if rain is expected
+      const rainStartResult = findConditionStart(["rain", "drizzle", "shower"]);
+      if (rainStartResult) {
+        const rainStart = rainStartResult.timestamp;
 
-      // Check for next rain period
-      const nextRainStart = findConditionStart(
-        "rain,drizzle,shower",
-        "Rain",
-        "beginning",
-        2,
-      );
-      if (nextRainStart) {
-        trends.push(`Next rain beginning ${nextRainStart}`);
+        // Search for end starting AFTER the rain starts
+        const rainEnd = findConditionEnd(["rain", "drizzle", "shower"], rainStartResult.index + 1);
+        const startFormatted = isToday(rainStart)
+          ? `later starting at ${formatTime(rainStart, true)}`
+          : `${formatTimeWithDay(rainStart, true).replace("at ", "starting at ")}`;
+
+        if (rainEnd) {
+          trends.push(
+            `Rain expected ${startFormatted} and ending ${formatTimeWithDay(rainEnd, true)}`,
+          );
+        } else {
+          trends.push(`Rain expected ${startFormatted}`);
+        }
       }
     }
 
+    // Process snow conditions
     if (isSnowing) {
-      trends.push(`Snow beginning ${snowEvents.start}`);
-
-      const snowEnd = findConditionEnd(["snow", "flurries"], "Snow", 1);
+      // Currently snowing - show end time only
+      const snowEnd = findConditionEnd(["snow", "flurries"]);
       if (snowEnd) {
-        trends.push(snowEnd);
+        trends.push(`Snow to end ${formatTimeWithDay(snowEnd, true)}`);
       } else {
         trends.push("Snow to continue");
       }
+    } else {
+      // Not currently snowing - check if snow is expected
+      const snowStartResult = findConditionStart(["snow", "flurries"]);
+      if (snowStartResult) {
+        const snowStart = snowStartResult.timestamp;
+        // Search for end starting AFTER the snow starts
+        const snowEnd = findConditionEnd(["snow", "flurries"], snowStartResult.index + 1);
+        const startFormatted = isToday(snowStart)
+          ? `later starting at ${formatTime(snowStart, true)}`
+          : `${formatTimeWithDay(snowStart, true).replace("at ", "starting at ")}`;
 
-      const nextSnowStart = findConditionStart(
-        "snow,flurries",
-        "Snow",
-        "beginning",
-        2,
-      );
-      if (nextSnowStart) {
-        trends.push(`Next snow beginning ${nextSnowStart}`);
+        if (snowEnd) {
+          trends.push(
+            `Snow expected ${startFormatted} and ending ${formatTimeWithDay(snowEnd, true)}`,
+          );
+        } else {
+          trends.push(`Snow expected ${startFormatted}`);
+        }
       }
     }
 
+    // Process fog conditions
     if (isFoggy) {
-      trends.push(`Fog developing ${fogEvents.start}`);
-
-      const fogEnd = findConditionEnd(["fog", "mist"], "Fog", 1);
+      // Currently foggy - show end time only
+      const fogEnd = findConditionEnd(["fog", "mist"]);
       if (fogEnd) {
-        trends.push(fogEnd.replace("to end by", "to clear by"));
+        trends.push(`Fog to clear ${formatTimeWithDay(fogEnd, true)}`);
       } else {
         trends.push("Fog to continue");
       }
+    } else {
+      // Not currently foggy - check if fog is expected
+      const fogStartResult = findConditionStart(["fog", "mist"]);
+      if (fogStartResult) {
+        const fogStart = fogStartResult.timestamp;
+        // Search for end starting AFTER the fog starts
+        const fogEnd = findConditionEnd(["fog", "mist"], fogStartResult.index + 1);
+        const startFormatted = isToday(fogStart)
+          ? `later starting at ${formatTime(fogStart, true)}`
+          : `${formatTimeWithDay(fogStart, true).replace("at ", "starting at ")}`;
 
-      const nextFogStart = findConditionStart(
-        "fog,mist",
-        "Fog",
-        "developing",
-        2,
-      );
-      if (nextFogStart) {
-        trends.push(`Next fog developing ${nextFogStart}`);
-      }
-    }
-
-    // If currently clear, show upcoming events
-    if (!isRaining && !isSnowing && !isFoggy) {
-      if (rainEvents.start) {
-        const rainEnd = findConditionEnd(
-          ["rain", "drizzle", "shower"],
-          "Rain",
-          1,
-        );
-        if (rainEnd) {
-          const endTime = rainEnd.replace("Rain to end by ", "");
-          trends.push(
-            `Rain beginning ${rainEvents.start} and ending ${endTime}`,
-          );
-        } else {
-          trends.push(`Rain beginning ${rainEvents.start}`);
-        }
-      }
-
-      if (snowEvents.start) {
-        const snowEnd = findConditionEnd(["snow", "flurries"], "Snow", 1);
-        if (snowEnd) {
-          const endTime = snowEnd.replace("Snow to end by ", "");
-          trends.push(
-            `Snow beginning ${snowEvents.start} and ending ${endTime}`,
-          );
-        } else {
-          trends.push(`Snow beginning ${snowEvents.start}`);
-        }
-      }
-
-      if (fogEvents.start) {
-        const fogEnd = findConditionEnd(["fog", "mist"], "Fog", 1);
         if (fogEnd) {
-          const endTime = fogEnd.replace("Fog to end by ", "");
           trends.push(
-            `Fog developing ${fogEvents.start} and clearing ${endTime}`,
+            `Fog expected ${startFormatted} and clearing ${formatTimeWithDay(fogEnd, true)}`,
           );
         } else {
-          trends.push(`Fog developing ${fogEvents.start}`);
+          trends.push(`Fog expected ${startFormatted}`);
         }
       }
     }
