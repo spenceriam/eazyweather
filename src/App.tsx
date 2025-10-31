@@ -387,7 +387,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-gray-50 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-brand-cream z-50 flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
