@@ -18,6 +18,144 @@ EazyWeather is a single-page React + TypeScript weather application that display
 - **Branch management**: Only commit to the correct issue branch
 - **Code quality**: Ensure all changes work and are properly tested before seeking approval
 
+## Version Bumping Protocol
+
+**CRITICAL**: AI agents MUST follow this semantic versioning workflow when creating PRs.
+
+### Semantic Versioning Format
+
+Version numbers follow the format: **MAJOR.MINOR.PATCH** (e.g., 1.2.3)
+
+- **MAJOR** (X.0.0): Breaking changes, API changes, architectural overhauls
+  - Example: 1.5.2 → 2.0.0
+- **MINOR** (0.X.0): New features, new components, significant enhancements (backwards compatible)
+  - Example: 1.5.2 → 1.6.0
+- **PATCH** (0.0.X): Bug fixes, typos, minor tweaks, performance improvements (backwards compatible)
+  - Example: 1.5.2 → 1.5.3
+
+### AI Agent Workflow for Version Bumping
+
+**Step 1: Analyze Changes**
+Before creating a PR, review all changes in your branch and categorize them.
+
+**Step 2: Ask User for Confirmation**
+Present your analysis to the user and ask for confirmation:
+```
+Based on the changes in this branch, I've identified:
+- [List key changes]
+
+I recommend a [PATCH/MINOR/MAJOR] version bump because [reasoning].
+
+Current version: X.Y.Z
+Proposed version: X.Y.Z
+
+Does this classification seem correct? Should I proceed with this version bump?
+```
+
+**Step 3: Apply Version Bump**
+After user confirms, bump the version IN the feature branch BEFORE creating PR:
+```bash
+npm version patch  # or minor, or major
+git push && git push --tags
+```
+
+**Step 4: Document in PR**
+- Update PR title to include new version (e.g., "Fix loading spinner (v1.5.3)")
+- Mention version bump and reasoning in PR description
+- List what changed to justify the bump type
+
+### Decision Tree for AI Agents
+
+**MAJOR bump (X.0.0)** - Use when:
+- Removing or renaming public components or APIs
+- Changing component props in breaking ways
+- Restructuring application architecture
+- Changing build output or deployment requirements
+- Any change that requires users/developers to modify their code
+
+**MINOR bump (0.X.0)** - Use when:
+- Adding new feature or component
+- Adding new props or options (backwards compatible)
+- Significant enhancement to existing feature
+- Adding new API endpoints or services
+- Adding analytics, logging, or monitoring
+- New user-facing functionality
+
+**PATCH bump (0.0.X)** - Use when:
+- Fixing bugs or errors
+- Correcting typos in UI text
+- Improving error messages or logging
+- CSS/styling fixes or adjustments
+- Performance optimizations (no API changes)
+- Accessibility improvements
+- Dependency updates (no breaking changes)
+- Security patches
+
+**SKIP version bump** - Use when:
+- Updating documentation only (README, comments)
+- Modifying AGENTS.md or workflow files
+- Changing CI/CD configurations
+- Updating .gitignore or similar tooling files
+- In these cases, label PR with `version:skip` or similar
+
+### Examples
+
+**PATCH: 1.0.2 → 1.0.3**
+- "Fix loading screen background color consistency"
+- "Correct error handling in location service"
+- "Improve responsive layout on mobile devices"
+
+**MINOR: 1.0.3 → 1.1.0**
+- "Add ZIP code search functionality"
+- "Replace Vercel Analytics with Google Analytics"
+- "Add new weather radar visualization component"
+
+**MAJOR: 1.5.2 → 2.0.0**
+- "Redesign weather API service with new data structure"
+- "Remove deprecated weatherApi.fetchByCity() method"
+- "Change from NWS API to OpenWeather API"
+
+### Integration with Existing Workflow
+
+Version bumping happens IN the feature branch, BEFORE creating the PR:
+
+1. Create feature branch: `git checkout -b issue-X-description`
+2. Make your changes and test thoroughly
+3. **Analyze changes and ask user about version bump type**
+4. **Bump version**: `npm version patch/minor/major`
+5. Push branch with tags: `git push && git push --tags`
+6. Create PR with version noted in title/description
+7. User reviews and merges to main
+
+### Verification Commands
+
+```bash
+# Check current version
+grep '"version"' package.json
+
+# Check if tags exist
+git tag -l | tail -5
+
+# View recent version bumps
+git log --oneline --grep="version" -10
+```
+
+### When You Forget
+
+If a PR was already created without version bump:
+1. Checkout the PR branch locally
+2. Run `npm version patch/minor/major`
+3. Push: `git push && git push --tags`
+4. Update PR description to mention version
+
+### Human Override
+
+Users can always override AI agent version decisions:
+- Manually edit package.json
+- Run `npm version X.Y.Z` to set specific version
+- Document reasoning in PR comments
+- AI agents should defer to user judgment when corrected
+
 ## Architecture
 - **Frontend**: React 18 with TypeScript, built with Vite
 - **Styling**: Tailwind CSS for responsive design with centered content layout
