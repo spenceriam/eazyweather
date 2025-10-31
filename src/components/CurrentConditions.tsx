@@ -125,32 +125,32 @@ export function CurrentConditions({
   };
 
   // Temporal helper functions for day context
-  const isToday = (timestamp: string): boolean => {
+  const getDaysDifference = (timestamp: string): number => {
     const date = new Date(timestamp);
     const today = new Date();
 
-    // Compare year, month, and day directly (all in local timezone)
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    );
+    // Get the date strings (e.g., "2025-10-31") which are timezone-independent
+    // This avoids all timezone calculation issues
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Parse both as UTC midnight to avoid any timezone issues
+    const dateUTC = new Date(dateStr + 'T00:00:00Z');
+    const todayUTC = new Date(todayStr + 'T00:00:00Z');
+
+    // Calculate difference in days
+    const diffInMs = dateUTC.getTime() - todayUTC.getTime();
+    const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+
+    return diffInDays;
+  };
+
+  const isToday = (timestamp: string): boolean => {
+    return getDaysDifference(timestamp) === 0;
   };
 
   const isTomorrow = (timestamp: string): boolean => {
-    const date = new Date(timestamp);
-    const today = new Date();
-
-    // Calculate tomorrow's date components
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Compare year, month, and day directly (all in local timezone)
-    return (
-      date.getFullYear() === tomorrow.getFullYear() &&
-      date.getMonth() === tomorrow.getMonth() &&
-      date.getDate() === tomorrow.getDate()
-    );
+    return getDaysDifference(timestamp) === 1;
   };
 
   const getDayOfWeek = (timestamp: string): string => {
@@ -174,37 +174,21 @@ export function CurrentConditions({
     if (!timestamp) return "N/A";
 
     const formattedTime = formatTime(timestamp, includeTimezone);
+    const daysDiff = getDaysDifference(timestamp);
 
-    // Debug logging
-    const date = new Date(timestamp);
-    const today = new Date();
-    console.log("formatTimeWithDay DEBUG:", {
-      timestamp,
-      formattedTime,
-      dateStr: date.toDateString(),
-      todayStr: today.toDateString(),
-      dateYear: date.getFullYear(),
-      dateMonth: date.getMonth(),
-      dateDate: date.getDate(),
-      todayYear: today.getFullYear(),
-      todayMonth: today.getMonth(),
-      todayDate: today.getDate(),
-      isTomorrow: isTomorrow(timestamp),
-      isToday: isToday(timestamp),
-    });
-
-    // Check tomorrow FIRST before checking today
-    if (isTomorrow(timestamp)) {
+    if (daysDiff === 1) {
+      // Tomorrow
       return `tomorrow at ${formattedTime}`;
-    }
-
-    // If not tomorrow, check if it's today
-    if (isToday(timestamp)) {
+    } else if (daysDiff === 0) {
+      // Today
+      return formattedTime;
+    } else if (daysDiff > 1) {
+      // 2+ days in the future
+      return `on ${getDayOfWeek(timestamp)} at ${formattedTime}`;
+    } else {
+      // In the past (shouldn't happen, but handle it)
       return formattedTime;
     }
-
-    // If neither today nor tomorrow, show day of week
-    return `on ${getDayOfWeek(timestamp)} at ${formattedTime}`;
   };
 
   // Generate weather trend comments based on hourly forecast
