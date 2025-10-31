@@ -129,18 +129,28 @@ export function CurrentConditions({
     const date = new Date(timestamp);
     const today = new Date();
 
-    // Use toDateString() which returns date in local timezone (e.g., "Thu Oct 31 2025")
-    // This is the most reliable way to compare calendar dates
-    return date.toDateString() === today.toDateString();
+    // Compare year, month, and day directly (all in local timezone)
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    );
   };
 
   const isTomorrow = (timestamp: string): boolean => {
     const date = new Date(timestamp);
-    const tomorrow = new Date();
+    const today = new Date();
+
+    // Calculate tomorrow's date components
+    const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Use toDateString() which returns date in local timezone
-    return date.toDateString() === tomorrow.toDateString();
+    // Compare year, month, and day directly (all in local timezone)
+    return (
+      date.getFullYear() === tomorrow.getFullYear() &&
+      date.getMonth() === tomorrow.getMonth() &&
+      date.getDate() === tomorrow.getDate()
+    );
   };
 
   const getDayOfWeek = (timestamp: string): string => {
@@ -165,13 +175,36 @@ export function CurrentConditions({
 
     const formattedTime = formatTime(timestamp, includeTimezone);
 
+    // Debug logging
+    const date = new Date(timestamp);
+    const today = new Date();
+    console.log("formatTimeWithDay DEBUG:", {
+      timestamp,
+      formattedTime,
+      dateStr: date.toDateString(),
+      todayStr: today.toDateString(),
+      dateYear: date.getFullYear(),
+      dateMonth: date.getMonth(),
+      dateDate: date.getDate(),
+      todayYear: today.getFullYear(),
+      todayMonth: today.getMonth(),
+      todayDate: today.getDate(),
+      isTomorrow: isTomorrow(timestamp),
+      isToday: isToday(timestamp),
+    });
+
+    // Check tomorrow FIRST before checking today
     if (isTomorrow(timestamp)) {
       return `tomorrow at ${formattedTime}`;
-    } else if (!isToday(timestamp)) {
-      return `on ${getDayOfWeek(timestamp)} at ${formattedTime}`;
     }
 
-    return formattedTime;
+    // If not tomorrow, check if it's today
+    if (isToday(timestamp)) {
+      return formattedTime;
+    }
+
+    // If neither today nor tomorrow, show day of week
+    return `on ${getDayOfWeek(timestamp)} at ${formattedTime}`;
   };
 
   // Generate weather trend comments based on hourly forecast
