@@ -1,9 +1,6 @@
 export function LoadingSpinner() {
   return (
-    <div
-      className="flex flex-col items-center justify-center py-20"
-      style={{ backgroundColor: "#f9f6ee" }}
-    >
+    <div className="flex flex-col items-center justify-center py-20">
       <div className="mb-6">
         <img
           src="/assets/logo.png"

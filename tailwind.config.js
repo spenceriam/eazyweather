@@ -9,6 +9,7 @@ export default {
           dark: "#2a3337",
           light: "#4a5459",
           lighter: "#e8eaeb",
+          cream: "#f9f6ee",
         },
       },
     },
