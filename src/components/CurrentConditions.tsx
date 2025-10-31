@@ -267,6 +267,17 @@ export function CurrentConditions({
       const rainStartResult = findConditionStart(["rain", "drizzle", "shower"]);
       if (rainStartResult) {
         const rainStart = rainStartResult.timestamp;
+
+        // DEBUG: Log hourly forecast around rain period
+        console.log("🔍 RAIN DEBUG - Start index:", rainStartResult.index);
+        for (let i = rainStartResult.index; i < Math.min(rainStartResult.index + 25, hourlyForecast.length); i++) {
+          const hour = hourlyForecast[i];
+          const hasRain = ["rain", "drizzle", "shower"].some(type =>
+            hour.shortForecast.toLowerCase().includes(type)
+          );
+          console.log(`  [${i}] ${hour.startTime}: ${hour.shortForecast} ${hasRain ? '☔' : '☀️'}`);
+        }
+
         // Search for end starting AFTER the rain starts
         const rainEnd = findConditionEnd(["rain", "drizzle", "shower"], rainStartResult.index + 1);
         const startFormatted = isToday(rainStart)
@@ -274,10 +285,12 @@ export function CurrentConditions({
           : `${formatTimeWithDay(rainStart, true).replace("at ", "starting at ")}`;
 
         if (rainEnd) {
+          console.log("🔍 RAIN END FOUND:", rainEnd);
           trends.push(
             `Rain expected ${startFormatted} and ending ${formatTimeWithDay(rainEnd, true)}`,
           );
         } else {
+          console.log("🔍 RAIN END: Not found in search window");
           trends.push(`Rain expected ${startFormatted}`);
         }
       }
