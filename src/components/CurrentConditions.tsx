@@ -526,12 +526,17 @@ export function CurrentConditions({
                     {getWindDisplay()}
                   </span>
                 </div>
-                {getWindGust() && (
+                {getWindGust() ? (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Wind gust</span>
                     <span className="font-medium text-gray-800">
                       {getWindGust()}
                     </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500"></span>
+                    <span className="font-medium text-gray-800"></span>
                   </div>
                 )}
                 <div className="flex justify-between">
