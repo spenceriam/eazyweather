@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "license": "MIT",
   "author": "Spencer Francisco <https://x.com/spencer_i_am>",
   "type": "module",
@@ -14,12 +14,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/leaflet": "^1.9.21",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

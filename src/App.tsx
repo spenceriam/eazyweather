@@ -23,6 +23,7 @@ import {
   getBrowserLocation,
   saveLocation,
   getSavedLocation,
+  getManualPin,
   getChicagoFallback,
   type LocationResult,
 } from "./services/locationService";
@@ -262,6 +263,19 @@ function App() {
     setShowSearch(false);
 
     try {
+      // First, check for manual pin - it takes priority over automatic location
+      const manualPin = getManualPin();
+      if (manualPin) {
+        console.log("Using manual pin location:", manualPin.displayName);
+        setCoordinates(manualPin.coordinates);
+        setLocationName(manualPin.displayName);
+        updatePageTitle(manualPin.displayName);
+        setShowInitialModal(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Second, check for saved location
       const saved = getSavedLocation();
       if (saved) {
         setCoordinates(saved.coordinates);

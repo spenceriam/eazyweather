@@ -9,6 +9,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "leaflet/dist/leaflet.css";
 
 // Service worker removed to fix caching issues - Issue #30
 // This app is online-only and doesn't need PWA capabilities

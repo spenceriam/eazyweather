@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Search, Clock, X } from "lucide-react";
+import { MapPin, Search, Clock, X, Navigation } from "lucide-react";
 import {
   reverseGeocode,
   geocodeLocationMultiple,
@@ -8,9 +8,13 @@ import {
   saveLocationToHistory,
   getLocationHistory,
   getChicagoFallback,
+  saveManualPin,
+  clearManualPin,
+  hasManualPin,
   type LocationResult,
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
+import { LocationPinModal } from "./LocationPinModal";
 
 interface LocationSectionProps {
   coordinates: Coordinates | null;
@@ -20,6 +24,7 @@ interface LocationSectionProps {
 }
 
 export function LocationSection({
+  coordinates,
   locationName,
   onLocationUpdate,
   forceShowSearch = false,
@@ -31,10 +36,13 @@ export function LocationSection({
   const [searchHistory, setSearchHistory] = useState<LocationResult[]>([]);
   const [searchResults, setSearchResults] = useState<LocationResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [isManualPin, setIsManualPin] = useState(false);
 
-  // Load search history on mount
+  // Load search history and check for manual pin on mount
   useEffect(() => {
     setSearchHistory(getLocationHistory());
+    setIsManualPin(hasManualPin());
   }, []);
 
   // Handle forceShowSearch prop changes
@@ -114,7 +122,7 @@ export function LocationSection({
   async function handleUseCurrentLocation() {
     setIsLoading(true);
     setError(null);
-    setShowSearch(false);
+    setShowSearchResults(false);
 
     try {
       const coords = await getBrowserLocation();
@@ -126,6 +134,28 @@ export function LocationSection({
       handleLocationSuccess(getChicagoFallback());
     }
     // Don't clear loading state - let parent component handle it
+  }
+
+  function handlePinLocation(coords: Coordinates, displayName: string) {
+    const locationResult: LocationResult = {
+      coordinates: coords,
+      displayName,
+      city: "",
+      state: "",
+      country: "",
+    };
+
+    saveManualPin(locationResult);
+    saveLocation(locationResult);
+    setIsManualPin(true);
+    setIsLoading(true);
+    onLocationUpdate(locationResult);
+  }
+
+  function handleClearManualPin() {
+    clearManualPin();
+    setIsManualPin(false);
+    // Optionally, trigger a location refresh here
   }
 
   function handleSearchClear() {
@@ -146,18 +176,43 @@ export function LocationSection({
               <h2 className="text-xl font-semibold text-gray-800">
                 {locationName}
               </h2>
+              {isManualPin && (
+                <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                  <Navigation className="w-3 h-3" />
+                  Pinned location active
+                </p>
+              )}
             </div>
           </div>
 
           {/* Search Controls */}
           {!isSearching ? (
-            <button
-              onClick={() => setIsSearching(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
-            >
-              <Search className="w-4 h-4" />
-              Change Location
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowPinModal(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors whitespace-nowrap"
+              >
+                <MapPin className="w-4 h-4" />
+                Pin My Location
+              </button>
+              <button
+                onClick={() => setIsSearching(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
+              >
+                <Search className="w-4 h-4" />
+                Change Location
+              </button>
+              {isManualPin && (
+                <button
+                  onClick={handleClearManualPin}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors whitespace-nowrap"
+                  title="Clear manual pin and use automatic location"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Pin
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex-1 lg:max-w-md">
               <form onSubmit={handleSearchSubmit} className="space-y-4">
@@ -279,6 +334,14 @@ export function LocationSection({
           </div>
         )}
       </div>
+
+      {/* Location Pin Modal */}
+      <LocationPinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onLocationSelect={handlePinLocation}
+        initialCoordinates={coordinates || undefined}
+      />
     </section>
   );
 }
