@@ -129,22 +129,29 @@ export function CurrentConditions({
     const date = new Date(timestamp);
     const today = new Date();
 
-    // Compare dates by setting both to start of day (midnight) in local timezone
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Create copies and reset to midnight for accurate comparison
+    const dateAtMidnight = new Date(date);
+    dateAtMidnight.setHours(0, 0, 0, 0);
 
-    return dateOnly.getTime() === todayOnly.getTime();
+    const todayAtMidnight = new Date(today);
+    todayAtMidnight.setHours(0, 0, 0, 0);
+
+    return dateAtMidnight.getTime() === todayAtMidnight.getTime();
   };
 
   const isTomorrow = (timestamp: string): boolean => {
     const date = new Date(timestamp);
     const today = new Date();
-    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-    // Compare dates by setting to start of day (midnight) in local timezone
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Create copies and reset to midnight for accurate comparison
+    const dateAtMidnight = new Date(date);
+    dateAtMidnight.setHours(0, 0, 0, 0);
 
-    return dateOnly.getTime() === tomorrow.getTime();
+    const tomorrowAtMidnight = new Date(today);
+    tomorrowAtMidnight.setDate(tomorrowAtMidnight.getDate() + 1);
+    tomorrowAtMidnight.setHours(0, 0, 0, 0);
+
+    return dateAtMidnight.getTime() === tomorrowAtMidnight.getTime();
   };
 
   const getDayOfWeek = (timestamp: string): string => {
