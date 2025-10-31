@@ -526,25 +526,31 @@ export function CurrentConditions({
                     {getWindDisplay()}
                   </span>
                 </div>
-                {getWindGust() ? (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Wind gust</span>
-                    <span className="font-medium text-gray-800">
-                      {getWindGust()}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500"></span>
-                    <span className="font-medium text-gray-800"></span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-500">&nbsp;</span>
+                  <span className="font-medium text-gray-800">&nbsp;</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Sunset</span>
                   <span className="font-medium text-gray-800">
                     {getSunset()}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Conditional rows below main grid */}
+            <div className="grid grid-cols-2 gap-4 text-sm mt-3">
+              <div></div>
+              <div className="space-y-3">
+                {getWindGust() && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Wind gust</span>
+                    <span className="font-medium text-gray-800">
+                      {getWindGust()}
+                    </span>
+                  </div>
+                )}
                 {getSnowDepth() && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Snow depth</span>
