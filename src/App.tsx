@@ -16,6 +16,7 @@ import { LocationSection } from "./components/LocationSection";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
+import { LocationPinModal } from "./components/LocationPinModal";
 
 import { getAllWeatherData } from "./services/weatherApi";
 import {
@@ -44,6 +45,8 @@ function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [showInitialModal, setShowInitialModal] = useState(true);
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -355,6 +358,39 @@ function App() {
     }
   }
 
+  function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
+    const { saveManualPin } = require("./services/locationService");
+
+    const locationResult: LocationResult = {
+      coordinates: coords,
+      displayName,
+      city: "",
+      state: "",
+      country: "",
+    };
+
+    saveManualPin(locationResult);
+    saveLocation(locationResult);
+    setCoordinates(coords);
+    setLocationName(displayName);
+    updatePageTitle(displayName);
+    setShowPinModal(false);
+    setPendingGPSCoordinates(null);
+    setIsLoading(true);
+
+    // Load weather data
+    loadWeatherData(true);
+  }
+
+  function handlePinModalClose() {
+    setShowPinModal(false);
+    setPendingGPSCoordinates(null);
+    // Show initial modal again if no location is set yet
+    if (!coordinates || (coordinates.latitude === 41.8781 && coordinates.longitude === -87.6298)) {
+      setShowInitialModal(true);
+    }
+  }
+
   async function handleInitialLocationSelect(query: string, useGPS: boolean) {
     setShowInitialModal(false);
     setIsLoading(true);
@@ -362,13 +398,11 @@ function App() {
 
     try {
       if (useGPS) {
-        // Use GPS location
+        // Get GPS location and open pin modal for refinement
         const coords = await getBrowserLocation();
-        const locationResult = await reverseGeocode(coords);
-        setCoordinates(coords);
-        setLocationName(locationResult.displayName);
-        saveLocation(locationResult);
-        updatePageTitle(locationResult.displayName);
+        setPendingGPSCoordinates(coords);
+        setShowPinModal(true);
+        setIsLoading(false);
       } else {
         // Use searched location
         const { geocodeLocation } = await import("./services/locationService");
@@ -377,10 +411,10 @@ function App() {
         setLocationName(locationResult.displayName);
         saveLocation(locationResult);
         updatePageTitle(locationResult.displayName);
-      }
 
-      // Load weather data for new location
-      await loadWeatherData(true); // skipRateLimit=true for location changes
+        // Load weather data for new location
+        await loadWeatherData(true); // skipRateLimit=true for location changes
+      }
     } catch (error) {
       console.log("Location selection failed:", error);
       // Fall back to Chicago
@@ -537,6 +571,14 @@ function App() {
           isOpen={showInitialModal}
           onClose={handleInitialModalClose}
           onLocationSelect={handleInitialLocationSelect}
+        />
+
+        {/* Location Pin Modal for refinement */}
+        <LocationPinModal
+          isOpen={showPinModal}
+          onClose={handlePinModalClose}
+          onLocationSelect={handlePinLocationConfirm}
+          initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
         />
       </div>
     </div>
