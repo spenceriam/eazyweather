@@ -377,6 +377,7 @@ function App() {
     updatePageTitle(displayName);
     setShowPinModal(false);
     setPendingGPSCoordinates(null);
+    setShowInitialModal(false); // Keep welcome modal closed
     setIsLoading(true);
 
     // Load weather data
@@ -392,8 +393,19 @@ function App() {
   function handlePinModalClose() {
     setShowPinModal(false);
     setPendingGPSCoordinates(null);
-    // Show initial modal again if no location is set yet
-    if (!coordinates || (coordinates.latitude === 41.8781 && coordinates.longitude === -87.6298)) {
+
+    // Only show initial modal again if:
+    // 1. No coordinates are set at all (null)
+    // 2. Still on default Chicago AND no saved location exists
+    const savedLocation = getSavedLocation();
+    if (!coordinates && !savedLocation) {
+      setShowInitialModal(true);
+    } else if (
+      coordinates &&
+      coordinates.latitude === 41.8781 &&
+      coordinates.longitude === -87.6298 &&
+      !savedLocation
+    ) {
       setShowInitialModal(true);
     }
   }
