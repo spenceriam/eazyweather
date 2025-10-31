@@ -360,21 +360,30 @@ function App() {
   }
 
   async function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
-    const locationResult: LocationResult = {
-      coordinates: coords,
-      displayName,
-      city: "",
-      state: "",
-      country: "",
-    };
+    console.log("📍 Pin confirmed - Coordinates:", coords, "Display Name:", displayName);
 
-    console.log("Pin confirmed:", locationResult);
+    // Get full location data with proper reverse geocoding
+    let locationResult: LocationResult;
+    try {
+      locationResult = await reverseGeocode(coords);
+      console.log("📍 Full location data:", locationResult);
+    } catch (error) {
+      console.error("Reverse geocode failed, using basic data:", error);
+      // Fallback to basic data if reverse geocode fails
+      locationResult = {
+        coordinates: coords,
+        displayName,
+        city: "",
+        state: "",
+        country: "",
+      };
+    }
 
     saveManualPin(locationResult);
     saveLocation(locationResult);
     setCoordinates(coords);
-    setLocationName(displayName);
-    updatePageTitle(displayName);
+    setLocationName(locationResult.displayName);
+    updatePageTitle(locationResult.displayName);
     setShowPinModal(false);
     setPendingGPSCoordinates(null);
     setShowInitialModal(false); // Keep welcome modal closed

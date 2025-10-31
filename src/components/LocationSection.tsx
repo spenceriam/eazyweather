@@ -43,7 +43,11 @@ export function LocationSection({
   // Load search history and check for manual pin on mount
   useEffect(() => {
     setSearchHistory(getLocationHistory());
-    setIsManualPin(hasManualPin());
+    const manualPinActive = hasManualPin();
+    setIsManualPin(manualPinActive);
+    if (manualPinActive) {
+      console.log("📍 Manual pin location is active");
+    }
   }, []);
 
   // Handle forceShowSearch prop changes
@@ -185,12 +189,6 @@ export function LocationSection({
               <h2 className="text-xl font-semibold text-gray-800">
                 {locationName}
               </h2>
-              {isManualPin && (
-                <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                  <Navigation className="w-3 h-3" />
-                  Pinned location active
-                </p>
-              )}
             </div>
           </div>
 
