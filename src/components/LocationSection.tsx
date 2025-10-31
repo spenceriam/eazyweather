@@ -194,25 +194,13 @@ export function LocationSection({
 
           {/* Search Controls */}
           {!isSearching ? (
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setIsSearching(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
-              >
-                <Search className="w-4 h-4" />
-                Change Location
-              </button>
-              {isManualPin && (
-                <button
-                  onClick={handleClearManualPin}
-                  className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors whitespace-nowrap"
-                  title="Clear manual pin and use automatic location"
-                >
-                  <X className="w-4 h-4" />
-                  Clear Pin
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => setIsSearching(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors whitespace-nowrap"
+            >
+              <Search className="w-4 h-4" />
+              Change Location
+            </button>
           ) : (
             <div className="flex-1 lg:max-w-md">
               <form onSubmit={handleSearchSubmit} className="space-y-4">
@@ -291,6 +279,20 @@ export function LocationSection({
                   </button>
                 </div>
               </form>
+
+              {/* Clear Pin Button */}
+              {isManualPin && (
+                <div className="mt-4">
+                  <button
+                    onClick={handleClearManualPin}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                    title="Clear manual pin and use automatic location"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear Pin
+                  </button>
+                </div>
+              )}
 
               {/* Search History */}
               {searchHistory.length > 0 && (
