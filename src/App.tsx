@@ -12,7 +12,6 @@ import { CurrentConditions } from "./components/CurrentConditions";
 import { SevenDayForecast } from "./components/SevenDayForecast";
 import { HourlyForecast } from "./components/HourlyForecast";
 import { MonthlyForecast } from "./components/MonthlyForecast";
-import { LocationSection } from "./components/LocationSection";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
@@ -43,7 +42,6 @@ function App() {
   const [locationName, setLocationName] = useState("Chicago, Illinois");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
   const [showInitialModal, setShowInitialModal] = useState(true);
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -264,7 +262,6 @@ function App() {
   const initializeLocation = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    setShowSearch(false);
 
     try {
       // First, check for manual pin - it takes priority over automatic location
@@ -342,7 +339,6 @@ function App() {
   async function handleLocationSelect(location: LocationResult) {
     setIsLoading(true);
     setError(null);
-    setShowSearch(false);
 
     try {
       setCoordinates(location.coordinates);
@@ -469,7 +465,7 @@ function App() {
     );
   }
 
-  if (error && !coordinates && !showSearch && !isLoading) {
+  if (error && !coordinates && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <ErrorMessage message={error} onRetry={initializeLocation} />
@@ -489,17 +485,13 @@ function App() {
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
-        <Header locationName={locationName} />
+        <Header
+          locationName={locationName}
+          coordinates={coordinates}
+          onLocationUpdate={handleLocationSelect}
+        />
 
         <main>
-          {/* Location section - full width */}
-          <LocationSection
-            coordinates={coordinates}
-            locationName={locationName}
-            onLocationUpdate={handleLocationSelect}
-            forceShowSearch={showSearch}
-          />
-
           {/* Centered white content area */}
           <div className="bg-white">
             {isLoading || (error && !coordinates) ? (
