@@ -17,6 +17,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
+import { WhatsNewModal } from "./components/modals/WhatsNewModal";
 
 import { getAllWeatherData } from "./services/weatherApi";
 import {
@@ -30,6 +31,12 @@ import {
   type LocationResult,
 } from "./services/locationService";
 import { refreshService } from "./services/refreshService";
+import {
+  shouldShowWhatsNew,
+  markWhatsNewAsSeen,
+  getCurrentVersion,
+} from "./services/versionService";
+import { getReleaseNotesForVersion } from "./data/releaseNotes";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -49,8 +56,21 @@ function App() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
 
+  // What's New modal state
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
+
+  // Check if What's New modal should be shown on mount
+  useEffect(() => {
+    if (shouldShowWhatsNew()) {
+      setShowWhatsNew(true);
+      // Don't show InitialLocationModal while What's New is showing
+      setShowInitialModal(false);
+    }
+  }, []);
+
   // Update page title for SEO
   function updatePageTitle(location: string) {
     const baseTitle = "EazyWeather - Free Local Weather Forecast";
@@ -461,6 +481,26 @@ function App() {
     // No need to load weather data again
   }
 
+  function handleWhatsNewClose() {
+    // Mark the current version as seen
+    markWhatsNewAsSeen();
+    setShowWhatsNew(false);
+
+    // After closing What's New, check if we should show InitialLocationModal
+    // Only show if user is on Chicago default and has no saved location
+    const savedLocation = getSavedLocation();
+    const manualPin = getManualPin();
+    if (
+      !savedLocation &&
+      !manualPin &&
+      coordinates &&
+      coordinates.latitude === 41.8781 &&
+      coordinates.longitude === -87.6298
+    ) {
+      setShowInitialModal(true);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-brand-cream z-50 flex items-center justify-center">
@@ -593,6 +633,15 @@ function App() {
         </main>
 
         <Footer />
+
+        {/* What's New Modal - shows first on version updates */}
+        {showWhatsNew && getReleaseNotesForVersion(getCurrentVersion()) && (
+          <WhatsNewModal
+            isOpen={showWhatsNew}
+            onClose={handleWhatsNewClose}
+            releaseNotes={getReleaseNotesForVersion(getCurrentVersion())!}
+          />
+        )}
 
         {/* Initial Location Selection Modal */}
         <InitialLocationModal

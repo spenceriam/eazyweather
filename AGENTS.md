@@ -156,6 +156,168 @@ Users can always override AI agent version decisions:
 - Document reasoning in PR comments
 - AI agents should defer to user judgment when corrected
 
+## Release Notes Maintenance
+
+**IMPORTANT**: EazyWeather displays a "What's New" modal to returning users when the version changes (MAJOR, MINOR, or PATCH). AI agents MUST update release notes when creating PRs.
+
+### File Location
+- **Release Notes Data**: `src/data/releaseNotes.ts`
+- **Type Definitions**: `src/types/whatsNew.ts`
+- **Version Service**: `src/services/versionService.ts`
+
+### AI Agent Workflow for Release Notes
+
+**Step 1: Make Your Changes**
+Complete all code changes for your feature/fix in the branch.
+
+**Step 2: Prepare Release Notes Entry**
+Before bumping version, draft release notes describing the changes:
+
+```typescript
+{
+  title: 'Short, user-friendly title',
+  description: 'Clear description of what changed and why users should care (benefits, not technical details)',
+  prNumber: 123, // Your PR number (if known, otherwise add after PR creation)
+  prUrl: 'https://github.com/spenceriam/eazyweather/pull/123',
+  category: 'feature' | 'improvement' | 'fix' | 'visual' | 'analytics',
+}
+```
+
+**Step 3: Update releaseNotes.ts**
+1. Open `src/data/releaseNotes.ts`
+2. Find the entry for the CURRENT version (the version you're bumping TO)
+3. If the version doesn't exist yet, create a new entry at the TOP of the array
+4. Add your change to the `changes` array in the appropriate category
+5. Use clear, user-friendly language (write for end-users, not developers)
+
+**Step 4: Bump Version**
+After updating release notes, bump the version:
+```bash
+npm version patch  # or minor, or major
+git push && git push --tags
+```
+
+**Step 5: Update PR Number (if needed)**
+After creating the PR, if you didn't know the PR number:
+1. Go back to `releaseNotes.ts`
+2. Update the `prNumber` and `prUrl` fields
+3. Commit and push the update
+
+### Category Guidelines
+
+**feature** 🗺️ - New user-facing features
+- Examples: "Pin my location", "ZIP code search", "Dark mode toggle"
+- Use when: Adding entirely new functionality
+
+**improvement** 🔄 - Enhancements to existing features
+- Examples: "Better search with multiple results", "Auto-refresh improvements"
+- Use when: Making existing features better, faster, or more reliable
+
+**fix** 🔧 - Bug fixes and corrections
+- Examples: "Fixed UV Index display", "Corrected timezone handling"
+- Use when: Fixing broken functionality or unexpected behavior
+
+**visual** 🎨 - UI/UX updates, styling, branding
+- Examples: "New duck logo", "Compact header", "Branded loading screen"
+- Use when: Changing appearance, layout, or visual design
+
+**analytics** 📊 - Analytics, tracking, or monitoring changes
+- Examples: "Switched to Google Analytics", "Added error tracking"
+- Use when: Modifying analytics, telemetry, or monitoring systems
+
+### Example: Adding Release Notes for a New Feature
+
+**Scenario**: You're adding dark mode support (issue #9, PR #99)
+
+**1. Draft your entry:**
+```typescript
+{
+  title: 'Dark mode',
+  description: 'Toggle between light and dark themes for comfortable viewing in any environment. Your preference is saved automatically.',
+  prNumber: 99,
+  prUrl: 'https://github.com/spenceriam/eazyweather/pull/99',
+  category: 'feature',
+}
+```
+
+**2. Update releaseNotes.ts:**
+```typescript
+export const releaseNotes: ReleaseNote[] = [
+  {
+    version: '1.4.0', // New MINOR version (new feature)
+    date: 'February 2025',
+    changes: [
+      // Add your entry here
+      {
+        title: 'Dark mode',
+        description: 'Toggle between light and dark themes for comfortable viewing in any environment. Your preference is saved automatically.',
+        prNumber: 99,
+        prUrl: 'https://github.com/spenceriam/eazyweather/pull/99',
+        category: 'feature',
+      },
+    ],
+  },
+  {
+    version: '1.3.1', // Previous version
+    date: 'January 2025',
+    changes: [
+      // ... existing entries
+    ],
+  },
+];
+```
+
+**3. Bump version:**
+```bash
+npm version minor  # 1.3.1 → 1.4.0
+```
+
+### Writing User-Friendly Release Notes
+
+**DO:**
+- ✅ Focus on user benefits and outcomes
+- ✅ Use simple, clear language
+- ✅ Explain WHAT changed and WHY it matters
+- ✅ Keep descriptions concise (1-2 sentences)
+- ✅ Use active voice
+
+**DON'T:**
+- ❌ Use technical jargon or implementation details
+- ❌ Write for developers (write for end-users)
+- ❌ Include code snippets or API changes
+- ❌ Make it too long or verbose
+
+**Examples:**
+
+❌ Bad: "Refactored locationService.ts to use async/await pattern and added TypeScript generics"
+✅ Good: "Faster and more reliable location detection with better error messages"
+
+❌ Bad: "Updated React component lifecycle methods to hooks"
+✅ Good: "Improved app performance and reduced loading times"
+
+❌ Bad: "Implemented CSS Grid with media queries for responsive breakpoints"
+✅ Good: "Better mobile layout that adapts beautifully to all screen sizes"
+
+### Verification
+
+After updating release notes, verify:
+1. The version in `releaseNotes.ts` matches `package.json`
+2. All changes are categorized correctly
+3. PR numbers and URLs are accurate
+4. Descriptions are user-friendly and clear
+5. The entry appears at the TOP of the array (newest first)
+
+### When to Skip Release Notes
+
+You can skip adding release notes for:
+- Documentation-only changes (README, AGENTS.md)
+- CI/CD configuration updates
+- Test file changes
+- Build tooling updates
+- .gitignore or similar meta files
+
+In these cases, you can still bump the version (if needed) but don't add to release notes.
+
 ## Architecture
 - **Frontend**: React 18 with TypeScript, built with Vite
 - **Styling**: Tailwind CSS for responsive design with centered content layout
