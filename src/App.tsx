@@ -17,6 +17,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
+import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 
 import { getAllWeatherData } from "./services/weatherApi";
 import {
@@ -48,6 +49,7 @@ function App() {
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
+  const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -351,6 +353,9 @@ function App() {
   }
 
   async function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
+    // Dismiss the permission overlay
+    setIsRequestingLocationPermission(false);
+
     // Get full location data with proper reverse geocoding
     let locationResult: LocationResult;
     try {
@@ -388,6 +393,9 @@ function App() {
   }
 
   function handlePinModalClose() {
+    // Dismiss the permission overlay
+    setIsRequestingLocationPermission(false);
+
     setShowPinModal(false);
     setPendingGPSCoordinates(null);
 
@@ -414,6 +422,9 @@ function App() {
 
     try {
       if (useGPS) {
+        // Show permission overlay while requesting location
+        setIsRequestingLocationPermission(true);
+
         // Get GPS location and open pin modal for refinement
         const coords = await getBrowserLocation();
         setPendingGPSCoordinates(coords);
@@ -432,6 +443,9 @@ function App() {
         await loadWeatherData(true); // skipRateLimit=true for location changes
       }
     } catch (error) {
+      // Dismiss overlay on error
+      setIsRequestingLocationPermission(false);
+
       // Fall back to Chicago
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
@@ -595,6 +609,9 @@ function App() {
           onLocationSelect={handlePinLocationConfirm}
           initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
         />
+
+        {/* Location Permission Overlay */}
+        {isRequestingLocationPermission && <LocationPermissionOverlay />}
       </div>
     </div>
   );
