@@ -394,7 +394,9 @@ export function CurrentConditions({
   };
 
   const getWindDisplay = () => {
-    if (conditions.windSpeedValue === 0) {
+    const speed = Math.round(conditions.windSpeedValue || 0);
+
+    if (speed === 0) {
       return "Calm";
     }
 
@@ -403,7 +405,7 @@ export function CurrentConditions({
         ? getWindDirection(conditions.windDirection)
         : "";
 
-    return `${Math.round(conditions.windSpeedValue || 0)} mph ${direction}`;
+    return `${speed} mph ${direction}`;
   };
 
   const getWindGust = () => {

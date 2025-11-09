@@ -275,9 +275,6 @@ export async function getCurrentConditions(
       temperatureUnit:
         props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
       relativeHumidity: props.relativeHumidity.value,
-      windSpeed: props.windSpeed.value
-        ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
-        : "Calm",
       windDirection: props.windDirection.value || 0,
       textDescription: textDescription || "Unknown",
       icon: props.icon || "",
@@ -521,13 +518,8 @@ export async function getAllWeatherData(
           temperatureUnit:
             props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
           relativeHumidity: props.relativeHumidity.value,
-          windSpeed: props.windSpeed.value
-            ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
-            : "Calm",
-          windSpeedValue: props.windSpeed.value
-            ? props.windSpeed.value * 0.621371
-            : 0,
-          windDirection: props.windDirection.value || 0,
+          windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
+          windDirection: props.windDirection.value ?? 0,
           textDescription: textDescription || "Unknown",
           icon: props.icon || "",
           timestamp: props.timestamp,
