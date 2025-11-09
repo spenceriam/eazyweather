@@ -87,7 +87,7 @@ export function HourlyForecast({ forecast, timezone }: HourlyForecastProps) {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-2">
+                    <div className="text-sm text-gray-500 mb-2">
                       {isToday(hour.startTime) ? (
                         "Today"
                       ) : isTomorrow(hour.startTime) ? (
@@ -99,7 +99,7 @@ export function HourlyForecast({ forecast, timezone }: HourlyForecastProps) {
                         formatDate(hour.startTime)
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">
+                    <div className="text-sm text-gray-500 mb-2">
                       {formatTime(hour.startTime)}
                     </div>
                     <div className="flex items-center gap-4">
