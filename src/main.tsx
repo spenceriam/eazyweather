@@ -18,11 +18,7 @@ import "leaflet/dist/leaflet.css";
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(function (registrations) {
     for (let registration of registrations) {
-      registration.unregister().then(function (boolean) {
-        if (boolean) {
-          console.log("Service worker unregistered successfully");
-        }
-      });
+      registration.unregister();
     }
   });
 }

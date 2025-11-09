@@ -39,9 +39,8 @@ export function Header({ locationName }: HeaderProps) {
       .then(() => {
         // Successfully started playing
       })
-      .catch((error) => {
+      .catch(() => {
         // Handle error silently (e.g., user hasn't interacted with page yet)
-        console.log("Audio play prevented:", error);
         isPlayingRef.current = false;
       });
 

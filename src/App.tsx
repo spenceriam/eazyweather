@@ -126,8 +126,8 @@ function App() {
       };
 
       script.textContent = JSON.stringify(structuredData);
-    } catch (error) {
-      console.warn("Failed to update structured data:", error);
+    } catch {
+      // Silently handle structured data errors
     }
   }
 
@@ -172,7 +172,6 @@ function App() {
             "Weather data unavailable for this location. Try searching for a nearby city.",
           );
         } else {
-          console.log("✅ Weather data loaded successfully");
           setError(null);
 
           // Update structured data when weather data loads
@@ -223,9 +222,6 @@ function App() {
         !state.isRefreshing &&
         coordinates
       ) {
-        console.log(
-          "Page visible with stale data, triggering immediate refresh",
-        );
         loadWeatherData(true); // Pass true to indicate this is auto-refresh, not manual
       }
     });
@@ -270,7 +266,6 @@ function App() {
       // First, check for manual pin - it takes priority over automatic location
       const manualPin = getManualPin();
       if (manualPin) {
-        console.log("Using manual pin location:", manualPin.displayName);
         setCoordinates(manualPin.coordinates);
         setLocationName(manualPin.displayName);
         updatePageTitle(manualPin.displayName);
@@ -317,7 +312,6 @@ function App() {
       setShowInitialModal(true);
       // Don't set loading state - let weather load silently for Chicago default
     } catch (locationError) {
-      console.log("Location initialization failed:", locationError);
       // Default to Chicago as fallback
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
@@ -360,13 +354,10 @@ function App() {
   }
 
   async function handlePinLocationConfirm(coords: Coordinates, displayName: string) {
-    console.log("📍 Pin confirmed - Coordinates:", coords, "Display Name:", displayName);
-
     // Get full location data with proper reverse geocoding
     let locationResult: LocationResult;
     try {
       locationResult = await reverseGeocode(coords);
-      console.log("📍 Full location data:", locationResult);
     } catch (error) {
       console.error("Reverse geocode failed, using basic data:", error);
       // Fallback to basic data if reverse geocode fails
@@ -444,7 +435,6 @@ function App() {
         await loadWeatherData(true); // skipRateLimit=true for location changes
       }
     } catch (error) {
-      console.log("Location selection failed:", error);
       // Fall back to Chicago
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);

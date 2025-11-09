@@ -54,7 +54,6 @@ async function fetchWithUserAgent(
   if (!options.skipCache) {
     const cached = requestCache.get(cacheKey);
     if (cached && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
-      console.log(`Returning cached data for ${url}`);
       return cached.data;
     }
   }
@@ -62,7 +61,6 @@ async function fetchWithUserAgent(
   // Check if there's already a pending request for this URL (unless skipping cache)
   const cachedRequest = requestCache.get(cacheKey);
   if (!options.skipCache && cachedRequest?.promise) {
-    console.log(`Returning pending request for ${url}`);
     return cachedRequest.promise;
   }
 
@@ -75,9 +73,6 @@ async function fetchWithUserAgent(
         .sort((a, b) => b.timestamp - a.timestamp)[0];
 
       if (lastRequest && now - lastRequest.timestamp < MIN_REQUEST_INTERVAL) {
-        console.log(
-          `Rate limiting request for ${url}, adding to queue (${MIN_REQUEST_INTERVAL - (now - lastRequest.timestamp)}ms remaining)`,
-        );
         return new Promise((resolve, reject) => {
           requestQueue.push({
             url,
@@ -108,7 +103,6 @@ async function fetchWithUserAgent(
       if (!response.ok) {
         // Handle rate limit errors (429)
         if (response.status === 429) {
-          console.warn(`Rate limit hit for ${url}, queuing retry`);
           return new Promise((resolve, reject) => {
             requestQueue.push({
               url,
@@ -163,7 +157,6 @@ async function processQueue() {
 
   while (requestQueue.length > 0) {
     const request = requestQueue.shift()!;
-    console.log(`Processing queued request for ${request.url}`);
 
     try {
       // Always wait minimum interval between queued requests
@@ -174,9 +167,6 @@ async function processQueue() {
       if (lastRequest) {
         const timeSinceLastRequest = Date.now() - lastRequest.timestamp;
         if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-          console.log(
-            `Waiting ${MIN_REQUEST_INTERVAL - timeSinceLastRequest}ms before next request`,
-          );
           await new Promise((resolve) =>
             setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest),
           );
@@ -185,13 +175,11 @@ async function processQueue() {
 
       // Wait for rate limit delay if this is a retry
       if (request.retryCount > 0) {
-        console.log(`Retry attempt ${request.retryCount} for ${request.url}`);
         await new Promise((resolve) =>
           setTimeout(resolve, RATE_LIMIT_RETRY_DELAY),
         );
       }
 
-      console.log(`Making API call for ${request.url}`);
       const apiResponse = await fetch(request.url, {
         headers: {
           "User-Agent": USER_AGENT,
@@ -200,7 +188,6 @@ async function processQueue() {
       });
 
       const data = await apiResponse.json();
-      console.log(`API response for ${request.url}: ${apiResponse.status}`);
 
       // Update cache with successful response
       if (apiResponse.ok) {
@@ -214,7 +201,6 @@ async function processQueue() {
         request.retryCount < MAX_RETRY_ATTEMPTS
       ) {
         // Retry rate limited requests
-        console.log(`Rate limited, retrying ${request.url}`);
         request.retryCount++;
         requestQueue.unshift(request); // Put back at front of queue
       } else {
@@ -278,16 +264,9 @@ export async function getCurrentConditions(
         const hourlyForecast = await getHourlyForecast(coords, options);
         if (hourlyForecast && hourlyForecast.length > 0) {
           textDescription = hourlyForecast[0].shortForecast;
-          console.log(
-            "Using hourly forecast fallback for current conditions:",
-            textDescription,
-          );
         }
-      } catch (error) {
-        console.warn(
-          "Failed to get hourly forecast fallback for current conditions:",
-          error,
-        );
+      } catch {
+        // Silently handle hourly forecast fallback errors
       }
     }
 
@@ -443,8 +422,6 @@ export async function getAllWeatherData(
   monthly: MonthlyForecast;
 }> {
   try {
-    console.log("🌤️ Starting weather data fetch for:", coords);
-
     // Get weather point once with longer timeout for ZIP code searches
     const point = await getWeatherPoint(coords, options);
 
@@ -453,16 +430,8 @@ export async function getAllWeatherData(
       throw new Error("Weather service not available for this location");
     }
 
-    console.log(
-      "✅ Weather point found:",
-      point.properties.relativeLocation?.properties?.city || "Unknown location",
-    );
-
     // Get timezone for location
     const timezone = await getTimezoneFromCoords(coords);
-    console.log(
-      `🌍getAllWeatherData: Using coordinates ${coords.latitude}, ${coords.longitude} with timezone: ${timezone}`,
-    );
 
     // Make all API calls in parallel with point data, with individual error handling
 
@@ -501,27 +470,6 @@ export async function getAllWeatherData(
     if (hourlyData.status === "rejected") {
       console.warn("⚠️ Hourly API failed:", hourlyData.reason);
     }
-
-    console.log("📊 Weather API results summary:", {
-      stations: stationsData.status === "fulfilled" ? "✅" : "❌",
-      forecast: forecastData.status === "fulfilled" ? "✅" : "❌",
-      hourly: hourlyData.status === "fulfilled" ? "✅" : "❌",
-    });
-
-    // Log detailed API results for debugging
-    console.log("🔍 Detailed API results for location:", coords);
-    console.log(
-      "📍 Stations result:",
-      stationsData.status === "fulfilled" ? "SUCCESS" : "FAILED",
-    );
-    console.log(
-      "🌤️ Forecast result:",
-      forecastData.status === "fulfilled" ? "SUCCESS" : "FAILED",
-    );
-    console.log(
-      "⏰ Hourly result:",
-      hourlyData.status === "fulfilled" ? "SUCCESS" : "FAILED",
-    );
 
     // If all APIs failed, return empty data instead of throwing
     if (!stationsResult && !forecastResult && !hourlyResult) {
@@ -566,10 +514,6 @@ export async function getAllWeatherData(
           hourlyData.properties.periods.length > 0
         ) {
           textDescription = hourlyData.properties.periods[0].shortForecast;
-          console.log(
-            "Using hourly forecast fallback for current conditions:",
-            textDescription,
-          );
         }
 
         current = {
@@ -617,27 +561,6 @@ export async function getAllWeatherData(
       hourlyResult && hourlyResult.properties && hourlyResult.properties.periods
         ? hourlyResult.properties.periods.slice(0, 48)
         : [];
-
-    // Log what data we were able to retrieve
-    console.log(`📊 Weather data summary:
-      - Current conditions: ${current ? "✅" : "❌"}
-      - 7-day forecast: ${forecast.length > 0 ? `✅ (${forecast.length} periods)` : "❌"}
-      - Hourly forecast: ${hourly.length > 0 ? `✅ (${hourly.length} periods)` : "❌"}
-    `);
-
-    // No critical failure - always return what we have
-    console.log(`📊 Final weather data summary:
-      - Current conditions: ${current ? "✅" : "❌"}
-      - 7-day forecast: ${forecast.length > 0 ? `✅ (${forecast.length} periods)` : "❌"}
-      - Hourly forecast: ${hourly.length > 0 ? `✅ (${hourly.length} periods)` : "❌"}
-    `);
-
-    // If we have partial data, that's better than no data
-    if (current || forecast.length > 0 || hourly.length > 0) {
-      console.log("✅ Returning partial weather data - better than nothing!");
-    } else {
-      console.log("❌ No weather data available at all");
-    }
 
     // Get today's high and low from forecast
     let todayHigh: number | undefined;
@@ -776,8 +699,8 @@ export async function getAllWeatherData(
             return timezone;
           }
         }
-      } catch (error) {
-        console.warn("Failed to get timezone from coordinates:", error);
+      } catch {
+        // Silently handle timezone API errors and fall back to longitude-based detection
       }
 
       // Fallback to common US timezones based on longitude
@@ -805,13 +728,9 @@ export async function getAllWeatherData(
       try {
         // Get timezone for accurate local times
         const timezone = await getTimezoneFromCoords(coords);
-        console.log(
-          `🌅getSunriseSunsetFromAPI: Using coordinates ${coords.latitude}, ${coords.longitude} with timezone: ${timezone}`,
-        );
 
         const today = new Date().toISOString().split("T")[0];
         const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=${timezone}`;
-        console.log(`🌅getSunriseSunsetFromAPI: API URL: ${url}`);
 
         // fetchWithUserAgent returns parsed JSON data, not a Response object
         const data = await fetchWithUserAgent(url, { skipRateLimit: true });
@@ -827,10 +746,6 @@ export async function getAllWeatherData(
           const sunriseTime = data.results.sunrise;
           const sunsetTime = data.results.sunset;
 
-          console.log(
-            `🌅getSunriseSunsetFromAPI: Got sunrise ${sunriseTime}, sunset ${sunsetTime}`,
-          );
-
           return {
             sunrise: sunriseTime,
             sunset: sunsetTime,
@@ -843,9 +758,6 @@ export async function getAllWeatherData(
       } catch (error) {
         console.error("Error fetching sunrise/sunset:", error);
         // Fallback to calculation
-        console.log(
-          `🌅getSunriseSunsetFromAPI: Using fallback calculation for ${coords.latitude}, ${coords.longitude}`,
-        );
         return calculateSunriseSunset(coords);
       }
     }
@@ -938,7 +850,6 @@ export const rateLimitConfig = {
 
 export function clearRequestCache() {
   requestCache.clear();
-  console.log("🧹 Request cache cleared");
 }
 
 // Check for cache-clearing URL parameter for testing
@@ -946,7 +857,6 @@ if (
   typeof window !== "undefined" &&
   window.location.search.includes("clear=cache")
 ) {
-  console.log("🧹 Clearing cache due to URL parameter");
   clearRequestCache();
   // Clean up the URL without page reload
   const url = new URL(window.location);
