@@ -14,7 +14,6 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const gearButtonRef = useRef<HTMLButtonElement>(null);
 
   const navItems = [
     { id: "current", label: "Current" },
@@ -91,8 +90,10 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
               {locationName}
             </span>
             <button
-              ref={gearButtonRef}
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
               className="p-1.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
               aria-label="Change location"
             >
@@ -108,7 +109,6 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
                   setIsDropdownOpen(false);
                 }}
                 onClose={() => setIsDropdownOpen(false)}
-                triggerRef={gearButtonRef}
               />
             )}
           </div>
@@ -153,8 +153,10 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
                 {locationName}
               </span>
               <button
-                ref={gearButtonRef}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDropdownOpen(!isDropdownOpen);
+                }}
                 className="p-1.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
                 aria-label="Change location"
               >
@@ -170,7 +172,6 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
                     setIsDropdownOpen(false);
                   }}
                   onClose={() => setIsDropdownOpen(false)}
-                  triggerRef={gearButtonRef}
                 />
               )}
             </div>
