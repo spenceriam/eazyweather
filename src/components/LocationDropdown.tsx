@@ -18,12 +18,14 @@ interface LocationDropdownProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
   onClose: () => void;
+  triggerRef?: React.RefObject<HTMLElement>;
 }
 
 export function LocationDropdown({
   coordinates,
   onLocationUpdate,
   onClose,
+  triggerRef,
 }: LocationDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,9 +48,20 @@ export function LocationDropdown({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
+      const target = event.target as Node;
+
+      // Don't close if clicking inside dropdown
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
       }
+
+      // Don't close if clicking the trigger button (it has its own toggle handler)
+      if (triggerRef?.current && triggerRef.current.contains(target)) {
+        return;
+      }
+
+      // Close if clicking outside both dropdown and trigger
+      onClose();
     }
 
     // Close on ESC key
@@ -65,7 +78,7 @@ export function LocationDropdown({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscKey);
     };
-  }, [onClose]);
+  }, [onClose, triggerRef]);
 
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
