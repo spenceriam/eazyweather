@@ -358,7 +358,8 @@ export function CurrentConditions({
       "North by Northwest",
     ];
 
-    const index = Math.round(((degrees + 22.5) % 360) / 22.5);
+    // Add 11.25 to center the slices, then divide by 22.5 to get the index
+    const index = Math.floor((degrees + 11.25) / 22.5) % 16;
     return directions[index];
   };
 
@@ -405,7 +406,7 @@ export function CurrentConditions({
         ? getWindDirection(conditions.windDirection)
         : "";
 
-    return `${speed} mph ${direction}`;
+    return `${speed} mph ${direction || ""}`;
   };
 
   const getWindGust = () => {
