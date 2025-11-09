@@ -1,11 +1,58 @@
 import { WeatherIcon } from "./icons/WeatherIcon";
 import type { ForecastPeriod } from "../types/weather";
+import { useState } from "react";
 
 interface SevenDayForecastProps {
   forecast: ForecastPeriod[];
+  timezone: string;
 }
 
-export function SevenDayForecast({ forecast }: SevenDayForecastProps) {
+export function SevenDayForecast({ forecast, timezone }: SevenDayForecastProps) {
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+
+  function toggleCard(cardNumber: number) {
+    setExpandedCard(expandedCard === cardNumber ? null : cardNumber);
+  }
+
+  function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      timeZone: timezone,
+    });
+  }
+
+  function formatTime(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+      timeZone: timezone,
+    });
+  }
+
+  function isToday(dateString: string) {
+    const date = new Date(dateString);
+    const today = new Date();
+    return (
+      date.toLocaleDateString("en-US", { timeZone: timezone }) ===
+      today.toLocaleDateString("en-US", { timeZone: timezone })
+    );
+  }
+
+  function isTomorrow(dateString: string) {
+    const date = new Date(dateString);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return (
+      date.toLocaleDateString("en-US", { timeZone: timezone }) ===
+      tomorrow.toLocaleDateString("en-US", { timeZone: timezone })
+    );
+  }
+
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -22,13 +69,26 @@ export function SevenDayForecast({ forecast }: SevenDayForecastProps) {
             {forecast.map((period) => (
               <div
                 key={period.number}
-                className="bg-gray-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                className="bg-gray-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => toggleCard(period.number)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {period.name}
-                    </h3>
+                    <div className="text-xs text-gray-500 mb-2">
+                      {isToday(period.startTime) ? (
+                        "Today"
+                      ) : isTomorrow(period.startTime) ? (
+                        <>
+                          {formatDate(period.startTime)}
+                          <div>(Tomorrow)</div>
+                        </>
+                      ) : (
+                        formatDate(period.startTime)
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">
+                      {formatTime(period.startTime)}
+                    </div>
                     <div className="flex items-center gap-4 mb-3">
                       <div className="text-3xl font-light text-gray-800">
                         {period.temperature}°
@@ -65,9 +125,17 @@ export function SevenDayForecast({ forecast }: SevenDayForecastProps) {
                     />
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                  {period.detailedForecast}
-                </p>
+                {expandedCard === period.number && (
+                  <>
+                    <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                      {/* Placeholder for Gemma3n summary */}
+                      <strong>Forecast:</strong> {period.shortForecast}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                      {period.detailedForecast}
+                    </p>
+                  </>
+                )}
               </div>
             ))}
           </div>
