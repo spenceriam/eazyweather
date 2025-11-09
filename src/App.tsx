@@ -111,8 +111,8 @@ function App() {
               },
               windSpeed: {
                 "@type": "QuantitativeValue",
-                value: conditions.windSpeed,
-                unitText: conditions.windSpeed.includes("mph") ? "mph" : "km/h",
+                value: conditions.windSpeedValue || 0,
+                unitText: "mph",
               },
               weatherCondition: conditions.textDescription,
             }

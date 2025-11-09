@@ -19,7 +19,6 @@ export interface CurrentConditions {
   temperature: number;
   temperatureUnit: string;
   relativeHumidity: number;
-  windSpeed: string;
   windSpeedValue?: number;
   windDirection: number;
   textDescription: string;

@@ -149,10 +149,6 @@ export function CurrentConditions({
     return getDaysDifference(timestamp) === 0;
   };
 
-  const isTomorrow = (timestamp: string): boolean => {
-    return getDaysDifference(timestamp) === 1;
-  };
-
   const getDayOfWeek = (timestamp: string): string => {
     const date = new Date(timestamp);
     const days = [
@@ -398,11 +394,18 @@ export function CurrentConditions({
   };
 
   const getWindDisplay = () => {
-    if (conditions.windSpeedValue === 0) {
+    const speed = Math.round(conditions.windSpeedValue || 0);
+
+    if (speed === 0) {
       return "Calm";
     }
 
-    return `${Math.round(conditions.windSpeedValue || 0)} mph ${getWindDirection(conditions.windDirection)}`;
+    const direction =
+      typeof conditions.windDirection === "number"
+        ? getWindDirection(conditions.windDirection)
+        : "";
+
+    return `${speed} mph ${direction}`;
   };
 
   const getWindGust = () => {
@@ -438,6 +441,7 @@ export function CurrentConditions({
   };
 
   const trends = getWeatherTrends();
+  const windGust = getWindGust();
 
   return (
     <section id="current" className="bg-gray-100">
@@ -526,10 +530,16 @@ export function CurrentConditions({
                     {getWindDisplay()}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">&nbsp;</span>
-                  <span className="font-medium text-gray-800">&nbsp;</span>
-                </div>
+                {windGust ? (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Wind gust</span>
+                    <span className="font-medium text-gray-800">
+                      {windGust}
+                    </span>
+                  </div>
+                ) : (
+                  <div>&nbsp;</div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Sunset</span>
                   <span className="font-medium text-gray-800">
@@ -543,14 +553,6 @@ export function CurrentConditions({
             <div className="grid grid-cols-2 gap-4 text-sm mt-3">
               <div></div>
               <div className="space-y-3">
-                {getWindGust() && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Wind gust</span>
-                    <span className="font-medium text-gray-800">
-                      {getWindGust()}
-                    </span>
-                  </div>
-                )}
                 {getSnowDepth() && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Snow depth</span>
