@@ -189,9 +189,6 @@ function App() {
             updateStructuredData(locationResult, current);
           }
 
-          // Reset refresh service after successful load
-          refreshService.updateConfig({ enableAutoRefresh: true });
-
           // Mark weather as loaded
           if (!hasWeatherLoaded) {
             setHasWeatherLoaded(true);
