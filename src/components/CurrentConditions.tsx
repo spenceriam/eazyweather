@@ -439,6 +439,7 @@ export function CurrentConditions({
   };
 
   const trends = getWeatherTrends();
+  const windGust = getWindGust();
 
   return (
     <section id="current" className="bg-gray-100">
@@ -527,13 +528,15 @@ export function CurrentConditions({
                     {getWindDisplay()}
                   </span>
                 </div>
-                {getWindGust() && (
+                {windGust ? (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Wind gust</span>
                     <span className="font-medium text-gray-800">
-                      {getWindGust()}
+                      {windGust}
                     </span>
                   </div>
+                ) : (
+                  <div>&nbsp;</div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Sunset</span>
