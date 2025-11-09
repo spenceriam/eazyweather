@@ -79,7 +79,6 @@ class RefreshService {
     refreshFunction: () => Promise<void>,
   ): Promise<void> {
     if (this.state.isRefreshing) {
-      console.log("Refresh already in progress, skipping");
       return;
     }
 
@@ -249,9 +248,6 @@ class RefreshService {
 
   // Force immediate refresh when page becomes visible
   private triggerImmediateRefresh(): void {
-    console.log(
-      "Data is stale, triggering immediate refresh on page visibility",
-    );
     this.notifyListeners();
   }
 }

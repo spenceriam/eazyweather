@@ -65,8 +65,6 @@ export async function getBrowserLocation(): Promise<Coordinates> {
         });
       },
       (error) => {
-        console.log("First location attempt failed:", error.message);
-
         // Second attempt with high accuracy enabled
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -76,8 +74,6 @@ export async function getBrowserLocation(): Promise<Coordinates> {
             });
           },
           (secondError) => {
-            console.log("Second location attempt failed:", secondError.message);
-
             // Final attempt with maximum timeout
             navigator.geolocation.getCurrentPosition(
               (position) => {
@@ -132,7 +128,6 @@ export async function reverseGeocode(
   coords: Coordinates,
 ): Promise<LocationResult> {
   try {
-    console.log("Reverse geocoding coordinates:", coords);
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&addressdetails=1`,
       {
@@ -143,13 +138,10 @@ export async function reverseGeocode(
     );
 
     if (!response.ok) {
-      console.log("❌ API response not ok:", response.status);
       throw new Error(`Geocoding failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("📊 API response data:", data);
-    console.log("Reverse geocoding response:", data);
 
     if (!data || !data.address) {
       throw new Error("Invalid response format from geocoding service");
@@ -168,8 +160,6 @@ export async function reverseGeocode(
       "";
     const state = address.state || address.province || "";
     const country = address.country || "";
-
-    console.log("Parsed address:", { city, state, country });
 
     // Format display name based on location type
     let displayName = "";
@@ -199,8 +189,6 @@ export async function reverseGeocode(
       }
     }
 
-    console.log("Final display name:", displayName);
-
     return {
       coordinates: coords,
       displayName,
@@ -223,13 +211,11 @@ export async function reverseGeocode(
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
-    console.log("🔍 Starting geocodeLocation for:", query);
     let searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
 
     // Store original query for display (preserve ZIP code format)
     const originalQuery = searchQuery;
-    console.log("📝 Original query stored:", originalQuery);
 
     // Handle ZIP code searches
     if (isZipCode(searchQuery)) {
@@ -244,7 +230,6 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=1&addressdetails=1`;
     }
 
-    console.log("🌐 Making API call with params:", searchParams);
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?${searchParams}`,
       {
@@ -265,13 +250,11 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     }
 
     const result = data[0];
-    console.log("📍 First result:", result);
     const address = result.address;
     const coords = {
       latitude: parseFloat(result.lat),
       longitude: parseFloat(result.lon),
     };
-    console.log("🗺️ Parsed coords:", coords, "address:", address);
 
     // Try multiple city-level fields, but never county
     const city =
@@ -316,15 +299,13 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       }
     }
 
-    const locationResult = {
+    return {
       coordinates: coords,
       displayName,
       city,
       state,
       country,
     };
-    console.log("✅ Final location result:", locationResult);
-    return locationResult;
   } catch (error) {
     console.error("Geocoding error:", error);
     throw new Error("Unable to find location. Please try a different search.");
