@@ -9,7 +9,7 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   {
     version: "1.5.0",
-    date: "January 2025",
+    date: "November 9, 2025",
     type: "minor",
     title: "Location Controls Redesign",
     changes: [
@@ -19,23 +19,70 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.4.0",
-    date: "January 2025",
+    date: "November 9, 2025",
     type: "minor",
     title: "Visual Enhancements",
     changes: [
       "Added beautiful glassmorphism effects to all modal backdrops",
       "Enhanced location permission overlay with blur effect for better focus",
+      "Added opaque overlay during location permission requests",
     ],
   },
   {
     version: "1.3.x",
-    date: "January 2025",
+    date: "October 31 - November 9, 2025",
     type: "patch",
-    title: "Weather Display Improvements",
+    title: "Weather Display & UX Improvements",
     changes: [
       "Fixed wind display and alignment issues for cleaner weather cards",
       "Corrected calm wind display and wind gust positioning",
       "Increased font size on hourly forecast cards for better readability",
+      "Improved 7-day forecast card details and layout",
+      "Fixed critical infinite loop in refresh service",
+      "Reduced console logs to essential errors and warnings only",
+      "Fixed pin modal map height for smaller laptop screens",
+      "Removed UV Index and replaced with conditional Wind Gust display",
+    ],
+  },
+  {
+    version: "1.2.0",
+    date: "October 31, 2025",
+    type: "minor",
+    title: "Interactive Location Pin Feature",
+    changes: [
+      "Added interactive map for precise location refinement",
+      "Introduced location pinning to save preferred locations",
+      "Improved location search with pin confirmation workflow",
+    ],
+  },
+  {
+    version: "1.1.x",
+    date: "October 31, 2025",
+    type: "minor",
+    title: "Analytics & UI Polish",
+    changes: [
+      "Replaced Vercel Analytics with Google Analytics",
+      "Fixed loading screen background color consistency",
+      "Improved footer formatting and layout",
+    ],
+  },
+  {
+    version: "1.0.x",
+    date: "October 21-25, 2025",
+    type: "major",
+    title: "Initial Release - Core Features",
+    changes: [
+      "Real-time weather data from National Weather Service",
+      "Current conditions with temperature, wind, and humidity",
+      "Hourly, 7-day, and monthly forecasts",
+      "Weather trend comments for better context",
+      "Sunrise and sunset times integration",
+      "Auto-refresh with rate limiting",
+      "Enhanced location search with disambiguation",
+      "Mobile-responsive hourly forecast layout",
+      "Branded loading experience with duck logo",
+      "Initial location modal for better onboarding",
+      "Custom brand color scheme with warm cream backgrounds",
     ],
   },
 ];
