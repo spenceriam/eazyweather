@@ -2,11 +2,13 @@ import { useState } from "react";
 import { DataSourcesModal } from "./modals/DataSourcesModal";
 import { PrivacyModal } from "./modals/PrivacyModal";
 import { TermsModal } from "./modals/TermsModal";
+import { WhatsNewModal } from "./modals/WhatsNewModal";
 
 export function Footer() {
   const [isDataSourcesOpen, setIsDataSourcesOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
 
   return (
     <>
@@ -18,14 +20,23 @@ export function Footer() {
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
-              {/* Left: Data sources (original functionality enhanced) */}
+              {/* Left: Data sources + What's New */}
               <div className="text-left">
-                <button
-                  onClick={() => setIsDataSourcesOpen(true)}
-                  className="text-brand hover:text-brand-dark underline transition-colors"
-                >
-                  Website Data Sources
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsDataSourcesOpen(true)}
+                    className="text-brand hover:text-brand-dark underline transition-colors"
+                  >
+                    Website Data Sources
+                  </button>
+                  <span>•</span>
+                  <button
+                    onClick={() => setIsWhatsNewOpen(true)}
+                    className="text-brand hover:text-brand-dark underline transition-colors"
+                  >
+                    What's New
+                  </button>
+                </div>
               </div>
 
               {/* Center: Copyright, links, and version info */}
@@ -117,14 +128,23 @@ export function Footer() {
         {/* Mobile: Two-row layout */}
         <div className="md:hidden">
           <div className="px-4 py-3 text-xs text-gray-600 space-y-2">
-            {/* Row 1: Data Sources on left, Privacy/Terms on right */}
+            {/* Row 1: Data Sources + What's New on left, Privacy/Terms on right */}
             <div className="flex items-center justify-between">
-              <button
-                onClick={() => setIsDataSourcesOpen(true)}
-                className="text-brand hover:text-brand-dark underline transition-colors"
-              >
-                Website Data Sources
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsDataSourcesOpen(true)}
+                  className="text-brand hover:text-brand-dark underline transition-colors"
+                >
+                  Website Data Sources
+                </button>
+                <span>•</span>
+                <button
+                  onClick={() => setIsWhatsNewOpen(true)}
+                  className="text-brand hover:text-brand-dark underline transition-colors"
+                >
+                  What's New
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsPrivacyOpen(true)}
@@ -221,6 +241,10 @@ export function Footer() {
         onClose={() => setIsPrivacyOpen(false)}
       />
       <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+      <WhatsNewModal
+        isOpen={isWhatsNewOpen}
+        onClose={() => setIsWhatsNewOpen(false)}
+      />
     </>
   );
 }
