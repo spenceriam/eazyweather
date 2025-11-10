@@ -1,6 +1,5 @@
 import { Modal } from "../ui/Modal";
 import { changelog } from "../../data/changelog";
-import { Sparkles } from "lucide-react";
 
 export function WhatsNewModal({
   isOpen,
@@ -14,12 +13,9 @@ export function WhatsNewModal({
       <div className="space-y-6">
         {/* Latest version highlight */}
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-5 w-5 text-brand" />
-            <h3 className="text-lg font-semibold text-brand">
-              Version {changelog[0].version} - {changelog[0].title}
-            </h3>
-          </div>
+          <h3 className="text-lg font-semibold text-brand mb-3">
+            Version {changelog[0].version} - {changelog[0].title}
+          </h3>
           <ul className="space-y-2">
             {changelog[0].changes.map((change, idx) => (
               <li key={idx} className="flex items-start gap-2">
