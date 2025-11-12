@@ -77,14 +77,17 @@ export function transformToDailyForecasts(
       continue;
     }
 
-    // Get the date string for this period
-    const periodDate = new Date(currentPeriod.startTime);
-    const periodDateString = `${periodDate.getFullYear()}-${String(periodDate.getMonth() + 1).padStart(2, '0')}-${String(periodDate.getDate()).padStart(2, '0')}`;
+    // Extract date from ISO string (YYYY-MM-DD) without timezone conversion
+    // startTime format: "2024-11-12T06:00:00-08:00"
+    const periodDateString = currentPeriod.startTime.split('T')[0];
 
     // Skip today - we already have Current Conditions for today
     if (periodDateString === todayDateString) {
       continue;
     }
+
+    // Parse the date for getting day name
+    const periodDate = new Date(periodDateString + 'T00:00:00');
 
     // Get day name from date (always use day of week, no "Today" or "Tomorrow")
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
