@@ -34,7 +34,8 @@ export function WeatherCarousel({
   const [canScrollNext, setCanScrollNext] = useState(false);
 
   // Transform forecast data to daily forecasts
-  const dailyForecasts = transformToDailyForecasts(forecast);
+  // Use conditions timestamp to determine "today" in the location's timezone
+  const dailyForecasts = transformToDailyForecasts(forecast, conditions.timestamp);
 
   // Handle scroll to 7-day forecast section
   const scrollToForecast = useCallback(() => {

@@ -61,11 +61,13 @@ export function degreesToAbbreviatedDirection(degrees: number): string {
  * Groups day/night periods into single day cards
  */
 export function transformToDailyForecasts(
-  forecastPeriods: ForecastPeriod[]
+  forecastPeriods: ForecastPeriod[],
+  currentTimestamp: string
 ): DailyForecast[] {
   const dailyForecasts: DailyForecast[] = [];
-  const today = new Date();
-  const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  // Extract today's date from the current conditions timestamp (location's timezone)
+  // timestamp format: "2025-11-11T14:53:00+00:00"
+  const todayDateString = currentTimestamp.split('T')[0];
 
   // Group periods by day
   for (let i = 0; i < forecastPeriods.length - 1; i++) {
