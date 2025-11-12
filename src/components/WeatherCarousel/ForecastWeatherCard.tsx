@@ -16,11 +16,11 @@ export function ForecastWeatherCard({ forecast }: ForecastWeatherCardProps) {
   const windSpeed = extractWindSpeed(forecast.windSpeed);
 
   // Format date as "Mon 11/12"
+  // Parse date string directly to avoid timezone issues
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${month}/${day}`;
+    // dateString format: "2024-11-12"
+    const [, month, day] = dateString.split('-');
+    return `${parseInt(month, 10)}/${parseInt(day, 10)}`;
   };
 
   const cardTitle = `${forecast.dayName.toUpperCase()} ${formatDate(forecast.date)}`;

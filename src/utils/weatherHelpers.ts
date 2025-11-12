@@ -86,12 +86,13 @@ export function transformToDailyForecasts(
       continue;
     }
 
-    // Parse the date for getting day name
-    const periodDate = new Date(periodDateString + 'T00:00:00');
+    // Parse date components directly to avoid timezone conversion
+    const [year, month, day] = periodDateString.split('-').map(Number);
+    const periodDate = new Date(Date.UTC(year, month - 1, day));
 
     // Get day name from date (always use day of week, no "Today" or "Tomorrow")
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = days[periodDate.getDay()];
+    const dayName = days[periodDate.getUTCDay()];
 
     // Determine high/low temperatures
     const high = currentPeriod.temperature; // Daytime temp is the high
