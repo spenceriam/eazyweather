@@ -79,18 +79,9 @@ export function transformToDailyForecasts(
     const startDate = new Date(currentPeriod.startTime);
     const dateString = startDate.toISOString().split('T')[0];
 
-    // Determine day name
-    let dayName = currentPeriod.name;
-
-    // Simplify day names
-    if (dayName.includes('This Afternoon') || dayName.includes('Today')) {
-      dayName = 'Today';
-    } else if (dayName.includes('Tonight')) {
-      dayName = 'Tonight';
-    } else {
-      // Remove any time qualifiers like "Monday Night" -> "Monday"
-      dayName = dayName.replace(/\s+(Night|Afternoon)$/i, '');
-    }
+    // Get day name from date (always use day of week, no "Today" or "Tomorrow")
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = days[startDate.getDay()];
 
     // Determine high/low temperatures
     const high = currentPeriod.temperature; // Daytime temp is the high

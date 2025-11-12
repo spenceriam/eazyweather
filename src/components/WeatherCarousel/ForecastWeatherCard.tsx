@@ -13,105 +13,61 @@ export function ForecastWeatherCard({ forecast }: ForecastWeatherCardProps) {
       ? Math.round((forecast.high * 9) / 5 + 32)
       : Math.round(forecast.high);
 
-  const lowF =
-    forecast.temperatureUnit === 'C'
-      ? Math.round((forecast.low * 9) / 5 + 32)
-      : Math.round(forecast.low);
-
   const windSpeed = extractWindSpeed(forecast.windSpeed);
 
-  const formatTime = (timestamp: string) => {
-    if (!timestamp) return 'N/A';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+  // Format date as "Mon 11/12"
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
   };
 
-  const getSunrise = () => {
-    if (forecast.sunriseTime) {
-      return formatTime(forecast.sunriseTime);
-    }
-    return 'N/A';
-  };
-
-  const getSunset = () => {
-    if (forecast.sunsetTime) {
-      return formatTime(forecast.sunsetTime);
-    }
-    return 'N/A';
-  };
+  const cardTitle = `${forecast.dayName.toUpperCase()} ${formatDate(forecast.date)}`;
 
   return (
-    <WeatherCard title={forecast.dayName.toUpperCase()}>
-      {/* Weather icon and temperature */}
-      <div className="flex flex-col items-center text-center mb-4">
-        <div className="mb-3">
+    <WeatherCard title={cardTitle}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="text-3xl font-light text-gray-800">
+              {tempF}°
+            </div>
+            <div className="text-sm text-gray-600 capitalize">
+              {forecast.shortForecast}
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+              {windSpeed > 0 ? `${windSpeed} mph` : 'Calm'}
+            </span>
+            <span>{forecast.windDirection}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-center sm:justify-end">
           <WeatherIcon
             condition={forecast.shortForecast}
             isDaytime={forecast.isDaytime}
-            size={100}
-            className="drop-shadow-lg"
+            size={80}
           />
         </div>
-        <div className="text-5xl font-light text-gray-800 mb-2">
-          {tempF}°
-        </div>
-        <div className="text-base text-gray-600 capitalize">
-          {forecast.shortForecast}
-        </div>
       </div>
-
-      {/* Weather details grid */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        {/* Left column */}
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-500">High / Low</span>
-            <span className="font-medium text-gray-800">
-              {tempF}° / {lowF}°
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Humidity</span>
-            <span className="font-medium text-gray-800">
-              {forecast.humidity ? `${Math.round(forecast.humidity)}%` : 'N/A'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Wind</span>
-            <span className="font-medium text-gray-800 text-right">
-              {windSpeed > 0 ? `${windSpeed} mph ${forecast.windDirection}` : 'Calm'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Sunrise</span>
-            <span className="font-medium text-gray-800">{getSunrise()}</span>
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-500">&nbsp;</span>
-            <span className="font-medium text-gray-800">&nbsp;</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">&nbsp;</span>
-            <span className="font-medium text-gray-800">&nbsp;</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">&nbsp;</span>
-            <span className="font-medium text-gray-800">&nbsp;</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Sunset</span>
-            <span className="font-medium text-gray-800">{getSunset()}</span>
-          </div>
-        </div>
-      </div>
+      <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+        {forecast.detailedForecast}
+      </p>
     </WeatherCard>
   );
 }

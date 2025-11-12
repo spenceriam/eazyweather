@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CurrentWeatherCard } from './CurrentWeatherCard';
 import { ForecastWeatherCard } from './ForecastWeatherCard';
 import { MoreForecastCard } from './MoreForecastCard';
@@ -29,6 +30,8 @@ export function WeatherCarousel({
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
 
   // Transform forecast data to daily forecasts
   const dailyForecasts = transformToDailyForecasts(forecast);
@@ -45,6 +48,8 @@ export function WeatherCarousel({
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setSelectedIndex(emblaApi.selectedScrollSnap());
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
   // Setup Embla event listeners
@@ -68,35 +73,75 @@ export function WeatherCarousel({
     [emblaApi]
   );
 
+  // Navigation button handlers
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
   // Total cards: 1 (current) + daily forecasts + 1 (navigation)
   const totalCards = 1 + dailyForecasts.length + 1;
 
   return (
     <section id="current" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Carousel container */}
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-4">
-            {/* Card 1: Current Conditions */}
-            <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)]">
-              <CurrentWeatherCard conditions={conditions} timezone={timezone} />
-            </div>
+        {/* Carousel container with navigation arrows */}
+        <div className="relative">
+          {/* Left arrow - hidden on mobile */}
+          <button
+            onClick={scrollPrev}
+            disabled={!canScrollPrev}
+            className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 items-center justify-center bg-white rounded-full shadow-lg transition-all ${
+              canScrollPrev
+                ? 'opacity-100 hover:bg-gray-50 cursor-pointer'
+                : 'opacity-30 cursor-not-allowed'
+            }`}
+            aria-label="Previous card"
+          >
+            <ChevronLeft className="w-6 h-6 text-gray-800" />
+          </button>
 
-            {/* Cards 2-5: Daily Forecasts */}
-            {dailyForecasts.map((dailyForecast, index) => (
-              <div
-                key={`forecast-${index}`}
-                className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)]"
-              >
-                <ForecastWeatherCard forecast={dailyForecast} />
+          {/* Carousel */}
+          <div className="overflow-hidden mx-0 md:mx-14" ref={emblaRef}>
+            <div className="flex gap-4">
+              {/* Card 1: Current Conditions */}
+              <div className="flex-shrink-0 w-full md:w-[calc(40%-0.5rem)]">
+                <CurrentWeatherCard conditions={conditions} timezone={timezone} />
               </div>
-            ))}
 
-            {/* Card 6: Navigation to 7-Day Forecast */}
-            <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)]">
-              <MoreForecastCard onNavigate={scrollToForecast} />
+              {/* Cards 2-5: Daily Forecasts */}
+              {dailyForecasts.map((dailyForecast, index) => (
+                <div
+                  key={`forecast-${index}`}
+                  className="flex-shrink-0 w-full md:w-[calc(40%-0.5rem)]"
+                >
+                  <ForecastWeatherCard forecast={dailyForecast} />
+                </div>
+              ))}
+
+              {/* Card 6: Navigation to 7-Day Forecast */}
+              <div className="flex-shrink-0 w-full md:w-[calc(40%-0.5rem)]">
+                <MoreForecastCard onNavigate={scrollToForecast} />
+              </div>
             </div>
           </div>
+
+          {/* Right arrow - hidden on mobile */}
+          <button
+            onClick={scrollNext}
+            disabled={!canScrollNext}
+            className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 items-center justify-center bg-white rounded-full shadow-lg transition-all ${
+              canScrollNext
+                ? 'opacity-100 hover:bg-gray-50 cursor-pointer'
+                : 'opacity-30 cursor-not-allowed'
+            }`}
+            aria-label="Next card"
+          >
+            <ChevronRight className="w-6 h-6 text-gray-800" />
+          </button>
         </div>
 
         {/* Carousel indicators */}
