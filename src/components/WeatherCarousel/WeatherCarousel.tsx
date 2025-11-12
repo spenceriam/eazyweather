@@ -82,7 +82,7 @@ export function WeatherCarousel({
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Total cards: 1 (current) + daily forecasts + 1 (navigation)
+  // Total cards: 1 (current) + 3 daily forecasts + 1 (navigation) = 5 cards
   const totalCards = 1 + dailyForecasts.length + 1;
 
   return (
@@ -113,7 +113,7 @@ export function WeatherCarousel({
                   <CurrentWeatherCard conditions={conditions} timezone={timezone} />
                 </div>
 
-                {/* Cards 2-5: Daily Forecasts */}
+                {/* Cards 2-4: Daily Forecasts (Tomorrow + 2 days) */}
                 {dailyForecasts.map((dailyForecast, index) => (
                   <div
                     key={`forecast-${index}`}
@@ -123,7 +123,7 @@ export function WeatherCarousel({
                   </div>
                 ))}
 
-                {/* Card 6: Navigation to 7-Day Forecast */}
+                {/* Card 5: Navigation to 7-Day Forecast */}
                 <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex">
                   <MoreForecastCard onNavigate={scrollToForecast} />
                 </div>

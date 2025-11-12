@@ -64,6 +64,8 @@ export function transformToDailyForecasts(
   forecastPeriods: ForecastPeriod[]
 ): DailyForecast[] {
   const dailyForecasts: DailyForecast[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // Group periods by day
   for (let i = 0; i < forecastPeriods.length - 1; i++) {
@@ -77,7 +79,14 @@ export function transformToDailyForecasts(
 
     // Get the start date for this day
     const startDate = new Date(currentPeriod.startTime);
-    const dateString = startDate.toISOString().split('T')[0];
+    startDate.setHours(0, 0, 0, 0);
+
+    // Skip today - we already have Current Conditions for today
+    if (startDate.getTime() === today.getTime()) {
+      continue;
+    }
+
+    const dateString = new Date(currentPeriod.startTime).toISOString().split('T')[0];
 
     // Get day name from date (always use day of week, no "Today" or "Tomorrow")
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -101,8 +110,8 @@ export function transformToDailyForecasts(
       temperatureUnit: currentPeriod.temperatureUnit,
     });
 
-    // Only get 4 days for the carousel (Tomorrow + 3 more days)
-    if (dailyForecasts.length >= 4) {
+    // Only get 3 days for the carousel (Tomorrow + 2 more days after)
+    if (dailyForecasts.length >= 3) {
       break;
     }
   }
