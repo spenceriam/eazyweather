@@ -16,6 +16,16 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
 
   const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
 
+  // Format current date as "mm/dd"
+  const formatCurrentDate = () => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    return `${month}/${day}`;
+  };
+
+  const cardTitle = `CURRENT CONDITIONS ${formatCurrentDate()}`;
+
   const getRealFeel = () => {
     if (conditions.heatIndex) {
       return Math.round(
@@ -85,7 +95,7 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
   };
 
   return (
-    <WeatherCard title="NOW">
+    <WeatherCard title={cardTitle}>
       {/* Weather icon and temperature */}
       <div className="flex flex-col items-center text-center mb-4">
         <div className="mb-3">
