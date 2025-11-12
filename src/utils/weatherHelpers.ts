@@ -65,7 +65,7 @@ export function transformToDailyForecasts(
 ): DailyForecast[] {
   const dailyForecasts: DailyForecast[] = [];
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   // Group periods by day
   for (let i = 0; i < forecastPeriods.length - 1; i++) {
@@ -77,27 +77,25 @@ export function transformToDailyForecasts(
       continue;
     }
 
-    // Get the start date for this day
-    const startDate = new Date(currentPeriod.startTime);
-    startDate.setHours(0, 0, 0, 0);
+    // Get the date string for this period
+    const periodDate = new Date(currentPeriod.startTime);
+    const periodDateString = `${periodDate.getFullYear()}-${String(periodDate.getMonth() + 1).padStart(2, '0')}-${String(periodDate.getDate()).padStart(2, '0')}`;
 
     // Skip today - we already have Current Conditions for today
-    if (startDate.getTime() === today.getTime()) {
+    if (periodDateString === todayDateString) {
       continue;
     }
 
-    const dateString = new Date(currentPeriod.startTime).toISOString().split('T')[0];
-
     // Get day name from date (always use day of week, no "Today" or "Tomorrow")
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = days[startDate.getDay()];
+    const dayName = days[periodDate.getDay()];
 
     // Determine high/low temperatures
     const high = currentPeriod.temperature; // Daytime temp is the high
     const low = nextPeriod && !nextPeriod.isDaytime ? nextPeriod.temperature : currentPeriod.temperature;
 
     dailyForecasts.push({
-      date: dateString,
+      date: periodDateString,
       dayName,
       high,
       low,
