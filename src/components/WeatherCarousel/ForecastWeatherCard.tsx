@@ -44,6 +44,11 @@ export function ForecastWeatherCard({ forecast }: ForecastWeatherCardProps) {
           {forecast.shortForecast}
         </div>
       </div>
+
+      {/* Detailed forecast text */}
+      <p className="text-sm text-gray-600 text-center leading-relaxed">
+        {forecast.detailedForecast}
+      </p>
     </WeatherCard>
   );
 }
