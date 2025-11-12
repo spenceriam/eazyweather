@@ -107,9 +107,9 @@ export function WeatherCarousel({
 
             {/* Carousel */}
             <div className="overflow-hidden mx-0 md:mx-14" ref={emblaRef}>
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-stretch">
                 {/* Card 1: Current Conditions */}
-                <div className="flex-shrink-0 w-full">
+                <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex">
                   <CurrentWeatherCard conditions={conditions} timezone={timezone} />
                 </div>
 
@@ -117,14 +117,14 @@ export function WeatherCarousel({
                 {dailyForecasts.map((dailyForecast, index) => (
                   <div
                     key={`forecast-${index}`}
-                    className="flex-shrink-0 w-full"
+                    className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex"
                   >
                     <ForecastWeatherCard forecast={dailyForecast} />
                   </div>
                 ))}
 
                 {/* Card 6: Navigation to 7-Day Forecast */}
-                <div className="flex-shrink-0 w-full">
+                <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex">
                   <MoreForecastCard onNavigate={scrollToForecast} />
                 </div>
               </div>

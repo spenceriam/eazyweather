@@ -10,7 +10,7 @@ interface WeatherCardProps {
 export function WeatherCard({ title, children, onClick, className = '' }: WeatherCardProps) {
   return (
     <div
-      className={`bg-white rounded-2xl shadow-lg p-6 flex-shrink-0 transition-all duration-150 ease-out active:shadow-xl active:-translate-y-1 ${className}`}
+      className={`bg-white rounded-2xl shadow-lg p-6 flex flex-col flex-shrink-0 h-full transition-all duration-150 ease-out active:shadow-xl active:-translate-y-1 ${className}`}
       onClick={onClick}
       style={{
         cursor: onClick ? 'pointer' : 'default',
@@ -19,7 +19,9 @@ export function WeatherCard({ title, children, onClick, className = '' }: Weathe
       <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
         {title}
       </h3>
-      {children}
+      <div className="flex-1">
+        {children}
+      </div>
     </div>
   );
 }
