@@ -65,9 +65,7 @@ export function transformToDailyForecasts(
   currentTimestamp: string
 ): DailyForecast[] {
   const dailyForecasts: DailyForecast[] = [];
-  // Extract today's date from the current conditions timestamp (location's timezone)
-  // timestamp format: "2025-11-11T14:53:00+00:00"
-  const todayDateString = currentTimestamp.split('T')[0];
+  let skippedFirstDaytime = false;
 
   // Group periods by day
   for (let i = 0; i < forecastPeriods.length - 1; i++) {
@@ -79,14 +77,15 @@ export function transformToDailyForecasts(
       continue;
     }
 
+    // Skip the first daytime period - that's "today" and we already have Current Conditions for it
+    if (!skippedFirstDaytime) {
+      skippedFirstDaytime = true;
+      continue;
+    }
+
     // Extract date from ISO string (YYYY-MM-DD) without timezone conversion
     // startTime format: "2024-11-12T06:00:00-08:00"
     const periodDateString = currentPeriod.startTime.split('T')[0];
-
-    // Skip today - we already have Current Conditions for today
-    if (periodDateString === todayDateString) {
-      continue;
-    }
 
     // Parse date components directly to avoid timezone conversion
     const [year, month, day] = periodDateString.split('-').map(Number);
