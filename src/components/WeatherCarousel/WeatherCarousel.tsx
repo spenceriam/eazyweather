@@ -106,9 +106,9 @@ export function WeatherCarousel({
               <ChevronLeft className="w-6 h-6 text-gray-800" />
             </button>
 
-            {/* Carousel */}
-            <div className="overflow-hidden mx-0 md:mx-14" ref={emblaRef}>
-              <div className="flex gap-4 items-stretch">
+            {/* Carousel - add padding to prevent shadow clipping */}
+            <div className="overflow-hidden mx-0 md:mx-14 py-2 -my-2" ref={emblaRef}>
+              <div className="flex gap-4 items-stretch px-0.5 -mx-0.5">
                 {/* Card 1: Current Conditions */}
                 <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex">
                   <CurrentWeatherCard conditions={conditions} timezone={timezone} />
