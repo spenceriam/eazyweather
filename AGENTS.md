@@ -232,7 +232,7 @@ The application displays all weather information in a single scrollable page wit
 - **SevenDayForecast**: Vertical stacking layout with centered content
 - **MonthlyForecast**: Calendar grid with weather icons and temperature averages
 - All major sections (except LocationSection) include "Back to Top" navigation buttons
-- All weather sections use centered white content with darker gray sides (max-w-4xl mx-auto)
+- All weather sections use centered white content with darker gray sides (max-w-6xl mx-auto)
 
 ## Location services
 - **Reverse Geocoding**: Converts GPS coordinates to "City, State" or "City, Country" format
@@ -273,7 +273,7 @@ No environment variables required - all APIs are free and public.
 - Single-page application with client-side routing only
 
 ## UI/UX patterns
-- **Layout**: Centered white content (max-w-4xl) with darker gray sides (#E5E7EB)
+- **Layout**: Centered white content (max-w-6xl) with darker gray sides (#E5E7EB)
 - **Cards**: Rounded corners, shadows, hover effects
 - **Navigation**: Smooth scrolling with sticky header
 - **Search**: Integrated with history, clear button, and recent locations
