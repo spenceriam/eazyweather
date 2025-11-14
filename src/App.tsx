@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { CurrentConditions } from "./components/CurrentConditions";
+import { WeatherCarousel } from "./components/WeatherCarousel";
 import { SevenDayForecast } from "./components/SevenDayForecast";
 import { HourlyForecast } from "./components/HourlyForecast";
 import { MonthlyForecast } from "./components/MonthlyForecast";
@@ -505,17 +505,10 @@ function App() {
               </div>
             ) : (
               <>
-                {currentConditions ? (
-                  <CurrentConditions
+                {currentConditions && forecast.length > 0 ? (
+                  <WeatherCarousel
                     conditions={currentConditions}
-                    onRefresh={handleManualRefresh}
-                    isRefreshing={refreshState.isRefreshing}
-                    lastUpdated={
-                      refreshState.lastRefreshTime
-                        ? new Date(refreshState.lastRefreshTime).toISOString()
-                        : currentConditions?.timestamp
-                    }
-                    hourlyForecast={hourlyForecast}
+                    forecast={forecast}
                     timezone={currentConditions.timezone}
                   />
                 ) : (

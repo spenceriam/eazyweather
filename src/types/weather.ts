@@ -84,3 +84,26 @@ export interface MonthlyForecast {
   year: number;
   days: MonthlyDay[];
 }
+
+export interface DailyForecast {
+  date: string;
+  dayName: string;
+  high: number;
+  low: number;
+  icon: string;
+  shortForecast: string;
+  detailedForecast: string;
+  windSpeed: string;
+  windDirection: string;
+  humidity?: number;
+  sunriseTime?: string;
+  sunsetTime?: string;
+  isDaytime: boolean;
+  temperatureUnit: string;
+}
+
+export interface CarouselCard {
+  id: string;
+  type: 'current' | 'forecast' | 'navigation';
+  data?: CurrentConditions | DailyForecast;
+}

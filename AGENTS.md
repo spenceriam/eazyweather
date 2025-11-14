@@ -163,6 +163,7 @@ Users can always override AI agent version decisions:
 - **Geocoding**: OpenStreetMap Nominatim API for both forward and reverse geocoding
 - **State Management**: React hooks (useState, useEffect, useCallback)
 - **Icons**: Lucide React
+- **Carousel**: Embla Carousel React for weather preview carousel
 - **Layout**: Single-page application with smooth scroll navigation and UI distinction
 
 ## Key directories
@@ -173,7 +174,7 @@ Users can always override AI agent version decisions:
 ## Single-page layout structure
 The application displays all weather information in a single scrollable page with centered white content:
 1. **Location Section** - Current location (City, State format) with integrated search and 4-location history
-2. **Current Conditions** - Compact card with rounded edges and horizontal layout
+2. **Weather Carousel** - Interactive carousel with current conditions and 3-day forecast preview (replaces static Current Conditions)
 3. **Hourly Forecast** - Wide, short cards with complete weather details
 4. **7-Day Forecast** - Vertical stacking of daily forecasts
 5. **Monthly Forecast** - Calendar grid with temperature averages
@@ -205,7 +206,8 @@ The application displays all weather information in a single scrollable page wit
 ## Progress tracking
 - **Phase 1 Complete**: All Quick Wins finished (issues #4, #14, #16)
 - **Phase 2 Complete**: All Core UX Improvements finished (issues #5, #3, #6)
-- **Next phase**: Phase 3 Essential Features (starting with issue #13)
+- **Phase 3 In Progress**: Essential Features
+  - ✅ Issue #46: Weather carousel with current conditions + 3-day preview (v1.6.0)
 - **Major milestone**: All high-priority UX issues completed!
 - **Documentation**: Always update priority_enhancements.md and close issues with completion comments
 
@@ -221,7 +223,11 @@ The application displays all weather information in a single scrollable page wit
 ## Component guidelines
 - **Header**: Uses anchor links for section navigation with sticky positioning
 - **LocationSection**: Integrated location display, search, and 4-location history management
-- **CurrentConditions**: Compact rounded card with horizontal layout (max-w-4xl)
+- **WeatherCarousel**: Interactive Embla carousel with 5 cards (current conditions + 3-day forecast + navigation card), supports touch/drag, 2 cards visible on desktop, 1 on mobile, hover-visible navigation arrows
+  - Cards use shadow-lg with proper padding to prevent clipping
+  - Skips first daytime forecast period to avoid duplicate "today"
+  - Wind directions abbreviated (N, NNE, SW, etc.)
+  - Smooth scroll to 7-day forecast on navigation card click
 - **HourlyForecast**: Wide, short cards showing time, icon, temperature, conditions, wind
 - **SevenDayForecast**: Vertical stacking layout with centered content
 - **MonthlyForecast**: Calendar grid with weather icons and temperature averages

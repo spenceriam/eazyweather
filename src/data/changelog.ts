@@ -8,6 +8,21 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.6.0",
+    date: "November 14, 2025",
+    type: "minor",
+    title: "Interactive Weather Carousel",
+    changes: [
+      "Replaced static Current Conditions with interactive carousel featuring current weather + 3-day forecast preview",
+      "Added touch/drag navigation with smooth scrolling animations",
+      "Desktop shows 2 cards side-by-side, mobile shows 1 card at a time",
+      "Hover-activated navigation arrows on desktop for easy browsing",
+      "Abbreviated wind directions (N, NNE, SW, etc.) for cleaner display",
+      "Added navigation card to quickly jump to full 7-day forecast",
+      "Detailed forecast descriptions included on each day card",
+    ],
+  },
+  {
     version: "1.5.0",
     date: "November 9, 2025",
     type: "minor",
