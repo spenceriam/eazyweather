@@ -27,6 +27,11 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
   const firstDay = new Date(forecast.year, forecast.month, 1);
   const startDay = firstDay.getDay();
 
+  // Get today's date number for highlighting
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() === forecast.month && today.getFullYear() === forecast.year;
+  const todayDate = isCurrentMonth ? today.getDate() : null;
+
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -50,7 +55,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                 <span className="text-gray-600">7-Day Forecast</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
+                <div className="w-4 h-4 bg-brand-cream border border-gray-300 rounded"></div>
                 <span className="text-gray-600">Predictions</span>
               </div>
             </div>
@@ -86,19 +91,22 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                     ? "bg-blue-100 hover:bg-blue-100"
                     : day.dataType === "forecast"
                       ? "bg-cyan-50 hover:bg-cyan-50"
-                      : "bg-gray-50 hover:bg-gray-100";
+                      : "bg-brand-cream hover:bg-brand-cream";
+
+                const isToday = day.date === todayDate;
+                const todayBorder = isToday ? "border-2 border-gray-900" : "";
 
                 return (
                 <div
                   key={day.date}
-                  className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${bgColor} transition-colors`}
+                  className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${bgColor} ${todayBorder} transition-colors`}
                 >
-                  <div className="flex flex-col items-center justify-between h-full">
-                    <div className="text-sm font-medium text-gray-700">
+                  <div className="flex flex-col items-start justify-between h-full">
+                    <div className="text-sm font-bold text-gray-700 w-full">
                       {day.date}
                     </div>
 
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 w-full">
                       <WeatherIcon
                         condition={day.condition}
                         isDaytime={true}
@@ -109,7 +117,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                       </div>
                     </div>
 
-                    <div className="text-xs text-gray-500 text-center leading-tight max-w-full truncate">
+                    <div className="text-xs text-gray-500 text-center leading-tight max-w-full truncate w-full">
                       {day.condition}
                     </div>
                   </div>
@@ -123,7 +131,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
             <p>
               <strong>Note:</strong> Dark blue shows actual past weather from this month.
               Light cyan shows the 7-day forecast from the National Weather Service.
-              Gray shows predictions based on historical weather patterns.
+              Cream shows predictions based on historical weather patterns.
             </p>
           </div>
 

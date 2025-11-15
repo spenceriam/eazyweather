@@ -430,16 +430,41 @@ export async function getMonthlyForecast(
       const hasHistorical = historicalData.has(day);
       const hasPrediction = predictionData.has(day);
 
-      if (isPast && hasHistorical) {
-        // Use historical data for past days
-        const hist = historicalData.get(day)!;
-        days.push({
-          date: day,
-          temperature: hist.temp,
-          condition: hist.condition,
-          icon: defaultIcon, // Open-Meteo doesn't provide icons, use NWS icon
-          dataType: "historical",
-        });
+      if (isPast) {
+        // All past days are marked as "historical" regardless of data source
+        if (hasHistorical) {
+          // Use actual historical data
+          const hist = historicalData.get(day)!;
+          days.push({
+            date: day,
+            temperature: hist.temp,
+            condition: hist.condition,
+            icon: defaultIcon, // Open-Meteo doesn't provide icons, use NWS icon
+            dataType: "historical",
+          });
+        } else if (hasForecast) {
+          // Use forecast data as fallback, but still mark as historical
+          const forecast = forecastByDay.get(day)!;
+          days.push({
+            date: day,
+            temperature: forecast.temperature,
+            condition: forecast.shortForecast,
+            icon: forecast.icon,
+            dataType: "historical",
+          });
+        } else {
+          // Use prediction data as fallback, but still mark as historical
+          const prediction = hasPrediction
+            ? predictionData.get(day)!
+            : { temperature: 65, condition: "Partly Cloudy" }; // fallback
+          days.push({
+            date: day,
+            temperature: prediction.temperature,
+            condition: prediction.condition,
+            icon: defaultIcon,
+            dataType: "historical",
+          });
+        }
       } else if (hasForecast) {
         // Use NWS forecast data (today + next 7 days)
         const forecast = forecastByDay.get(day)!;
