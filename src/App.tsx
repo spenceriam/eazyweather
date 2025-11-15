@@ -157,6 +157,9 @@ function App() {
         // For initial Chicago load, include monthly forecast to avoid extra loading time
         const shouldIncludeMonthly = isInitialChicagoLoad && locationName === "Chicago, Illinois";
 
+        console.log(`🔍 Loading weather data - Location: "${locationName}", Initial Chicago: ${isInitialChicagoLoad}, Include Monthly: ${shouldIncludeMonthly}`);
+        const loadStartTime = Date.now();
+
         const {
           current,
           forecast: sevenDay,
@@ -166,6 +169,9 @@ function App() {
           skipRateLimit,
           includeMonthly: shouldIncludeMonthly,
         });
+
+        const loadDuration = ((Date.now() - loadStartTime) / 1000).toFixed(2);
+        console.log(`⏱️ Weather data loaded in ${loadDuration}s (Monthly included: ${!!monthly})`);
 
         setCurrentConditions(current);
         setForecast(sevenDay);
