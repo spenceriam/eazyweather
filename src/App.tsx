@@ -589,13 +589,11 @@ function App() {
                   <section id="monthly" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
-                        <div className="bg-white rounded-lg shadow-md p-8">
-                          <div className="flex items-center justify-center">
-                            <LoadingSpinner />
-                            <span className="ml-3 text-gray-600">
-                              Loading monthly forecast...
-                            </span>
-                          </div>
+                        <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
+                          <LoadingSpinner />
+                          <span className="ml-3 text-gray-700">
+                            Loading monthly forecast
+                          </span>
                         </div>
                       </div>
                     </div>
