@@ -43,11 +43,11 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-brand-lighter border border-brand-light rounded"></div>
-                <span className="text-gray-600">Available Forecast</span>
+                <span className="text-gray-600">Historical & Forecast Data</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
-                <span className="text-gray-600">Estimated Average</span>
+                <span className="text-gray-600">Predictions</span>
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                 <div
                   key={day.date}
                   className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${
-                    day.isAvailable
+                    day.dataType === "historical" || day.dataType === "forecast"
                       ? "bg-brand-lighter hover:bg-brand-lighter"
                       : "bg-gray-50 hover:bg-gray-100"
                   } transition-colors`}
@@ -112,9 +112,9 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
 
           <div className="mt-6 text-sm text-gray-600">
             <p>
-              <strong>Note:</strong> Days 1-7 show actual forecast data from the
-              National Weather Service. Days 8-31 show estimated averages based
-              on the current weather pattern.
+              <strong>Note:</strong> Past days show actual historical weather data.
+              The next 7 days show forecast data from the National Weather Service.
+              Remaining days show predictions based on 3-year historical averages from Open-Meteo.
             </p>
           </div>
 
