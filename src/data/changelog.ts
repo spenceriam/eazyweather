@@ -13,10 +13,9 @@ export const changelog: ChangelogEntry[] = [
     type: "patch",
     title: "Wider Content Layout for Desktop",
     changes: [
-      "Increased content width from 896px to 1152px for better use of desktop screen space",
-      "Aligned carousel width with all weather sections for consistent visual layout",
-      "All weather sections (Carousel, Hourly, 7-Day, Monthly) now use unified max-w-6xl width",
-      "Mobile and tablet views remain unchanged",
+      "Weather sections now use more of your screen on desktop and laptop computers",
+      "Weather carousel width now matches the sections below for a cleaner, more aligned look",
+      "Mobile and tablet experience remains the same",
     ],
   },
   {
