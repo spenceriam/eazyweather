@@ -65,7 +65,7 @@ export function HourlyForecast({ forecast, timezone }: HourlyForecastProps) {
   return (
     <section id="hourly" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-gray-800">
               Hourly Forecast

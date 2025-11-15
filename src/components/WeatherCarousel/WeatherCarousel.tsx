@@ -89,7 +89,7 @@ export function WeatherCarousel({
   return (
     <section id="current" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Carousel container with navigation arrows */}
           <div className="relative group">
             {/* Left arrow - hidden on mobile, shown on hover */}
@@ -107,7 +107,7 @@ export function WeatherCarousel({
             </button>
 
             {/* Carousel - add padding to prevent shadow clipping */}
-            <div className="overflow-hidden mx-0 md:mx-14 py-4 -my-4" ref={emblaRef}>
+            <div className="overflow-hidden py-4 -my-4" ref={emblaRef}>
               <div className="flex gap-4 items-stretch px-4 -mx-4">
                 {/* Card 1: Current Conditions */}
                 <div className="flex-shrink-0 w-full md:w-[calc(50%-0.5rem)] flex">

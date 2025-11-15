@@ -13,7 +13,7 @@ export function SevenDayForecast({ forecast }: SevenDayForecastProps) {
   return (
     <section id="forecast" className="bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">
             7-Day Forecast
           </h2>

@@ -52,14 +52,23 @@ Proposed version: X.Y.Z
 Does this classification seem correct? Should I proceed with this version bump?
 ```
 
-**Step 3: Apply Version Bump**
-After user confirms, bump the version IN the feature branch BEFORE creating PR:
+**Step 3: Update What's New (Changelog)**
+Before bumping version, update the changelog at `src/data/changelog.ts`:
+- Add new entry at the TOP of the changelog array
+- Use current date in format "Month DD, YYYY"
+- Set type to "patch", "minor", or "major"
+- Write clear, user-friendly title (e.g., "Wider Content Layout for Desktop")
+- List changes as bullet points describing what users will see/experience
+- Keep descriptions concise and benefit-focused
+
+**Step 4: Apply Version Bump**
+After updating changelog, bump the version IN the feature branch BEFORE creating PR:
 ```bash
 npm version patch  # or minor, or major
 git push && git push --tags
 ```
 
-**Step 4: Document in PR**
+**Step 5: Document in PR**
 - Update PR title to include new version (e.g., "Fix loading spinner (v1.5.3)")
 - Mention version bump and reasoning in PR description
 - List what changed to justify the bump type
@@ -220,6 +229,12 @@ The application displays all weather information in a single scrollable page wit
 - Interfaces exported separately from implementations
 - Use semantic section IDs for navigation (location, current, hourly, forecast, monthly)
 
+## Changelog and What's New Modal
+- **Changelog Data**: Located at `src/data/changelog.ts` - update this when making releases
+- **What's New Modal**: Accessible from Footer, displays changelog entries to users
+- **Structure**: Each entry has version, date, type (major/minor/patch), title, and changes array
+- **Always update**: When bumping version, add new entry at TOP of changelog array BEFORE running npm version
+
 ## Component guidelines
 - **Header**: Uses anchor links for section navigation with sticky positioning
 - **LocationSection**: Integrated location display, search, and 4-location history management
@@ -232,7 +247,7 @@ The application displays all weather information in a single scrollable page wit
 - **SevenDayForecast**: Vertical stacking layout with centered content
 - **MonthlyForecast**: Calendar grid with weather icons and temperature averages
 - All major sections (except LocationSection) include "Back to Top" navigation buttons
-- All weather sections use centered white content with darker gray sides (max-w-4xl mx-auto)
+- All weather sections use centered white content with darker gray sides (max-w-6xl mx-auto)
 
 ## Location services
 - **Reverse Geocoding**: Converts GPS coordinates to "City, State" or "City, Country" format
@@ -273,7 +288,7 @@ No environment variables required - all APIs are free and public.
 - Single-page application with client-side routing only
 
 ## UI/UX patterns
-- **Layout**: Centered white content (max-w-4xl) with darker gray sides (#E5E7EB)
+- **Layout**: Centered white content (max-w-6xl) with darker gray sides (#E5E7EB)
 - **Cards**: Rounded corners, shadows, hover effects
 - **Navigation**: Smooth scrolling with sticky header
 - **Search**: Integrated with history, clear button, and recent locations
