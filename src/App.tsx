@@ -139,6 +139,8 @@ function App() {
   );
   const [monthlyForecast, setMonthlyForecast] =
     useState<MonthlyForecastType | null>(null);
+  const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState(false);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false) => {
@@ -208,6 +210,9 @@ function App() {
     if (!coordinates || !hasWeatherLoaded) return;
 
     const loadMonthlyForecast = async () => {
+      setIsMonthlyLoading(true);
+      setMonthlyError(false);
+
       try {
         console.log('📅 Loading monthly forecast asynchronously...');
         const monthly = await getMonthlyForecast(coordinates);
@@ -215,7 +220,9 @@ function App() {
         console.log('✅ Monthly forecast loaded');
       } catch (error) {
         console.warn('Could not load monthly forecast:', error);
-        // Silently fail - monthly forecast is not critical
+        setMonthlyError(true);
+      } finally {
+        setIsMonthlyLoading(false);
       }
     };
 
@@ -578,7 +585,22 @@ function App() {
 
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
-                ) : (
+                ) : isMonthlyLoading ? (
+                  <section id="monthly" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                      <div className="max-w-6xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-md p-8">
+                          <div className="flex items-center justify-center">
+                            <LoadingSpinner />
+                            <span className="ml-3 text-gray-600">
+                              Loading monthly forecast...
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                ) : monthlyError ? (
                   <section id="monthly" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
@@ -589,7 +611,7 @@ function App() {
                       </div>
                     </div>
                   </section>
-                )}
+                ) : null}
               </>
             )}
           </div>
