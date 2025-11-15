@@ -217,6 +217,98 @@ export async function getHistoricalWeatherForCurrentMonth(
 }
 
 /**
+ * Get historical averages for a date range (for predictions)
+ * Fetches data from previous years for the same dates and averages them
+ * @param coordinates - Latitude and longitude
+ * @param startDate - Start date string (YYYY-MM-DD)
+ * @param endDate - End date string (YYYY-MM-DD)
+ * @param yearsBack - Number of years to look back (default: 3)
+ * @returns Map of day-of-month to average weather data
+ */
+export async function getHistoricalAveragesForRange(
+  coordinates: Coordinates,
+  startDate: string,
+  endDate: string,
+  yearsBack: number = 3,
+): Promise<Map<number, { temperature: number; condition: string }>> {
+  const result = new Map<number, { temperature: number; condition: string }>();
+  const currentYear = new Date().getFullYear();
+
+  // Parse start and end dates
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Collect all data from previous years
+  const allDataByDay = new Map<number, HistoricalDay[]>();
+
+  // Fetch data for the same date range from previous years
+  for (let i = 1; i <= yearsBack; i++) {
+    const year = currentYear - i;
+    const yearStartDate = new Date(start);
+    yearStartDate.setFullYear(year);
+    const yearEndDate = new Date(end);
+    yearEndDate.setFullYear(year);
+
+    const yearStartStr = yearStartDate.toISOString().split('T')[0];
+    const yearEndStr = yearEndDate.toISOString().split('T')[0];
+
+    try {
+      const data = await getHistoricalWeather(
+        coordinates,
+        yearStartStr,
+        yearEndStr,
+      );
+
+      // Group by day of month
+      data.forEach((day) => {
+        const dayOfMonth = day.dayOfMonth;
+        if (!allDataByDay.has(dayOfMonth)) {
+          allDataByDay.set(dayOfMonth, []);
+        }
+        allDataByDay.get(dayOfMonth)!.push(day);
+      });
+    } catch (error) {
+      console.warn(
+        `Could not fetch historical data for ${yearStartStr} to ${yearEndStr}:`,
+        error,
+      );
+      // Continue with other years
+    }
+  }
+
+  // Calculate averages for each day
+  allDataByDay.forEach((daysData, dayOfMonth) => {
+    if (daysData.length === 0) {
+      return;
+    }
+
+    // Calculate average temperature
+    const avgTemp = Math.round(
+      daysData.reduce((sum, day) => sum + day.temperatureAvg, 0) /
+        daysData.length,
+    );
+
+    // Find most common condition
+    const conditionCounts: Record<string, number> = {};
+    daysData.forEach((day) => {
+      conditionCounts[day.condition] =
+        (conditionCounts[day.condition] || 0) + 1;
+    });
+
+    const mostCommonCondition = Object.keys(conditionCounts).reduce((a, b) =>
+      conditionCounts[a] > conditionCounts[b] ? a : b,
+    );
+
+    result.set(dayOfMonth, {
+      temperature: avgTemp,
+      condition: mostCommonCondition,
+    });
+  });
+
+  return result;
+}
+
+/**
  * Get historical averages for prediction (same dates from previous years)
  * @param coordinates - Latitude and longitude
  * @param targetDate - Target date to get historical averages for

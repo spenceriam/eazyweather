@@ -10,7 +10,7 @@ import type {
 import { BASE_URL } from "./config";
 import {
   getHistoricalWeatherForCurrentMonth,
-  getHistoricalAverageForDate,
+  getHistoricalAveragesForRange,
 } from "./historicalWeatherApi";
 
 const BASE_URL = "https://api.weather.gov";
@@ -388,12 +388,49 @@ export async function getMonthlyForecast(
     const defaultIcon =
       sevenDayForecast.length > 0 ? sevenDayForecast[0].icon : "";
 
+    // Fetch historical averages for prediction days (batch fetch)
+    let predictionData: Map<number, { temperature: number; condition: string }> =
+      new Map();
+
+    // Find the range of days that need predictions
+    const forecastDays = Array.from(forecastByDay.keys());
+    const maxForecastDay = forecastDays.length > 0 ? Math.max(...forecastDays) : currentDay;
+    const firstPredictionDay = maxForecastDay + 1;
+
+    if (firstPredictionDay <= daysInMonth) {
+      try {
+        const predictionStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(firstPredictionDay).padStart(2, '0')}`;
+        const predictionEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+        console.log(
+          `📊 Fetching historical averages for predictions (days ${firstPredictionDay}-${daysInMonth})`,
+        );
+
+        predictionData = await getHistoricalAveragesForRange(
+          coords,
+          predictionStartDate,
+          predictionEndDate,
+          3, // 3 years back
+        );
+
+        console.log(
+          `✅ Fetched historical averages for ${predictionData.size} prediction days`,
+        );
+      } catch (error) {
+        console.warn(
+          "Could not fetch historical averages for predictions, will use fallbacks:",
+          error,
+        );
+        // Continue without prediction data (will use fallbacks in loop)
+      }
+    }
+
     // Build the monthly calendar
     for (let day = 1; day <= daysInMonth; day++) {
-      const isToday = day === currentDay;
       const isPast = day < currentDay;
       const hasForecast = forecastByDay.has(day);
       const hasHistorical = historicalData.has(day);
+      const hasPrediction = predictionData.has(day);
 
       if (isPast && hasHistorical) {
         // Use historical data for past days
@@ -417,26 +454,14 @@ export async function getMonthlyForecast(
         });
       } else {
         // Use historical averages for prediction (days beyond forecast)
-        // Fetch 3-year average for this specific date
-        const targetDate = new Date(currentYear, currentMonth, day);
-        let predictedTemp = 65; // fallback
-        let predictedCondition = "Partly Cloudy"; // fallback
-
-        try {
-          const avg = await getHistoricalAverageForDate(coords, targetDate, 3);
-          predictedTemp = avg.temperature;
-          predictedCondition = avg.condition;
-        } catch (error) {
-          console.warn(
-            `Could not fetch historical average for day ${day}, using fallback`,
-          );
-          // Use fallback values defined above
-        }
+        const prediction = hasPrediction
+          ? predictionData.get(day)!
+          : { temperature: 65, condition: "Partly Cloudy" }; // fallback
 
         days.push({
           date: day,
-          temperature: predictedTemp,
-          condition: predictedCondition,
+          temperature: prediction.temperature,
+          condition: prediction.condition,
           icon: defaultIcon,
           dataType: "prediction",
         });
