@@ -387,7 +387,7 @@ export async function getMonthlyForecast(
               coords,
               predictionStartDate,
               predictionEndDate,
-              3, // 3 years back
+              1, // 1 year back for faster loading
             );
           })()
         : Promise.resolve(new Map())),
@@ -480,7 +480,7 @@ export async function getMonthlyForecast(
 // Comprehensive function to get all weather data with a single point API call
 export async function getAllWeatherData(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; includeMonthly?: boolean } = {},
 ): Promise<{
   current: CurrentConditions | null;
   forecast: ForecastPeriod[];
@@ -675,9 +675,11 @@ export async function getAllWeatherData(
       }
     }
 
-    // Monthly forecast is fetched separately to avoid blocking page load
-    // It will be loaded asynchronously after the main content is displayed
-    const monthly = null;
+    // Monthly forecast - only load if explicitly requested (for initial Chicago load)
+    // Otherwise loaded asynchronously to avoid blocking page load
+    const monthly = options.includeMonthly
+      ? await getMonthlyForecast(coords, options)
+      : null;
 
     // Get sunrise and sunset from sunrise-sunset.org API
     // Get timezone from coordinates using OpenStreetMap Nominatim

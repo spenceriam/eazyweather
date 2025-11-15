@@ -48,6 +48,7 @@ function App() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
+  const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -153,15 +154,28 @@ function App() {
       setError(null);
 
       try {
+        // For initial Chicago load, include monthly forecast to avoid extra loading time
+        const shouldIncludeMonthly = isInitialChicagoLoad && locationName === "Chicago, Illinois";
+
         const {
           current,
           forecast: sevenDay,
           hourly,
-        } = await getAllWeatherData(coordinates, { skipRateLimit });
+          monthly,
+        } = await getAllWeatherData(coordinates, {
+          skipRateLimit,
+          includeMonthly: shouldIncludeMonthly,
+        });
 
         setCurrentConditions(current);
         setForecast(sevenDay);
         setHourlyForecast(hourly);
+
+        // Set monthly forecast if it was included (initial Chicago load)
+        if (monthly) {
+          setMonthlyForecast(monthly);
+          console.log('✅ Monthly forecast loaded synchronously with initial data');
+        }
 
         // Check if we got any meaningful data
         const hasData = current || sevenDay.length > 0 || hourly.length > 0;
@@ -205,9 +219,24 @@ function App() {
     [coordinates, locationName, hasWeatherLoaded],
   );
 
+  // Track when user changes location from initial Chicago
+  useEffect(() => {
+    if (locationName !== "Chicago, Illinois" && isInitialChicagoLoad) {
+      setIsInitialChicagoLoad(false);
+      console.log('📍 Location changed from initial Chicago, future monthly loads will be async');
+    }
+  }, [locationName, isInitialChicagoLoad]);
+
   // Load monthly forecast asynchronously after main content loads
+  // UNLESS it's the initial Chicago load (then it's loaded during initial load)
   useEffect(() => {
     if (!coordinates || !hasWeatherLoaded) return;
+
+    // Skip async load for initial Chicago - it's already loaded synchronously
+    if (isInitialChicagoLoad && locationName === "Chicago, Illinois") {
+      console.log('📅 Skipping async monthly load for initial Chicago (already loaded)');
+      return;
+    }
 
     const loadMonthlyForecast = async () => {
       setIsMonthlyLoading(true);
@@ -227,7 +256,7 @@ function App() {
     };
 
     loadMonthlyForecast();
-  }, [coordinates, hasWeatherLoaded]);
+  }, [coordinates, hasWeatherLoaded, isInitialChicagoLoad, locationName]);
 
   // Refresh service effects
   useEffect(() => {
