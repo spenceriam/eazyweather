@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.6.1",
+    date: "November 15, 2025",
+    type: "patch",
+    title: "Wider Content Layout for Desktop",
+    changes: [
+      "Increased content width from 896px to 1152px for better use of desktop screen space",
+      "Aligned carousel width with all weather sections for consistent visual layout",
+      "All weather sections (Carousel, Hourly, 7-Day, Monthly) now use unified max-w-6xl width",
+      "Mobile and tablet views remain unchanged",
+    ],
+  },
+  {
     version: "1.6.0",
     date: "November 14, 2025",
     type: "minor",
