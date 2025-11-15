@@ -118,10 +118,15 @@ export async function getHistoricalWeather(
     timezone: 'auto', // Use local timezone for the location
   });
 
-  const url = `${BASE_URL}/forecast?${params.toString()}`;
+  // Use archive endpoint for historical data (past dates)
+  const isPastData = new Date(endDate) < new Date();
+  const baseUrl = isPastData
+    ? 'https://archive-api.open-meteo.com/v1/archive'
+    : BASE_URL + '/forecast';
+  const url = `${baseUrl}?${params.toString()}`;
 
   try {
-    console.log(`Fetching historical weather from Open-Meteo: ${startDate} to ${endDate}`);
+    console.log(`Fetching ${isPastData ? 'historical' : 'forecast'} weather from Open-Meteo: ${startDate} to ${endDate}`);
 
     const response = await fetch(url, {
       headers: {
@@ -241,9 +246,9 @@ export async function getHistoricalAveragesForRange(
   // Collect all data from previous years
   const allDataByDay = new Map<number, HistoricalDay[]>();
 
-  // Fetch data for the same date range from previous years
-  for (let i = 1; i <= yearsBack; i++) {
-    const year = currentYear - i;
+  // Fetch data for the same date range from previous years IN PARALLEL
+  const yearPromises = Array.from({ length: yearsBack }, (_, i) => {
+    const year = currentYear - (i + 1);
     const yearStartDate = new Date(start);
     yearStartDate.setFullYear(year);
     const yearEndDate = new Date(end);
@@ -252,29 +257,30 @@ export async function getHistoricalAveragesForRange(
     const yearStartStr = yearStartDate.toISOString().split('T')[0];
     const yearEndStr = yearEndDate.toISOString().split('T')[0];
 
-    try {
-      const data = await getHistoricalWeather(
-        coordinates,
-        yearStartStr,
-        yearEndStr,
-      );
+    return getHistoricalWeather(coordinates, yearStartStr, yearEndStr).catch(
+      (error) => {
+        console.warn(
+          `Could not fetch historical data for ${yearStartStr} to ${yearEndStr}:`,
+          error,
+        );
+        return []; // Return empty array on error
+      },
+    );
+  });
 
-      // Group by day of month
-      data.forEach((day) => {
-        const dayOfMonth = day.dayOfMonth;
-        if (!allDataByDay.has(dayOfMonth)) {
-          allDataByDay.set(dayOfMonth, []);
-        }
-        allDataByDay.get(dayOfMonth)!.push(day);
-      });
-    } catch (error) {
-      console.warn(
-        `Could not fetch historical data for ${yearStartStr} to ${yearEndStr}:`,
-        error,
-      );
-      // Continue with other years
-    }
-  }
+  // Wait for all year fetches to complete in parallel
+  const allYearsData = await Promise.all(yearPromises);
+
+  // Group all data by day of month
+  allYearsData.forEach((yearData) => {
+    yearData.forEach((day) => {
+      const dayOfMonth = day.dayOfMonth;
+      if (!allDataByDay.has(dayOfMonth)) {
+        allDataByDay.set(dayOfMonth, []);
+      }
+      allDataByDay.get(dayOfMonth)!.push(day);
+    });
+  });
 
   // Calculate averages for each day
   allDataByDay.forEach((daysData, dayOfMonth) => {

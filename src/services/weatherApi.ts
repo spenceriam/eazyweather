@@ -347,27 +347,7 @@ export async function getMonthlyForecast(
 
     const days: MonthlyDay[] = [];
 
-    // Fetch historical weather data for past days of current month
-    let historicalData: Map<number, { temp: number; condition: string }> =
-      new Map();
-
-    try {
-      const historical = await getHistoricalWeatherForCurrentMonth(coords);
-      historical.forEach((day) => {
-        historicalData.set(day.dayOfMonth, {
-          temp: day.temperatureAvg,
-          condition: day.condition,
-        });
-      });
-      console.log(
-        `✅ Fetched historical data for ${historical.length} days of current month`,
-      );
-    } catch (error) {
-      console.warn("Could not fetch historical data, continuing without it:", error);
-      // Continue without historical data (fallback mode)
-    }
-
-    // Get 7-day forecast
+    // Get 7-day forecast first (required, fast)
     const sevenDayForecast = await get7DayForecast(coords, {
       ...options,
       skipCache: true, // Don't use cache for forecast data
@@ -388,41 +368,59 @@ export async function getMonthlyForecast(
     const defaultIcon =
       sevenDayForecast.length > 0 ? sevenDayForecast[0].icon : "";
 
-    // Fetch historical averages for prediction days (batch fetch)
-    let predictionData: Map<number, { temperature: number; condition: string }> =
-      new Map();
-
     // Find the range of days that need predictions
     const forecastDays = Array.from(forecastByDay.keys());
     const maxForecastDay = forecastDays.length > 0 ? Math.max(...forecastDays) : currentDay;
     const firstPredictionDay = maxForecastDay + 1;
 
-    if (firstPredictionDay <= daysInMonth) {
-      try {
-        const predictionStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(firstPredictionDay).padStart(2, '0')}`;
-        const predictionEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+    // Fetch historical data and prediction data IN PARALLEL (non-blocking)
+    const [historicalResult, predictionResult] = await Promise.allSettled([
+      // Historical data for past days
+      getHistoricalWeatherForCurrentMonth(coords).catch(() => []),
 
-        console.log(
-          `📊 Fetching historical averages for predictions (days ${firstPredictionDay}-${daysInMonth})`,
-        );
+      // Prediction data for future days
+      (firstPredictionDay <= daysInMonth
+        ? (async () => {
+            const predictionStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(firstPredictionDay).padStart(2, '0')}`;
+            const predictionEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+            return await getHistoricalAveragesForRange(
+              coords,
+              predictionStartDate,
+              predictionEndDate,
+              3, // 3 years back
+            );
+          })()
+        : Promise.resolve(new Map())),
+    ]);
 
-        predictionData = await getHistoricalAveragesForRange(
-          coords,
-          predictionStartDate,
-          predictionEndDate,
-          3, // 3 years back
-        );
+    // Extract historical data
+    const historicalData: Map<number, { temp: number; condition: string }> = new Map();
+    if (historicalResult.status === 'fulfilled') {
+      historicalResult.value.forEach((day) => {
+        historicalData.set(day.dayOfMonth, {
+          temp: day.temperatureAvg,
+          condition: day.condition,
+        });
+      });
+      console.log(
+        `✅ Fetched historical data for ${historicalResult.value.length} days of current month`,
+      );
+    } else {
+      console.warn("Could not fetch historical data:", historicalResult.reason);
+    }
 
-        console.log(
-          `✅ Fetched historical averages for ${predictionData.size} prediction days`,
-        );
-      } catch (error) {
-        console.warn(
-          "Could not fetch historical averages for predictions, will use fallbacks:",
-          error,
-        );
-        // Continue without prediction data (will use fallbacks in loop)
-      }
+    // Extract prediction data
+    const predictionData: Map<number, { temperature: number; condition: string }> =
+      predictionResult.status === 'fulfilled'
+        ? predictionResult.value
+        : new Map();
+
+    if (predictionResult.status === 'fulfilled') {
+      console.log(
+        `✅ Fetched historical averages for ${predictionData.size} prediction days`,
+      );
+    } else {
+      console.warn("Could not fetch prediction data:", predictionResult.reason);
     }
 
     // Build the monthly calendar
