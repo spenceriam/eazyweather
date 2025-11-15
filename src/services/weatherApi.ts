@@ -485,7 +485,7 @@ export async function getAllWeatherData(
   current: CurrentConditions | null;
   forecast: ForecastPeriod[];
   hourly: HourlyForecastType[];
-  monthly: MonthlyForecast;
+  monthly: MonthlyForecast | null;
 }> {
   try {
     // Get weather point once with longer timeout for ZIP code searches
@@ -675,8 +675,9 @@ export async function getAllWeatherData(
       }
     }
 
-    // Calculate monthly forecast using dedicated function
-    const monthly = await getMonthlyForecast(coords, options);
+    // Monthly forecast is fetched separately to avoid blocking page load
+    // It will be loaded asynchronously after the main content is displayed
+    const monthly = null;
 
     // Get sunrise and sunset from sunrise-sunset.org API
     // Get timezone from coordinates using OpenStreetMap Nominatim

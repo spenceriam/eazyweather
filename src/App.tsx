@@ -18,7 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 
-import { getAllWeatherData } from "./services/weatherApi";
+import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
   reverseGeocode,
   getBrowserLocation,
@@ -155,13 +155,11 @@ function App() {
           current,
           forecast: sevenDay,
           hourly,
-          monthly,
         } = await getAllWeatherData(coordinates, { skipRateLimit });
 
         setCurrentConditions(current);
         setForecast(sevenDay);
         setHourlyForecast(hourly);
-        setMonthlyForecast(monthly);
 
         // Check if we got any meaningful data
         const hasData = current || sevenDay.length > 0 || hourly.length > 0;
@@ -204,6 +202,25 @@ function App() {
     },
     [coordinates, locationName, hasWeatherLoaded],
   );
+
+  // Load monthly forecast asynchronously after main content loads
+  useEffect(() => {
+    if (!coordinates || !hasWeatherLoaded) return;
+
+    const loadMonthlyForecast = async () => {
+      try {
+        console.log('📅 Loading monthly forecast asynchronously...');
+        const monthly = await getMonthlyForecast(coordinates);
+        setMonthlyForecast(monthly);
+        console.log('✅ Monthly forecast loaded');
+      } catch (error) {
+        console.warn('Could not load monthly forecast:', error);
+        // Silently fail - monthly forecast is not critical
+      }
+    };
+
+    loadMonthlyForecast();
+  }, [coordinates, hasWeatherLoaded]);
 
   // Refresh service effects
   useEffect(() => {
