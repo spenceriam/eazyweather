@@ -42,9 +42,11 @@ export function PrivacyModal({
         <div>
           <h3 className="font-medium text-gray-900 mb-2">Data Storage</h3>
           <p className="text-sm text-gray-600">
-            Location search history is stored locally in your browser's
-            localStorage. We do not collect, store, or transmit any personal
-            information to our servers.
+            Location data and search history are stored locally on your device.
+            You have the option to enable cookies to ensure this data persists
+            reliably for up to 6 months. If cookies are disabled, data is stored
+            only in your browser's localStorage. We do not collect, store, or
+            transmit any personal information to our servers.
           </p>
         </div>
 
