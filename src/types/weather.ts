@@ -76,7 +76,7 @@ export interface MonthlyDay {
   temperature: number;
   condition: string;
   icon: string;
-  isAvailable: boolean;
+  dataType: 'historical' | 'forecast' | 'prediction';
 }
 
 export interface MonthlyForecast {

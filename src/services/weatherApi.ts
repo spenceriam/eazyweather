@@ -8,6 +8,10 @@ import type {
   MonthlyDay,
 } from "../types/weather";
 import { BASE_URL } from "./config";
+import {
+  getHistoricalWeatherForCurrentMonth,
+  getHistoricalAveragesForRange,
+} from "./historicalWeatherApi";
 
 const BASE_URL = "https://api.weather.gov";
 const USER_AGENT = "(EazyWeather, eazyweather@example.com)";
@@ -334,68 +338,155 @@ export async function getMonthlyForecast(
   options: { skipRateLimit?: boolean } = {},
 ): Promise<MonthlyForecast> {
   try {
-    const sevenDayForecast = await get7DayForecast(coords, {
-      ...options,
-      skipCache: true, // Don't use cache for forecast data
-    });
+    // Get current date information
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
+    const currentDay = currentDate.getDate();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     const days: MonthlyDay[] = [];
 
-    // Calculate average temperature from available forecast data
-    const availableTemps = sevenDayForecast.map((period) => period.temperature);
-    const avgTemp =
-      availableTemps.length > 0
-        ? Math.round(
-            availableTemps.reduce((sum, temp) => sum + temp, 0) /
-              availableTemps.length,
-          )
-        : 65; // fallback average
+    // Get 7-day forecast first (required, fast)
+    const sevenDayForecast = await get7DayForecast(coords, {
+      ...options,
+      skipCache: true, // Don't use cache for forecast data
+    });
 
-    // Get most common condition from available forecast
-    const conditionCounts = sevenDayForecast.reduce(
-      (acc, period) => {
-        acc[period.shortForecast] = (acc[period.shortForecast] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    // Create a map of forecast data by day number
+    const forecastByDay = new Map<number, ForecastPeriod>();
+    sevenDayForecast.forEach((period) => {
+      const periodDate = new Date(period.startTime);
+      const dayNum = periodDate.getDate();
+      // Only add if we don't already have this day (keep first occurrence)
+      if (!forecastByDay.has(dayNum)) {
+        forecastByDay.set(dayNum, period);
+      }
+    });
 
-    const mostCommonCondition =
-      Object.keys(conditionCounts).length > 0
-        ? Object.keys(conditionCounts).reduce((a, b) =>
-            conditionCounts[a] > conditionCounts[b] ? a : b,
-          )
-        : "Partly Cloudy";
-
-    const mostCommonIcon =
+    // Find default icon from forecast for predictions
+    const defaultIcon =
       sevenDayForecast.length > 0 ? sevenDayForecast[0].icon : "";
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const forecastDay = sevenDayForecast.find((period) => {
-        const periodDate = new Date(period.startTime);
-        return periodDate.getDate() === day;
-      });
+    // Find the range of days that need predictions
+    const forecastDays = Array.from(forecastByDay.keys());
+    const maxForecastDay = forecastDays.length > 0 ? Math.max(...forecastDays) : currentDay;
+    const firstPredictionDay = maxForecastDay + 1;
 
-      if (forecastDay) {
+    // Fetch historical data and prediction data IN PARALLEL (non-blocking)
+    const [historicalResult, predictionResult] = await Promise.allSettled([
+      // Historical data for past days
+      getHistoricalWeatherForCurrentMonth(coords).catch(() => []),
+
+      // Prediction data for future days
+      (firstPredictionDay <= daysInMonth
+        ? (async () => {
+            const predictionStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(firstPredictionDay).padStart(2, '0')}`;
+            const predictionEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+            return await getHistoricalAveragesForRange(
+              coords,
+              predictionStartDate,
+              predictionEndDate,
+              1, // 1 year back for faster loading
+            );
+          })()
+        : Promise.resolve(new Map())),
+    ]);
+
+    // Extract historical data
+    const historicalData: Map<number, { temp: number; condition: string }> = new Map();
+    if (historicalResult.status === 'fulfilled') {
+      historicalResult.value.forEach((day) => {
+        historicalData.set(day.dayOfMonth, {
+          temp: day.temperatureAvg,
+          condition: day.condition,
+        });
+      });
+      console.log(
+        `✅ Fetched historical data for ${historicalResult.value.length} days of current month`,
+      );
+    } else {
+      console.warn("Could not fetch historical data:", historicalResult.reason);
+    }
+
+    // Extract prediction data
+    const predictionData: Map<number, { temperature: number; condition: string }> =
+      predictionResult.status === 'fulfilled'
+        ? predictionResult.value
+        : new Map();
+
+    if (predictionResult.status === 'fulfilled') {
+      console.log(
+        `✅ Fetched historical averages for ${predictionData.size} prediction days`,
+      );
+    } else {
+      console.warn("Could not fetch prediction data:", predictionResult.reason);
+    }
+
+    // Build the monthly calendar
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isPast = day < currentDay;
+      const hasForecast = forecastByDay.has(day);
+      const hasHistorical = historicalData.has(day);
+      const hasPrediction = predictionData.has(day);
+
+      if (isPast) {
+        // All past days are marked as "historical" regardless of data source
+        if (hasHistorical) {
+          // Use actual historical data
+          const hist = historicalData.get(day)!;
+          days.push({
+            date: day,
+            temperature: hist.temp,
+            condition: hist.condition,
+            icon: defaultIcon, // Open-Meteo doesn't provide icons, use NWS icon
+            dataType: "historical",
+          });
+        } else if (hasForecast) {
+          // Use forecast data as fallback, but still mark as historical
+          const forecast = forecastByDay.get(day)!;
+          days.push({
+            date: day,
+            temperature: forecast.temperature,
+            condition: forecast.shortForecast,
+            icon: forecast.icon,
+            dataType: "historical",
+          });
+        } else {
+          // Use prediction data as fallback, but still mark as historical
+          const prediction = hasPrediction
+            ? predictionData.get(day)!
+            : { temperature: 65, condition: "Partly Cloudy" }; // fallback
+          days.push({
+            date: day,
+            temperature: prediction.temperature,
+            condition: prediction.condition,
+            icon: defaultIcon,
+            dataType: "historical",
+          });
+        }
+      } else if (hasForecast) {
+        // Use NWS forecast data (today + next 7 days)
+        const forecast = forecastByDay.get(day)!;
         days.push({
           date: day,
-          temperature: forecastDay.temperature,
-          condition: forecastDay.shortForecast,
-          icon: forecastDay.icon,
-          isAvailable: true,
+          temperature: forecast.temperature,
+          condition: forecast.shortForecast,
+          icon: forecast.icon,
+          dataType: "forecast",
         });
       } else {
-        // Use calculated averages for days beyond 7-day forecast
+        // Use historical averages for prediction (days beyond forecast)
+        const prediction = hasPrediction
+          ? predictionData.get(day)!
+          : { temperature: 65, condition: "Partly Cloudy" }; // fallback
+
         days.push({
           date: day,
-          temperature: avgTemp,
-          condition: mostCommonCondition,
-          icon: mostCommonIcon,
-          isAvailable: false,
+          temperature: prediction.temperature,
+          condition: prediction.condition,
+          icon: defaultIcon,
+          dataType: "prediction",
         });
       }
     }
@@ -414,12 +505,12 @@ export async function getMonthlyForecast(
 // Comprehensive function to get all weather data with a single point API call
 export async function getAllWeatherData(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; includeMonthly?: boolean } = {},
 ): Promise<{
   current: CurrentConditions | null;
   forecast: ForecastPeriod[];
   hourly: HourlyForecastType[];
-  monthly: MonthlyForecast;
+  monthly: MonthlyForecast | null;
 }> {
   try {
     // Get weather point once with longer timeout for ZIP code searches
@@ -609,67 +700,11 @@ export async function getAllWeatherData(
       }
     }
 
-    // Calculate monthly forecast
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    const days: MonthlyDay[] = [];
-
-    // Calculate average temperature from available forecast data
-    const availableTemps = forecast.map((period) => period.temperature);
-    const avgTemp =
-      availableTemps.length > 0
-        ? Math.round(
-            availableTemps.reduce((sum, temp) => sum + temp, 0) /
-              availableTemps.length,
-          )
-        : 65; // fallback average
-
-    // Get most common condition from available forecast
-    const conditionCounts = forecast.reduce(
-      (acc, period) => {
-        acc[period.shortForecast] = (acc[period.shortForecast] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const mostCommonCondition =
-      Object.keys(conditionCounts).length > 0
-        ? Object.keys(conditionCounts).reduce((a, b) =>
-            conditionCounts[a] > conditionCounts[b] ? a : b,
-          )
-        : "Partly Cloudy";
-
-    const mostCommonIcon = forecast.length > 0 ? forecast[0].icon : "";
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const forecastDay = forecast.find((period) => {
-        const periodDate = new Date(period.startTime);
-        return periodDate.getDate() === day;
-      });
-
-      if (forecastDay) {
-        days.push({
-          date: day,
-          temperature: forecastDay.temperature,
-          condition: forecastDay.shortForecast,
-          icon: forecastDay.icon,
-          isAvailable: true,
-        });
-      } else {
-        // Use calculated averages for days beyond 7-day forecast
-        days.push({
-          date: day,
-          temperature: avgTemp,
-          condition: mostCommonCondition,
-          icon: mostCommonIcon,
-          isAvailable: false,
-        });
-      }
-    }
+    // Monthly forecast - only load if explicitly requested (for initial Chicago load)
+    // Otherwise loaded asynchronously to avoid blocking page load
+    const monthly = options.includeMonthly
+      ? await getMonthlyForecast(coords, options)
+      : null;
 
     // Get sunrise and sunset from sunrise-sunset.org API
     // Get timezone from coordinates using OpenStreetMap Nominatim
@@ -817,12 +852,6 @@ export async function getAllWeatherData(
         sunset: sunset.toISOString(),
       };
     }
-
-    const monthly: MonthlyForecast = {
-      month: currentMonth,
-      year: currentYear,
-      days,
-    };
 
     return {
       current,

@@ -8,6 +8,19 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.7.0",
+    date: "November 15, 2025",
+    type: "minor",
+    title: "Enhanced Monthly Calendar with Real Weather History",
+    changes: [
+      "Monthly calendar now shows actual past weather instead of estimates",
+      "See what the weather was really like on earlier days this month",
+      "More accurate predictions for remaining days based on historical weather patterns",
+      "Clearer labels showing which days are actual data vs predictions",
+      "Faster loading with smart caching of historical weather information",
+    ],
+  },
+  {
     version: "1.6.1",
     date: "November 15, 2025",
     type: "patch",

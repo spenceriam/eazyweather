@@ -18,7 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 
-import { getAllWeatherData } from "./services/weatherApi";
+import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
   reverseGeocode,
   getBrowserLocation,
@@ -48,6 +48,7 @@ function App() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
+  const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -139,6 +140,8 @@ function App() {
   );
   const [monthlyForecast, setMonthlyForecast] =
     useState<MonthlyForecastType | null>(null);
+  const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState(false);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false) => {
@@ -151,17 +154,34 @@ function App() {
       setError(null);
 
       try {
+        // For initial Chicago load, include monthly forecast to avoid extra loading time
+        const shouldIncludeMonthly = isInitialChicagoLoad && locationName === "Chicago, Illinois";
+
+        console.log(`🔍 Loading weather data - Location: "${locationName}", Initial Chicago: ${isInitialChicagoLoad}, Include Monthly: ${shouldIncludeMonthly}`);
+        const loadStartTime = Date.now();
+
         const {
           current,
           forecast: sevenDay,
           hourly,
           monthly,
-        } = await getAllWeatherData(coordinates, { skipRateLimit });
+        } = await getAllWeatherData(coordinates, {
+          skipRateLimit,
+          includeMonthly: shouldIncludeMonthly,
+        });
+
+        const loadDuration = ((Date.now() - loadStartTime) / 1000).toFixed(2);
+        console.log(`⏱️ Weather data loaded in ${loadDuration}s (Monthly included: ${!!monthly})`);
 
         setCurrentConditions(current);
         setForecast(sevenDay);
         setHourlyForecast(hourly);
-        setMonthlyForecast(monthly);
+
+        // Set monthly forecast if it was included (initial Chicago load)
+        if (monthly) {
+          setMonthlyForecast(monthly);
+          console.log('✅ Monthly forecast loaded synchronously with initial data');
+        }
 
         // Check if we got any meaningful data
         const hasData = current || sevenDay.length > 0 || hourly.length > 0;
@@ -204,6 +224,45 @@ function App() {
     },
     [coordinates, locationName, hasWeatherLoaded],
   );
+
+  // Track when user changes location from initial Chicago
+  useEffect(() => {
+    if (locationName !== "Chicago, Illinois" && isInitialChicagoLoad) {
+      setIsInitialChicagoLoad(false);
+      console.log('📍 Location changed from initial Chicago, future monthly loads will be async');
+    }
+  }, [locationName, isInitialChicagoLoad]);
+
+  // Load monthly forecast asynchronously after main content loads
+  // UNLESS it's the initial Chicago load (then it's loaded during initial load)
+  useEffect(() => {
+    if (!coordinates || !hasWeatherLoaded) return;
+
+    // Skip async load for initial Chicago - it's already loaded synchronously
+    if (isInitialChicagoLoad && locationName === "Chicago, Illinois") {
+      console.log('📅 Skipping async monthly load for initial Chicago (already loaded)');
+      return;
+    }
+
+    const loadMonthlyForecast = async () => {
+      setIsMonthlyLoading(true);
+      setMonthlyError(false);
+
+      try {
+        console.log('📅 Loading monthly forecast asynchronously...');
+        const monthly = await getMonthlyForecast(coordinates);
+        setMonthlyForecast(monthly);
+        console.log('✅ Monthly forecast loaded');
+      } catch (error) {
+        console.warn('Could not load monthly forecast:', error);
+        setMonthlyError(true);
+      } finally {
+        setIsMonthlyLoading(false);
+      }
+    };
+
+    loadMonthlyForecast();
+  }, [coordinates, hasWeatherLoaded, isInitialChicagoLoad, locationName]);
 
   // Refresh service effects
   useEffect(() => {
@@ -561,7 +620,20 @@ function App() {
 
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
-                ) : (
+                ) : isMonthlyLoading ? (
+                  <section id="monthly" className="bg-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                      <div className="max-w-6xl mx-auto">
+                        <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
+                          <LoadingSpinner />
+                          <span className="ml-3 text-gray-700">
+                            Loading monthly forecast
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                ) : monthlyError ? (
                   <section id="monthly" className="bg-gray-100">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
@@ -572,7 +644,7 @@ function App() {
                       </div>
                     </div>
                   </section>
-                )}
+                ) : null}
               </>
             )}
           </div>
