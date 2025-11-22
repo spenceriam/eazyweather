@@ -7,7 +7,6 @@ import type {
   MonthlyForecast,
   MonthlyDay,
 } from "../types/weather";
-import { BASE_URL } from "./config";
 import {
   getHistoricalWeatherForCurrentMonth,
   getHistoricalAveragesForRange,
@@ -230,7 +229,7 @@ async function processQueue() {
 
 export async function getWeatherPoint(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
 ): Promise<WeatherPoint> {
   const url = `${BASE_URL}/points/${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
   return fetchWithUserAgent(url, options);
@@ -238,10 +237,11 @@ export async function getWeatherPoint(
 
 export async function getCurrentConditions(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
 ): Promise<CurrentConditions | null> {
   try {
-    const point = await getWeatherPoint(coords, options);
+    // Don't skip cache for point data as it rarely changes
+    const point = await getWeatherPoint(coords, { ...options, skipCache: false });
     const stationsUrl = point.properties.observationStations;
     const stationsData = await fetchWithUserAgent(stationsUrl, {
       ...options,
@@ -279,9 +279,7 @@ export async function getCurrentConditions(
       temperatureUnit:
         props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
       relativeHumidity: props.relativeHumidity.value,
-      windSpeed: props.windSpeed.value
-        ? `${Math.round(props.windSpeed.value * 0.621371)} mph`
-        : "Calm",
+      windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
       windDirection: props.windDirection.value || 0,
       textDescription: textDescription || "Unknown",
       icon: props.icon || "",
@@ -295,10 +293,11 @@ export async function getCurrentConditions(
 
 export async function get7DayForecast(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
 ): Promise<ForecastPeriod[]> {
   try {
-    const point = await getWeatherPoint(coords, options);
+    // Don't skip cache for point data as it rarely changes
+    const point = await getWeatherPoint(coords, { ...options, skipCache: false });
     const forecastUrl = point.properties.forecast;
     const forecastData = await fetchWithUserAgent(forecastUrl, {
       ...options,
@@ -315,10 +314,11 @@ export async function get7DayForecast(
 
 export async function getHourlyForecast(
   coords: Coordinates,
-  options: { skipRateLimit?: boolean } = {},
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
 ): Promise<HourlyForecast[]> {
   try {
-    const point = await getWeatherPoint(coords, options);
+    // Don't skip cache for point data as it rarely changes
+    const point = await getWeatherPoint(coords, { ...options, skipCache: false });
     const hourlyUrl = point.properties.forecastHourly;
     const hourlyData = await fetchWithUserAgent(hourlyUrl, {
       ...options,
@@ -509,7 +509,7 @@ export async function getAllWeatherData(
 ): Promise<{
   current: CurrentConditions | null;
   forecast: ForecastPeriod[];
-  hourly: HourlyForecastType[];
+  hourly: HourlyForecast[];
   monthly: MonthlyForecast | null;
 }> {
   try {
@@ -599,12 +599,12 @@ export async function getAllWeatherData(
         let textDescription = props.textDescription;
         if (
           !textDescription &&
-          hourlyData &&
-          hourlyData.properties &&
-          hourlyData.properties.periods &&
-          hourlyData.properties.periods.length > 0
+          hourlyResult &&
+          hourlyResult.properties &&
+          hourlyResult.properties.periods &&
+          hourlyResult.properties.periods.length > 0
         ) {
-          textDescription = hourlyData.properties.periods[0].shortForecast;
+          textDescription = hourlyResult.properties.periods[0].shortForecast;
         }
 
         current = {
@@ -883,7 +883,7 @@ if (
 ) {
   clearRequestCache();
   // Clean up the URL without page reload
-  const url = new URL(window.location);
+  const url = new URL(window.location.href);
   url.searchParams.delete("clear");
   window.history.replaceState({}, "", url);
 }

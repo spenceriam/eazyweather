@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.7.1",
+    date: "November 22, 2025",
+    type: "patch",
+    title: "Performance Fix for Initial Load",
+    changes: [
+      "Fixed a critical issue causing a 30-second delay on initial page load",
+      "Optimized API caching strategy for weather location metadata",
+      "Improved reliability of monthly forecast loading",
+    ],
+  },
+  {
     version: "1.7.0",
     date: "November 15, 2025",
     type: "minor",
