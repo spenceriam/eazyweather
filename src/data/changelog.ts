@@ -13,7 +13,7 @@ export const changelog: ChangelogEntry[] = [
     type: "minor",
     title: "Enhanced Location Persistence",
     changes: [
-      "Added hybrid storage system using cookies to ensure location is remembered reliably across all browsers (including embedded views like Home Assistant)",
+      "Added hybrid storage system using cookies to ensure location is remembered reliably across all browsers and sessions",
       "Extended location memory duration to 6 months (optional)",
       "Added consent modal for location persistence choices",
       "Updated privacy policy to reflect new storage options",
