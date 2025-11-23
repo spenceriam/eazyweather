@@ -17,6 +17,7 @@ import { ErrorMessage } from "./components/ErrorMessage";
 import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
+import { CookieConsentModal } from "./components/modals/CookieConsentModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
@@ -29,6 +30,7 @@ import {
   getChicagoFallback,
   type LocationResult,
 } from "./services/locationService";
+import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { refreshService } from "./services/refreshService";
 import type {
   Coordinates,
@@ -43,8 +45,10 @@ function App() {
   const [locationName, setLocationName] = useState("Chicago, Illinois");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showInitialModal, setShowInitialModal] = useState(true);
+  const [showInitialModal, setShowInitialModal] = useState(false);
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
+  const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
@@ -377,9 +381,22 @@ function App() {
     }
   }, []);
 
+  // Check for cookie consent on mount
   useEffect(() => {
-    initializeLocation();
-  }, [initializeLocation]);
+    const consent = getCookieConsent();
+    if (consent === null) {
+      setShowCookieConsent(true);
+    } else {
+      setIsConsentResolved(true);
+    }
+  }, []);
+
+  // Run initialization once consent is resolved
+  useEffect(() => {
+    if (isConsentResolved) {
+      initializeLocation();
+    }
+  }, [isConsentResolved, initializeLocation]);
 
   useEffect(() => {
     // Load weather data if we have coordinates
@@ -387,6 +404,12 @@ function App() {
       loadWeatherData();
     }
   }, [coordinates, loadWeatherData]);
+
+  const handleCookieConsentResolve = (granted: boolean) => {
+    setCookieConsent(granted);
+    setShowCookieConsent(false);
+    setIsConsentResolved(true);
+  };
 
   async function handleLocationSelect(location: LocationResult) {
     setIsLoading(true);
@@ -669,6 +692,12 @@ function App() {
 
         {/* Location Permission Overlay */}
         {isRequestingLocationPermission && <LocationPermissionOverlay />}
+
+        {/* Cookie Consent Modal */}
+        <CookieConsentModal
+          isOpen={showCookieConsent}
+          onResolve={handleCookieConsentResolve}
+        />
       </div>
     </div>
   );

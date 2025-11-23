@@ -1,4 +1,5 @@
 import type { Coordinates } from "../types/weather";
+import { setCookie, getCookie, eraseCookie, getCookieConsent } from "../utils/cookieUtils";
 
 export interface LocationResult {
   coordinates: Coordinates;
@@ -7,6 +8,10 @@ export interface LocationResult {
   state: string;
   country: string;
 }
+
+// Storage configuration
+const STORAGE_EXPIRATION_DAYS = 180;
+const STORAGE_EXPIRATION_MS = STORAGE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 // ZIP Code validation utilities
 function isValidZipCode(zip: string): boolean {
@@ -407,25 +412,50 @@ export async function geocodeLocationMultiple(
 }
 
 export function saveLocation(locationResult: LocationResult): void {
-  localStorage.setItem(
-    "eazyweather_location",
-    JSON.stringify({
-      ...locationResult,
-      timestamp: Date.now(),
-    }),
-  );
+  const data = {
+    ...locationResult,
+    timestamp: Date.now(),
+  };
+  const json = JSON.stringify(data);
+
+  // Always save to localStorage as baseline
+  try {
+    localStorage.setItem("eazyweather_location", json);
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  // Save to cookie if consent granted
+  if (getCookieConsent() === "granted") {
+    setCookie("eazyweather_location", json, STORAGE_EXPIRATION_DAYS);
+  }
 }
 
 export function getSavedLocation(): LocationResult | null {
   try {
-    const saved = localStorage.getItem("eazyweather_location");
+    let saved: string | null = null;
+    const consent = getCookieConsent();
+
+    // 1. Try cookie if consented
+    if (consent === "granted") {
+      saved = getCookie("eazyweather_location");
+    }
+
+    // 2. Fallback to localStorage if no cookie or not consented
+    if (!saved) {
+      saved = localStorage.getItem("eazyweather_location");
+    }
+
     if (!saved) return null;
 
     const data = JSON.parse(saved);
     const age = Date.now() - data.timestamp;
 
-    if (age > 24 * 60 * 60 * 1000) {
+    if (age > STORAGE_EXPIRATION_MS) {
       localStorage.removeItem("eazyweather_location");
+      if (consent === "granted") {
+        eraseCookie("eazyweather_location");
+      }
       return null;
     }
 
@@ -452,11 +482,16 @@ export function saveLocationToHistory(locationResult: LocationResult): void {
 
     // Add to beginning and keep only last 4
     const newHistory = [locationResult, ...filteredHistory].slice(0, 4);
+    const json = JSON.stringify(newHistory);
 
     localStorage.setItem(
       "eazyweather_location_history",
-      JSON.stringify(newHistory),
+      json,
     );
+
+    if (getCookieConsent() === "granted") {
+      setCookie("eazyweather_location_history", json, STORAGE_EXPIRATION_DAYS);
+    }
   } catch (error) {
     console.error("Error saving location history:", error);
   }
@@ -464,7 +499,17 @@ export function saveLocationToHistory(locationResult: LocationResult): void {
 
 export function getLocationHistory(): LocationResult[] {
   try {
-    const saved = localStorage.getItem("eazyweather_location_history");
+    let saved: string | null = null;
+    const consent = getCookieConsent();
+
+    if (consent === "granted") {
+      saved = getCookie("eazyweather_location_history");
+    }
+
+    if (!saved) {
+      saved = localStorage.getItem("eazyweather_location_history");
+    }
+
     if (!saved) return [];
 
     const data = JSON.parse(saved);
@@ -476,19 +521,36 @@ export function getLocationHistory(): LocationResult[] {
 
 // Manual pin location functions
 export function saveManualPin(locationResult: LocationResult): void {
+  const data = {
+    ...locationResult,
+    isManualPin: true,
+    timestamp: Date.now(),
+  };
+  const json = JSON.stringify(data);
+
   localStorage.setItem(
     "eazyweather_manual_pin",
-    JSON.stringify({
-      ...locationResult,
-      isManualPin: true,
-      timestamp: Date.now(),
-    }),
+    json,
   );
+
+  if (getCookieConsent() === "granted") {
+    setCookie("eazyweather_manual_pin", json, STORAGE_EXPIRATION_DAYS);
+  }
 }
 
 export function getManualPin(): LocationResult | null {
   try {
-    const saved = localStorage.getItem("eazyweather_manual_pin");
+    let saved: string | null = null;
+    const consent = getCookieConsent();
+
+    if (consent === "granted") {
+      saved = getCookie("eazyweather_manual_pin");
+    }
+
+    if (!saved) {
+      saved = localStorage.getItem("eazyweather_manual_pin");
+    }
+
     if (!saved) return null;
 
     const data = JSON.parse(saved);
@@ -507,8 +569,14 @@ export function getManualPin(): LocationResult | null {
 
 export function clearManualPin(): void {
   localStorage.removeItem("eazyweather_manual_pin");
+  if (getCookieConsent() === "granted") {
+    eraseCookie("eazyweather_manual_pin");
+  }
 }
 
 export function hasManualPin(): boolean {
+  if (getCookieConsent() === "granted") {
+    if (getCookie("eazyweather_manual_pin")) return true;
+  }
   return localStorage.getItem("eazyweather_manual_pin") !== null;
 }
