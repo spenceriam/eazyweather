@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.8.1",
+    date: "November 23, 2025",
+    type: "patch",
+    title: "Fix Evening Forecast Gap",
+    changes: [
+      "Fixed a bug where the next day's forecast was missing during evening hours",
+      "Ensure tomorrow's forecast is always displayed correctly regardless of time of day",
+    ],
+  },
+  {
     version: "1.8.0",
     date: "November 22, 2025",
     type: "minor",
