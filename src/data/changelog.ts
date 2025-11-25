@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.8.2",
+    date: "November 23, 2025",
+    type: "patch",
+    title: "Fix Forecast Timezone Issue",
+    changes: [
+      "Fixed an issue where forecasts were skipped in late evening due to timezone differences",
+      "Ensure current time is correctly converted to local time for date comparisons",
+    ],
+  },
+  {
     version: "1.8.1",
     date: "November 23, 2025",
     type: "patch",

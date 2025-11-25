@@ -62,11 +62,25 @@ export function degreesToAbbreviatedDirection(degrees: number): string {
  */
 export function transformToDailyForecasts(
   forecastPeriods: ForecastPeriod[],
-  currentTimestamp: string
+  currentTimestamp: string,
+  timezone?: string
 ): DailyForecast[] {
   const dailyForecasts: DailyForecast[] = [];
   // Get date from current conditions to determine "today"
-  const currentDateString = currentTimestamp.split('T')[0];
+  let currentDateString = currentTimestamp.split('T')[0];
+
+  if (timezone) {
+    try {
+      // Create date from timestamp
+      const date = new Date(currentTimestamp);
+      // Get date string in YYYY-MM-DD format for the specific timezone
+      // en-CA locale gives YYYY-MM-DD format
+      currentDateString = date.toLocaleDateString('en-CA', { timeZone: timezone });
+    } catch (e) {
+      console.warn('Error converting date with timezone:', e);
+      // Fallback to split is already set
+    }
+  }
 
   // Group periods by day
   for (let i = 0; i < forecastPeriods.length - 1; i++) {
