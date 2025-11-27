@@ -12,6 +12,7 @@ export interface WeatherPoint {
     gridId: string;
     gridX: number;
     gridY: number;
+    timeZone: string;
   };
 }
 
