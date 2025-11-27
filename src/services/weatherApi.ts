@@ -522,7 +522,7 @@ export async function getAllWeatherData(
     }
 
     // Get timezone for location
-    const timezone = await getTimezoneFromCoords(coords);
+    const timezone = point.properties.timeZone;
 
     // Make all API calls in parallel with point data, with individual error handling
 
@@ -691,7 +691,10 @@ export async function getAllWeatherData(
     // Add sunrise/sunset to current conditions using API (with error handling)
     if (current && coords) {
       try {
-        const { sunrise, sunset } = await getSunriseSunsetFromAPI(coords);
+        const { sunrise, sunset } = await getSunriseSunsetFromAPI(
+          coords,
+          timezone,
+        );
         current.sunriseTime = sunrise;
         current.sunsetTime = sunset;
       } catch (sunError) {
@@ -706,153 +709,6 @@ export async function getAllWeatherData(
       ? await getMonthlyForecast(coords, options)
       : null;
 
-    // Get sunrise and sunset from sunrise-sunset.org API
-    // Get timezone from coordinates using OpenStreetMap Nominatim
-    async function getTimezoneFromCoords(coords: Coordinates): Promise<string> {
-      const cacheKey = `${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
-
-      if (timezoneCache.has(cacheKey)) {
-        return timezoneCache.get(cacheKey)!;
-      }
-
-      try {
-        const data = await fetchWithUserAgent(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&addressdetails=1&zoom=10`,
-          { skipRateLimit: true },
-        );
-
-        if (data && data.address) {
-          // Try to get timezone from address components
-          const timezone = data.address.timezone;
-          if (timezone) {
-            timezoneCache.set(cacheKey, timezone);
-            return timezone;
-          }
-        }
-      } catch {
-        // Silently handle timezone API errors and fall back to longitude-based detection
-      }
-
-      // Fallback to common US timezones based on longitude
-      // Note: Longitude is negative in Western hemisphere, so more negative = further west
-      // Pacific: < -120°, Mountain: -120° to -105°, Central: -105° to -85°, Eastern: > -85°
-      const lng = coords.longitude;
-      let fallbackTimezone = "America/New_York";
-
-      if (lng <= -120)
-        fallbackTimezone = "America/Los_Angeles"; // Pacific (e.g., LA: -118°, Seattle: -122°)
-      else if (lng <= -105 && lng > -120)
-        fallbackTimezone = "America/Denver"; // Mountain (e.g., Denver: -105°)
-      else if (lng <= -85 && lng > -105)
-        fallbackTimezone = "America/Chicago"; // Central (e.g., Chicago: -87.6°)
-      else if (lng > -85) fallbackTimezone = "America/New_York"; // Eastern (e.g., NYC: -74°)
-
-      timezoneCache.set(cacheKey, fallbackTimezone);
-      return fallbackTimezone;
-    }
-
-    async function getSunriseSunsetFromAPI(coords: Coordinates): Promise<{
-      sunrise: string;
-      sunset: string;
-    }> {
-      try {
-        // Get timezone for accurate local times
-        const timezone = await getTimezoneFromCoords(coords);
-
-        const today = new Date().toISOString().split("T")[0];
-        const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=${timezone}`;
-
-        // fetchWithUserAgent returns parsed JSON data, not a Response object
-        const data = await fetchWithUserAgent(url, { skipRateLimit: true });
-
-        if (!data || !data.results) {
-          throw new Error(
-            `Invalid response format from sunrise-sunset.org API`,
-          );
-        }
-
-        if (data.status === "OK") {
-          // Parse the API response correctly
-          const sunriseTime = data.results.sunrise;
-          const sunsetTime = data.results.sunset;
-
-          return {
-            sunrise: sunriseTime,
-            sunset: sunsetTime,
-          };
-        } else {
-          throw new Error(
-            `API returned status: ${data.status || "Unknown error"}`,
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching sunrise/sunset:", error);
-        // Fallback to calculation
-        return calculateSunriseSunset(coords);
-      }
-    }
-
-    // Calculate sunrise and sunset times from coordinates (fallback)
-    function calculateSunriseSunset(coords: Coordinates): {
-      sunrise: string;
-      sunset: string;
-    } {
-      const now = new Date();
-      const dayOfYear = Math.floor(
-        (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) /
-          (1000 * 60 * 60 * 24),
-      );
-
-      // Approximate sunrise/sunset calculation
-      const latRad = (coords.latitude * Math.PI) / 180;
-      const declination =
-        23.45 *
-        Math.sin(((dayOfYear + 284) * 2 * Math.PI) / 365) *
-        (Math.PI / 180);
-
-      // Sunrise time (in hours from midnight)
-      const sunriseHour =
-        12 -
-        (1 / 15) *
-          Math.acos(
-            (-Math.tan(latRad) * Math.tan(declination)) /
-              Math.sqrt(
-                1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2),
-              ),
-          );
-
-      // Sunset time (in hours from midnight)
-      const sunsetHour =
-        12 +
-        (1 / 15) *
-          Math.acos(
-            (-Math.tan(latRad) * Math.tan(declination)) /
-              Math.sqrt(
-                1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2),
-              ),
-          );
-
-      // Convert to Date objects
-      const sunrise = new Date(now);
-      sunrise.setHours(
-        Math.floor(sunriseHour),
-        Math.floor((sunriseHour % 1) * 60),
-        0,
-      );
-
-      const sunset = new Date(now);
-      sunset.setHours(
-        Math.floor(sunsetHour),
-        Math.floor((sunsetHour % 1) * 60),
-        0,
-      );
-
-      return {
-        sunrise: sunrise.toISOString(),
-        sunset: sunset.toISOString(),
-      };
-    }
-
     return {
       current,
       forecast,
@@ -864,6 +720,103 @@ export async function getAllWeatherData(
     throw error;
   }
 }
+
+// Get sunrise and sunset from sunrise-sunset.org API
+async function getSunriseSunsetFromAPI(
+  coords: Coordinates,
+  timezone: string,
+): Promise<{
+  sunrise: string;
+  sunset: string;
+}> {
+  // Calculate sunrise and sunset times from coordinates (fallback)
+  function calculateSunriseSunset(coords: Coordinates): {
+    sunrise: string;
+    sunset: string;
+  } {
+    const now = new Date();
+    const dayOfYear = Math.floor(
+      (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+
+    // Approximate sunrise/sunset calculation
+    const latRad = (coords.latitude * Math.PI) / 180;
+    const declination =
+      23.45 *
+      Math.sin(((dayOfYear + 284) * 2 * Math.PI) / 365) *
+      (Math.PI / 180);
+
+    // Sunrise time (in hours from midnight)
+    const sunriseHour =
+      12 -
+      (1 / 15) *
+        Math.acos(
+          (-Math.tan(latRad) * Math.tan(declination)) /
+            Math.sqrt(1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2)),
+        );
+
+    // Sunset time (in hours from midnight)
+    const sunsetHour =
+      12 +
+      (1 / 15) *
+        Math.acos(
+          (-Math.tan(latRad) * Math.tan(declination)) /
+            Math.sqrt(1 - Math.pow(Math.tan(latRad) * Math.tan(declination), 2)),
+        );
+
+    // Convert to Date objects
+    const sunrise = new Date(now);
+    sunrise.setHours(
+      Math.floor(sunriseHour),
+      Math.floor((sunriseHour % 1) * 60),
+      0,
+    );
+
+    const sunset = new Date(now);
+    sunset.setHours(
+      Math.floor(sunsetHour),
+      Math.floor((sunsetHour % 1) * 60),
+      0,
+    );
+
+    return {
+      sunrise: sunrise.toISOString(),
+      sunset: sunset.toISOString(),
+    };
+  }
+
+  try {
+    // Get timezone for accurate local times
+    const today = new Date().toISOString().split("T")[0];
+    const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=${timezone}`;
+
+    // fetchWithUserAgent returns parsed JSON data, not a Response object
+    const data = await fetchWithUserAgent(url, { skipRateLimit: true });
+
+    if (!data || !data.results) {
+      throw new Error(`Invalid response format from sunrise-sunset.org API`);
+    }
+
+    if (data.status === "OK") {
+      // Parse the API response correctly
+      const sunriseTime = data.results.sunrise;
+      const sunsetTime = data.results.sunset;
+
+      return {
+        sunrise: sunriseTime,
+        sunset: sunsetTime,
+      };
+    } else {
+      throw new Error(`API returned status: ${data.status || "Unknown error"}`);
+    }
+  } catch (error) {
+    console.error("Error fetching sunrise/sunset:", error);
+    // Fallback to calculation
+    return calculateSunriseSunset(coords);
+  }
+}
+
 
 // Export rate limiting utilities for testing and debugging
 export const rateLimitConfig = {

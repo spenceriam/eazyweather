@@ -77,6 +77,7 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
+      timeZone: timezone,
     });
   };
 
