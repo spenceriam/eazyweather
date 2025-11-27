@@ -73,15 +73,12 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
   const formatTime = (timestamp: string) => {
     if (!timestamp) return 'N/A';
     const date = new Date(timestamp);
-    const options: Intl.DateTimeFormatOptions = {
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
-    };
-    if (timezone) {
-      options.timeZone = timezone;
-    }
-    return date.toLocaleTimeString('en-US', options);
+      timeZone: timezone,
+    });
   };
 
   const getSunrise = () => {
