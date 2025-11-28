@@ -182,3 +182,40 @@ export function formatWindDisplay(speed: number, direction: string): string {
   const abbr = abbreviateWindDirection(direction);
   return `${speed} mph ${abbr}`;
 }
+
+/**
+ * Calculates whether it is currently daytime based on sunrise/sunset times
+ * Falls back to timezone-based hour check, then local system time
+ */
+export function calculateIsDaytime(
+  conditions: { sunriseTime?: string; sunsetTime?: string; timestamp?: string },
+  timezone?: string
+): boolean {
+  if (conditions.sunriseTime && conditions.sunsetTime) {
+    const now = conditions.timestamp
+      ? new Date(conditions.timestamp).getTime()
+      : Date.now();
+    const sunrise = new Date(conditions.sunriseTime).getTime();
+    const sunset = new Date(conditions.sunsetTime).getTime();
+    return now >= sunrise && now < sunset;
+  }
+
+  // Fallback using timezone if available
+  if (timezone) {
+    try {
+      const hour = parseInt(
+        new Date().toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          hour12: false,
+          timeZone: timezone,
+        }),
+        10
+      );
+      return hour >= 6 && hour < 20;
+    } catch {
+      // Fallback to local time if timezone is invalid
+    }
+  }
+
+  return new Date().getHours() >= 6 && new Date().getHours() < 20;
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { WeatherIcon } from "./icons/WeatherIcon";
+import { calculateIsDaytime } from "../utils/weatherHelpers";
 import type {
   CurrentConditions as CurrentConditionsType,
   HourlyForecast as HourlyForecastType,
@@ -23,14 +24,23 @@ export function CurrentConditions({
   hourlyForecast,
   timezone,
 }: CurrentConditionsProps) {
+  // Debug logging for timezone issues
+  console.log('CurrentConditions Debug:', {
+    timezoneProp: timezone,
+    conditionsTimezone: conditions.timezone,
+    sunrise: conditions.sunriseTime,
+    sunset: conditions.sunsetTime,
+  });
+
   const [is24Hour, setIs24Hour] = useState(false);
+  const effectiveTimezone = timezone || conditions.timezone;
 
   const tempF =
     conditions.temperatureUnit === "C"
       ? Math.round((conditions.temperature * 9) / 5 + 32)
       : Math.round(conditions.temperature);
 
-  const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
+  const isDaytime = calculateIsDaytime(conditions, effectiveTimezone);
 
   const getTimezoneAbbreviation = (tz: string): string => {
     if (!tz) return "";
@@ -94,11 +104,13 @@ export function CurrentConditions({
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
+          timeZone: effectiveTimezone,
         })
       : date.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
+          timeZone: effectiveTimezone,
         });
 
     // Format 24-hour time without leading zeros
@@ -112,8 +124,8 @@ export function CurrentConditions({
       formattedTime = timeString;
     }
 
-    if (includeTimezone && timezone) {
-      const tzAbbr = getTimezoneAbbreviation(timezone);
+    if (includeTimezone && effectiveTimezone) {
+      const tzAbbr = getTimezoneAbbreviation(effectiveTimezone);
       return `${formattedTime} ${tzAbbr}`;
     }
 

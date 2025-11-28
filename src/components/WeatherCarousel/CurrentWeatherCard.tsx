@@ -1,7 +1,10 @@
 import { WeatherCard } from './WeatherCard';
 import { WeatherIcon } from '../icons/WeatherIcon';
 import type { CurrentConditions } from '../../types/weather';
-import { degreesToAbbreviatedDirection } from '../../utils/weatherHelpers';
+import {
+  degreesToAbbreviatedDirection,
+  calculateIsDaytime,
+} from '../../utils/weatherHelpers';
 
 interface CurrentWeatherCardProps {
   conditions: CurrentConditions;
@@ -9,12 +12,22 @@ interface CurrentWeatherCardProps {
 }
 
 export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardProps) {
+  // Debug logging for timezone issues
+  console.log('CurrentWeatherCard Debug:', {
+    timezoneProp: timezone,
+    conditionsTimezone: conditions.timezone,
+    sunrise: conditions.sunriseTime,
+    sunset: conditions.sunsetTime,
+  });
+
+  const effectiveTimezone = timezone || conditions.timezone;
+
   const tempF =
     conditions.temperatureUnit === 'C'
       ? Math.round((conditions.temperature * 9) / 5 + 32)
       : Math.round(conditions.temperature);
 
-  const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
+  const isDaytime = calculateIsDaytime(conditions, effectiveTimezone);
 
   // Format current date as "mm/dd"
   const formatCurrentDate = () => {
@@ -77,6 +90,7 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
+      timeZone: effectiveTimezone,
     });
   };
 
