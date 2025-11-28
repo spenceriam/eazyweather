@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.8.3",
+    date: "November 27, 2025",
+    type: "patch",
+    title: "Fix Sunrise/Sunset Timezone Display",
+    changes: [
+      "Fixed incorrect sunrise/sunset times on mobile and when viewing different timezones",
+      "Ensure all times are displayed in the location's timezone rather than the device's timezone",
+      "Improved day/night icon logic to use actual location sunrise/sunset times",
+    ],
+  },
+  {
     version: "1.8.2",
     date: "November 23, 2025",
     type: "patch",

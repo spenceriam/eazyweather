@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { WeatherIcon } from "./icons/WeatherIcon";
+import { calculateIsDaytime } from "../utils/weatherHelpers";
 import type {
   CurrentConditions as CurrentConditionsType,
   HourlyForecast as HourlyForecastType,
@@ -30,7 +31,7 @@ export function CurrentConditions({
       ? Math.round((conditions.temperature * 9) / 5 + 32)
       : Math.round(conditions.temperature);
 
-  const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 20;
+  const isDaytime = calculateIsDaytime(conditions, timezone);
 
   const getTimezoneAbbreviation = (tz: string): string => {
     if (!tz) return "";
@@ -94,11 +95,13 @@ export function CurrentConditions({
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
+          timeZone: timezone,
         })
       : date.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
+          timeZone: timezone,
         });
 
     // Format 24-hour time without leading zeros
