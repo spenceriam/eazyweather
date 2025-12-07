@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.2",
+    date: "December 7, 2025",
+    type: "patch",
+    title: "Routing Configuration Hotfix",
+    changes: [
+      "Removed conflicting URL cleaning settings in server configuration",
+      "Simplified routing rules to prevent 404 errors on deep links",
+    ],
+  },
+  {
     version: "1.9.1",
     date: "December 7, 2025",
     type: "patch",
