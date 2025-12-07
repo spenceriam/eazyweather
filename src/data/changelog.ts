@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.2",
+    date: "December 7, 2025",
+    type: "patch",
+    title: "Routing Fixes",
+    changes: [
+      "Fixed issue where accessing direct location URLs (like /60050) would cause a 404 error.",
+    ],
+  },
+  {
     version: "1.9.1",
     date: "December 7, 2025",
     type: "patch",
