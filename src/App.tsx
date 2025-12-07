@@ -325,7 +325,9 @@ function App() {
     try {
       // 0. Check for URL-based location (ZIP or postal code)
       const rawPath = window.location.pathname.substring(1);
-      const path = decodeURIComponent(rawPath).trim();
+      // Remove trailing slash if present
+      const cleanPath = rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
+      const path = decodeURIComponent(cleanPath).trim();
 
       // Heuristic: Length 3-12, contains digit (to avoid generic pages), no dots (to avoid files)
       const isPotentialCode =

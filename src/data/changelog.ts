@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.1",
+    date: "December 7, 2025",
+    type: "patch",
+    title: "URL Location Fixes",
+    changes: [
+      "Fixed issue with trailing slashes in URL locations",
+      "Improved routing configuration for better deep link support",
+    ],
+  },
+  {
     version: "1.9.0",
     date: "December 7, 2025",
     type: "minor",
