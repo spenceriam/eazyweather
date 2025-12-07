@@ -22,6 +22,7 @@ import { CookieConsentModal } from "./components/modals/CookieConsentModal";
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
   reverseGeocode,
+  geocodeLocation,
   getBrowserLocation,
   saveLocation,
   getSavedLocation,
@@ -322,6 +323,50 @@ function App() {
     setError(null);
 
     try {
+      // 0. Check for URL-based location (ZIP or postal code)
+      const rawPath = window.location.pathname.substring(1);
+      // Remove trailing slash if present
+      const cleanPath = rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
+      const path = decodeURIComponent(cleanPath).trim();
+
+      // Heuristic: Length 3-12, contains digit (to avoid generic pages), no dots (to avoid files)
+      const isPotentialCode =
+        path.length >= 3 &&
+        path.length <= 12 &&
+        /\d/.test(path) &&
+        !path.includes(".");
+
+      if (isPotentialCode) {
+        try {
+          console.log(`🔍 Checking URL location: "${path}"`);
+          const locationResult = await geocodeLocation(path);
+
+          // If the display name is just the ZIP code, try to format it nicely
+          let finalDisplayName = locationResult.displayName;
+          if (finalDisplayName === path) {
+            if (locationResult.city && locationResult.state) {
+              finalDisplayName = `${locationResult.city}, ${locationResult.state}`;
+            } else if (locationResult.city && locationResult.country) {
+              finalDisplayName = `${locationResult.city}, ${locationResult.country}`;
+            }
+          }
+
+          setCoordinates(locationResult.coordinates);
+          setLocationName(finalDisplayName);
+          updatePageTitle(finalDisplayName);
+          setShowInitialModal(false);
+          setIsLoading(false);
+
+          // NOTE: We deliberately do NOT call saveLocation() here.
+          // This allows the URL location to be temporary for this session/view
+          // without overwriting the user's saved preference.
+          return;
+        } catch (urlError) {
+          console.warn("URL location lookup failed, falling back to stored location", urlError);
+          // Fall through to normal initialization
+        }
+      }
+
       // First, check for manual pin - it takes priority over automatic location
       const manualPin = getManualPin();
       if (manualPin) {
