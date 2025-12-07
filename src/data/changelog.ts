@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.0",
+    date: "December 7, 2025",
+    type: "minor",
+    title: "Direct URL Location Loading",
+    changes: [
+      "Added support for loading a specific location by appending a ZIP code to the URL (e.g., eazyweather.com/60050)",
+      "URL locations temporarily override saved preferences without overwriting them, perfect for bookmarking",
+      "Automatically resolves ZIP codes to display city and state names",
+    ],
+  },
+  {
     version: "1.8.3",
     date: "November 27, 2025",
     type: "patch",
