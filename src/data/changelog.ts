@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.3",
+    date: "December 8, 2025",
+    type: "patch",
+    title: "Smoother Direct Links",
+    changes: [
+      "Direct location links (e.g., /60613) now bypass the cookie consent modal for immediate weather access.",
+      "Improved user experience for bookmarked or shared location links.",
+    ],
+  },
+  {
     version: "1.9.2",
     date: "December 7, 2025",
     type: "patch",

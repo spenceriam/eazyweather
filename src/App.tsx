@@ -32,6 +32,7 @@ import {
   type LocationResult,
 } from "./services/locationService";
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
+import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
 import type {
   Coordinates,
@@ -324,26 +325,16 @@ function App() {
 
     try {
       // 0. Check for URL-based location (ZIP or postal code)
-      const rawPath = window.location.pathname.substring(1);
-      // Remove trailing slash if present
-      const cleanPath = rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
-      const path = decodeURIComponent(cleanPath).trim();
+      const potentialLocationCode = getPotentialLocationFromUrl();
 
-      // Heuristic: Length 3-12, contains digit (to avoid generic pages), no dots (to avoid files)
-      const isPotentialCode =
-        path.length >= 3 &&
-        path.length <= 12 &&
-        /\d/.test(path) &&
-        !path.includes(".");
-
-      if (isPotentialCode) {
+      if (potentialLocationCode) {
         try {
-          console.log(`🔍 Checking URL location: "${path}"`);
-          const locationResult = await geocodeLocation(path);
+          console.log(`🔍 Checking URL location: "${potentialLocationCode}"`);
+          const locationResult = await geocodeLocation(potentialLocationCode);
 
           // If the display name is just the ZIP code, try to format it nicely
           let finalDisplayName = locationResult.displayName;
-          if (finalDisplayName === path) {
+          if (finalDisplayName === potentialLocationCode) {
             if (locationResult.city && locationResult.state) {
               finalDisplayName = `${locationResult.city}, ${locationResult.state}`;
             } else if (locationResult.city && locationResult.country) {
@@ -429,6 +420,16 @@ function App() {
   // Check for cookie consent on mount
   useEffect(() => {
     const consent = getCookieConsent();
+    const potentialLocationUrl = getPotentialLocationFromUrl();
+
+    // If there is a direct URL location (e.g. /60613), we bypass the consent modal
+    // but we do NOT automatically set the consent to granted/denied.
+    if (potentialLocationUrl) {
+      console.log('📍 Direct URL location detected, bypassing cookie consent modal');
+      setIsConsentResolved(true);
+      return;
+    }
+
     if (consent === null) {
       setShowCookieConsent(true);
     } else {
