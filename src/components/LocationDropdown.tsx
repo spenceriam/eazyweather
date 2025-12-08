@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Clock, X, Navigation } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import {
   geocodeLocationMultiple,
   getBrowserLocation,
@@ -46,20 +46,19 @@ export function LocationDropdown({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-
-      // Ignore clicks on elements that are no longer in the DOM
-      // (e.g., the "Clear Pin" button after it's clicked and removed)
-      if (!target.isConnected) {
+      // Don't close if modal is open - let modal handle its own state
+      if (showPinModal) {
         return;
       }
+
+      const target = event.target as Node;
 
       // Don't close if clicking inside dropdown
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return;
       }
 
-      // Close if clicking outside (trigger button uses stopPropagation, so it won't reach here)
+      // Close if clicking outside
       onClose();
     }
 
@@ -204,6 +203,13 @@ export function LocationDropdown({
     <>
       <div
         ref={dropdownRef}
+        onClick={(e) => {
+          // Stop propagation to prevent document listener from firing
+          // This ensures clicks inside the dropdown (including "Clear Pin" which removes itself)
+          // do not trigger the close action.
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
         className="absolute top-full right-0 mt-2 w-full md:w-[500px] bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
       >
         <div className="p-4 space-y-4">
