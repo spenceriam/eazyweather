@@ -48,6 +48,12 @@ export function LocationDropdown({
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
 
+      // Ignore clicks on elements that are no longer in the DOM
+      // (e.g., the "Clear Pin" button after it's clicked and removed)
+      if (!target.isConnected) {
+        return;
+      }
+
       // Don't close if clicking inside dropdown
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return;
@@ -105,6 +111,13 @@ export function LocationDropdown({
 
   function handleLocationSuccess(locationResult: LocationResult) {
     setIsLoading(true);
+
+    // If selecting a new location, clear any existing manual pin
+    if (hasManualPin()) {
+      clearManualPin();
+      setIsManualPin(false);
+    }
+
     onLocationUpdate(locationResult);
     saveLocation(locationResult);
     saveLocationToHistory(locationResult);
