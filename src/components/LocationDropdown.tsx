@@ -46,6 +46,11 @@ export function LocationDropdown({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      // Don't act if the dropdown is hidden (e.g. mobile view when desktop is active)
+      if (!dropdownRef.current?.offsetParent) {
+        return;
+      }
+
       // Don't close if modal is open - let modal handle its own state
       if (showPinModal) {
         return;
@@ -80,7 +85,7 @@ export function LocationDropdown({
       document.removeEventListener("click", handleClickOutside);
       document.removeEventListener("keydown", handleEscKey);
     };
-  }, [onClose]);
+  }, [onClose, showPinModal]);
 
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
