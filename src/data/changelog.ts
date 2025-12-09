@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.4",
+    date: "December 9, 2025",
+    type: "patch",
+    title: "Weather Update Fix",
+    changes: [
+      "Fixed a bug where weather data would not update after searching for and selecting a new location.",
+      "Ensured smooth transition when switching cities.",
+    ],
+  },
+  {
     version: "1.9.3",
     date: "December 8, 2025",
     type: "patch",

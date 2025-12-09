@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "version": "1.9.3",
+  "version": "1.9.4",
   "license": "MIT",
   "author": "Spencer Francisco <https://x.com/spencer_i_am>",
   "type": "module",
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@playwright/test": "^1.57.0",
     "@supabase/supabase-js": "^2.57.4",
     "embla-carousel-react": "^8.6.0",
     "leaflet": "^1.9.4",
