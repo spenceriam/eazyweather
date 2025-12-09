@@ -150,8 +150,9 @@ function App() {
   const [monthlyError, setMonthlyError] = useState(false);
 
   const loadWeatherData = useCallback(
-    async (skipRateLimit = false) => {
-      if (!coordinates) return;
+    async (skipRateLimit = false, coordsOverride?: Coordinates) => {
+      const activeCoords = coordsOverride || coordinates;
+      if (!activeCoords) return;
 
       // Only set loading if weather hasn't loaded yet
       if (!hasWeatherLoaded) {
@@ -171,7 +172,7 @@ function App() {
           forecast: sevenDay,
           hourly,
           monthly,
-        } = await getAllWeatherData(coordinates, {
+        } = await getAllWeatherData(activeCoords, {
           skipRateLimit,
           includeMonthly: shouldIncludeMonthly,
         });
@@ -201,11 +202,11 @@ function App() {
           setError(null);
 
           // Update structured data when weather data loads
-          if (current && coordinates) {
+          if (current && activeCoords) {
             // Parse location name to extract city and state
             const locationParts = locationName.split(",");
             const locationResult = {
-              coordinates,
+              coordinates: activeCoords,
               displayName: locationName,
               city: locationParts[0]?.trim() || "",
               state: locationParts[1]?.trim() || "",
@@ -468,7 +469,7 @@ function App() {
       updatePageTitle(location.displayName);
 
       // Load weather data immediately to prevent flash
-      await loadWeatherData();
+      await loadWeatherData(true, location.coordinates);
     } catch (error) {
       console.error("Location change error:", error);
       setError("Failed to set location");
@@ -508,7 +509,7 @@ function App() {
 
     // Load weather data
     try {
-      await loadWeatherData(true);
+      await loadWeatherData(true, coords);
     } catch (error) {
       console.error("Error loading weather data:", error);
       setError("Failed to load weather data");
@@ -564,7 +565,7 @@ function App() {
         updatePageTitle(locationResult.displayName);
 
         // Load weather data for new location
-        await loadWeatherData(true); // skipRateLimit=true for location changes
+        await loadWeatherData(true, locationResult.coordinates); // skipRateLimit=true for location changes
       }
     } catch (error) {
       // Dismiss overlay on error
