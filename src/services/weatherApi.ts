@@ -759,7 +759,22 @@ export async function getAllWeatherData(
         // Get timezone for accurate local times
         const timezone = await getTimezoneFromCoords(coords);
 
-        const today = new Date().toISOString().split("T")[0];
+        // Use the location's local calendar date (not UTC date) to avoid
+        // requesting sunrise/sunset for the wrong day near timezone boundaries.
+        const dateParts = new Intl.DateTimeFormat("en-US", {
+          timeZone: timezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(new Date());
+
+        const year = dateParts.find((part) => part.type === "year")?.value;
+        const month = dateParts.find((part) => part.type === "month")?.value;
+        const day = dateParts.find((part) => part.type === "day")?.value;
+        const today =
+          year && month && day
+            ? `${year}-${month}-${day}`
+            : new Date().toISOString().split("T")[0];
         const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=${timezone}`;
 
         // fetchWithUserAgent returns parsed JSON data, not a Response object

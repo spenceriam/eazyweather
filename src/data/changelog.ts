@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.5",
+    date: "February 19, 2026",
+    type: "patch",
+    title: "ZIP Code Sunrise/Sunset Date Fix",
+    changes: [
+      "Fixed incorrect sunrise and sunset values for some ZIP-code lookups by using the location's local date instead of UTC date when querying sunrise/sunset data.",
+      "Prevents off-by-one-day sunrise/sunset results near timezone boundaries.",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",
