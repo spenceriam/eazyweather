@@ -87,7 +87,7 @@ export function WeatherCarousel({
   const totalCards = 1 + dailyForecasts.length + 1;
 
   return (
-    <section id="current" className="bg-gray-100">
+    <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Carousel container with navigation arrows */}
