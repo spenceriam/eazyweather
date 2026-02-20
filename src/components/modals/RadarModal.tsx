@@ -11,6 +11,11 @@ interface RadarModalProps {
   coordinates: Coordinates | null;
 }
 
+interface RadarFrame {
+  tileUrl: string;
+  timestampUtcSeconds: number;
+}
+
 export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   const userCoords = useMemo(
     () => ({
@@ -22,10 +27,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   const [mapRef, setMapRef] = useState<LeafletMap | null>(null);
   const [pinCoords, setPinCoords] = useState(userCoords);
   const [isRecentering, setIsRecentering] = useState(false);
-  const [radarFrames, setRadarFrames] = useState<string[]>([]);
+  const [radarFrames, setRadarFrames] = useState<RadarFrame[]>([]);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const activeRadarTileUrl = radarFrames[frameIndex] ?? null;
+  const activeRadarFrame = radarFrames[frameIndex] ?? null;
+  const activeRadarTileUrl = activeRadarFrame?.tileUrl ?? null;
 
   useEffect(() => {
     let isMounted = true;
@@ -38,13 +44,19 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         const pastFrames = Array.isArray(data?.radar?.past) ? data.radar.past : [];
         if (!pastFrames.length || !isMounted) return;
         const recentFrames = pastFrames.slice(-8);
-        const frameUrls = recentFrames
-          .map((frame: { path?: string }) => frame.path)
-          .filter((path: string | undefined): path is string => Boolean(path))
-          .map((path: string) => `${host}${path}/256/{z}/{x}/{y}/2/1_1.png`);
-        if (!frameUrls.length || !isMounted) return;
-        setRadarFrames(frameUrls);
-        setFrameIndex(frameUrls.length - 1);
+        const frames = recentFrames
+          .filter(
+            (frame: { path?: string; time?: number }) =>
+              Boolean(frame.path) && typeof frame.time === "number",
+          )
+          .map((frame: { path: string; time: number }) => ({
+            tileUrl: `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
+            timestampUtcSeconds: frame.time,
+          }));
+        if (!frames.length || !isMounted) return;
+        setRadarFrames(frames);
+        setFrameIndex(frames.length - 1);
+        setIsPlaying(frames.length > 1);
       } catch {
         // Keep base map even if radar overlay fetch fails.
       }
@@ -66,7 +78,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     if (!isOpen || !isPlaying || radarFrames.length <= 1) return;
     const timer = window.setInterval(() => {
       setFrameIndex((current) => (current + 1) % radarFrames.length);
-    }, 700);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [isOpen, isPlaying, radarFrames.length]);
 
@@ -122,11 +134,25 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setIsRecentering(false);
   }
 
+  const activeFrameLabel = useMemo(() => {
+    if (!activeRadarFrame) {
+      return "Radar: unavailable";
+    }
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const ageMinutes = Math.max(0, Math.round((nowSeconds - activeRadarFrame.timestampUtcSeconds) / 60));
+    const frameTime = new Date(activeRadarFrame.timestampUtcSeconds * 1000);
+    const formattedTime = frameTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return `Observed radar frame: ${ageMinutes} min ago (${formattedTime})`;
+  }, [activeRadarFrame]);
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Live Weather Radar">
       <div className="space-y-3">
         <p className="text-sm text-gray-600">
-          Interactive radar centered on your current location.
+          Animated observed radar (past frames only), centered on your location.
+        </p>
+        <p className="text-xs text-gray-500">
+          {activeFrameLabel}. This is not a future precipitation forecast.
         </p>
         <div className="w-full h-[65vh] min-h-[420px] rounded-md overflow-hidden border border-gray-200 bg-gray-100 relative">
           <MapContainer
@@ -151,16 +177,21 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             <Marker position={[pinCoords.latitude, pinCoords.longitude]} icon={userLocationIcon} />
           </MapContainer>
 
-          {radarFrames.length > 1 && (
-            <button
-              onClick={() => setIsPlaying((value) => !value)}
-              className="absolute top-3 left-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700"
-              aria-label={isPlaying ? "Pause radar animation" : "Play radar animation"}
-              title={isPlaying ? "Pause animation" : "Play animation"}
-            >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            </button>
-          )}
+          <button
+            onClick={() => radarFrames.length > 1 && setIsPlaying((value) => !value)}
+            disabled={radarFrames.length <= 1}
+            className="absolute top-3 left-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={isPlaying ? "Pause radar animation" : "Play radar animation"}
+            title={
+              radarFrames.length > 1
+                ? isPlaying
+                  ? "Pause animation"
+                  : "Play animation"
+                : "Animation unavailable (single frame)"
+            }
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
 
           <button
             onClick={handleRecenter}
