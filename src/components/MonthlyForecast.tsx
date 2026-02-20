@@ -102,7 +102,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                   className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${bgColor} ${todayBorder} transition-colors`}
                 >
                   <div className="flex flex-col items-start justify-between h-full">
-                    <div className="text-sm font-bold text-gray-700 w-full">
+                    <div className="text-sm font-bold text-slate-700 w-full">
                       {day.date}
                     </div>
 
@@ -112,12 +112,12 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                         isDaytime={true}
                         size={32}
                       />
-                      <div className="text-xs font-medium text-gray-800">
+                      <div className="text-xs font-medium text-slate-800">
                         {day.temperature}°
                       </div>
                     </div>
 
-                    <div className="text-xs text-gray-500 text-center leading-tight max-w-full truncate w-full">
+                    <div className="text-xs text-slate-600 text-center leading-tight max-w-full truncate w-full">
                       {day.condition}
                     </div>
                   </div>
