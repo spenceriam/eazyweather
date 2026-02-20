@@ -20,6 +20,8 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     [coordinates?.latitude, coordinates?.longitude],
   );
   const [mapRef, setMapRef] = useState<LeafletMap | null>(null);
+  const [currentCenter, setCurrentCenter] = useState(userCoords);
+  const [isRecentering, setIsRecentering] = useState(false);
   const [radarTileUrl, setRadarTileUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,9 +49,14 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
+    setCurrentCenter(userCoords);
+  }, [userCoords.latitude, userCoords.longitude]);
+
+  useEffect(() => {
     if (!mapRef || !isOpen) return;
-    mapRef.setView([userCoords.latitude, userCoords.longitude], mapRef.getZoom());
-  }, [mapRef, isOpen, userCoords.latitude, userCoords.longitude]);
+    mapRef.invalidateSize();
+    mapRef.setView([currentCenter.latitude, currentCenter.longitude], mapRef.getZoom());
+  }, [mapRef, isOpen, currentCenter.latitude, currentCenter.longitude]);
 
   const userLocationIcon = useMemo(
     () =>
@@ -69,11 +76,37 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     [],
   );
 
-  function handleRecenter() {
+  async function handleRecenter() {
     if (!mapRef) return;
-    mapRef.flyTo([userCoords.latitude, userCoords.longitude], mapRef.getZoom(), {
-      duration: 0.5,
+    setIsRecentering(true);
+
+    const flyToCoords = (latitude: number, longitude: number) => {
+      setCurrentCenter({ latitude, longitude });
+      mapRef.invalidateSize();
+      mapRef.flyTo([latitude, longitude], mapRef.getZoom(), { duration: 0.5 });
+    };
+
+    if (!navigator.geolocation) {
+      flyToCoords(userCoords.latitude, userCoords.longitude);
+      setIsRecentering(false);
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          flyToCoords(position.coords.latitude, position.coords.longitude);
+          resolve();
+        },
+        () => {
+          flyToCoords(userCoords.latitude, userCoords.longitude);
+          resolve();
+        },
+        { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 },
+      );
     });
+
+    setIsRecentering(false);
   }
 
   return (
@@ -84,7 +117,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         </p>
         <div className="w-full h-[65vh] min-h-[420px] rounded-md overflow-hidden border border-gray-200 bg-gray-100 relative">
           <MapContainer
-            center={[userCoords.latitude, userCoords.longitude]}
+            center={[currentCenter.latitude, currentCenter.longitude]}
             zoom={7}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
@@ -102,18 +135,19 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
               />
             )}
             <Marker
-              position={[userCoords.latitude, userCoords.longitude]}
+              position={[currentCenter.latitude, currentCenter.longitude]}
               icon={userLocationIcon}
             />
           </MapContainer>
 
           <button
             onClick={handleRecenter}
+            disabled={isRecentering}
             className="absolute top-3 right-3 z-[1000] bg-white/95 px-3 py-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-sm font-medium text-gray-700 flex items-center gap-2"
             aria-label="Recenter radar on your location"
           >
             <Crosshair className="w-4 h-4" />
-            Center on Me
+            {isRecentering ? "Centering..." : "Center on Me"}
           </button>
         </div>
       </div>
