@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.14.0",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Animated Weather Conditions",
+    changes: [
+      "Added looping weather condition animations for clear, partly cloudy, cloudy, rain, sleet, snow, thunderstorm, and fog",
+      "Added day and night visual variants so current conditions better match time of day",
+      "Added reduced-motion support to disable weather animations when user accessibility preference is enabled",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",

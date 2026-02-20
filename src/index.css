@@ -23,3 +23,108 @@ html {
 ::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* Weather icon animations */
+@keyframes weather-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes weather-drift {
+    0%, 100% { transform: translateX(0px); }
+    50% { transform: translateX(4px); }
+}
+
+@keyframes weather-rain {
+    0% { transform: translateY(0px); opacity: 1; }
+    100% { transform: translateY(8px); opacity: 0.25; }
+}
+
+@keyframes weather-snow {
+    0% { transform: translateY(0px) translateX(0px); opacity: 1; }
+    100% { transform: translateY(8px) translateX(2px); opacity: 0.35; }
+}
+
+@keyframes weather-twinkle {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.9; }
+}
+
+@keyframes weather-lightning {
+    0%, 42%, 55%, 100% { opacity: 0.2; }
+    45%, 48%, 52% { opacity: 1; }
+}
+
+@keyframes weather-fog {
+    0%, 100% { transform: translateX(0px); opacity: 0.4; }
+    50% { transform: translateX(6px); opacity: 0.8; }
+}
+
+.weather-spin-slow {
+    animation: weather-spin 14s linear infinite;
+    transform-origin: center;
+}
+
+.weather-spin-medium {
+    animation: weather-spin 9s linear infinite;
+    transform-origin: center;
+}
+
+.weather-drift-slow {
+    animation: weather-drift 3.8s ease-in-out infinite;
+}
+
+.weather-drift-fast {
+    animation: weather-drift 2.6s ease-in-out infinite;
+}
+
+.weather-rain-drop {
+    animation: weather-rain 1.1s linear infinite;
+}
+
+.weather-rain-delay-1 { animation-delay: 0s; }
+.weather-rain-delay-2 { animation-delay: 0.2s; }
+.weather-rain-delay-3 { animation-delay: 0.35s; }
+.weather-rain-delay-4 { animation-delay: 0.5s; }
+
+.weather-snow-fall {
+    animation: weather-snow 1.8s ease-in-out infinite;
+}
+
+.weather-snow-delay-1 { animation-delay: 0s; }
+.weather-snow-delay-2 { animation-delay: 0.25s; }
+.weather-snow-delay-3 { animation-delay: 0.45s; }
+.weather-snow-delay-4 { animation-delay: 0.65s; }
+
+.weather-twinkle-1 { animation: weather-twinkle 2.4s ease-in-out infinite; }
+.weather-twinkle-2 { animation: weather-twinkle 2.8s ease-in-out infinite 0.35s; }
+.weather-twinkle-3 { animation: weather-twinkle 3.1s ease-in-out infinite 0.55s; }
+
+.weather-lightning-flash {
+    animation: weather-lightning 2.2s ease-in-out infinite;
+}
+
+.weather-fog-drift {
+    animation: weather-fog 3s ease-in-out infinite;
+}
+
+.weather-fog-delay-1 { animation-delay: 0s; }
+.weather-fog-delay-2 { animation-delay: 0.2s; }
+.weather-fog-delay-3 { animation-delay: 0.35s; }
+.weather-fog-delay-4 { animation-delay: 0.5s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .weather-spin-slow,
+    .weather-spin-medium,
+    .weather-drift-slow,
+    .weather-drift-fast,
+    .weather-rain-drop,
+    .weather-snow-fall,
+    .weather-twinkle-1,
+    .weather-twinkle-2,
+    .weather-twinkle-3,
+    .weather-lightning-flash,
+    .weather-fog-drift {
+        animation: none !important;
+    }
+}
