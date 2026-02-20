@@ -25,8 +25,8 @@ export function LoadingSpinner() {
         />
       </div>
       <div className="relative w-16 h-16 mb-4">
-        <div className="absolute top-0 left-0 w-full h-full border-4 border-brand-lighter dark:border-gray-700 rounded-full"></div>
-        <div className="absolute top-0 left-0 w-full h-full border-4 border-brand dark:border-gray-300 rounded-full border-t-transparent animate-spin"></div>
+        <div className="absolute top-0 left-0 w-full h-full border-4 border-brand-lighter dark:border-gray-600 rounded-full"></div>
+        <div className="absolute top-0 left-0 w-full h-full border-4 border-brand rounded-full border-t-transparent dark:border-transparent dark:border-t-gray-100 dark:border-r-gray-300 animate-spin"></div>
       </div>
       <p className="text-gray-600 dark:text-gray-300 text-lg">Loading weather data...</p>
       <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
