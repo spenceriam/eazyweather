@@ -652,7 +652,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 pb-24 md:pb-20">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-800 pb-24 md:pb-20">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
@@ -669,7 +669,7 @@ function App() {
 
         <main>
           {/* Centered white content area */}
-          <div className="bg-white">
+          <div className="bg-slate-100 dark:bg-slate-800">
             {isLoading || (error && !coordinates) ? (
               <div className="flex items-center justify-center py-16">
                 <LoadingSpinner />
@@ -687,7 +687,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="current" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-16">
                       <div className="max-w-6xl mx-auto">
                         <div className="text-center">
@@ -707,7 +707,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="hourly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -722,7 +722,7 @@ function App() {
                 {forecast.length > 0 ? (
                   <SevenDayForecast forecast={forecast} />
                 ) : (
-                  <section id="forecast" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="forecast" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -737,7 +737,7 @@ function App() {
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
                 ) : isMonthlyLoading ? (
-                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="monthly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
@@ -750,7 +750,7 @@ function App() {
                     </div>
                   </section>
                 ) : monthlyError ? (
-                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="monthly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
