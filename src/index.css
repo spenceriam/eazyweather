@@ -85,6 +85,29 @@ body {
     caret-color: #f3f4f6 !important;
 }
 
+.dark .initial-location-input,
+.dark .initial-location-input:focus,
+.dark .initial-location-input:hover {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+    border-color: #4b5563 !important;
+    caret-color: #f3f4f6 !important;
+}
+
+.dark .initial-location-input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .initial-location-input:-webkit-autofill,
+.dark .initial-location-input:-webkit-autofill:hover,
+.dark .initial-location-input:-webkit-autofill:focus,
+.dark .initial-location-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    -webkit-text-fill-color: #f3f4f6 !important;
+    caret-color: #f3f4f6 !important;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;
