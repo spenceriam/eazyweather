@@ -13,16 +13,21 @@ import {
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
 import { LocationPinModal } from "./LocationPinModal";
+import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
 
 interface LocationDropdownProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
+  selectedTimezone: string;
+  onTimezoneChange: (timezone: string) => void;
   onClose: () => void;
 }
 
 export function LocationDropdown({
   coordinates,
   onLocationUpdate,
+  selectedTimezone,
+  onTimezoneChange,
   onClose,
 }: LocationDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,8 +38,10 @@ export function LocationDropdown({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [isManualPin, setIsManualPin] = useState(false);
+  const [showTimezonePicker, setShowTimezonePicker] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const commonTimezones = getCommonTimezoneOptions();
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -289,6 +296,35 @@ export function LocationDropdown({
                 >
                   Clear Pin
                 </button>
+              )}
+            </div>
+
+            {/* Timezone (under action buttons) */}
+            <div className="space-y-2 border-t border-gray-200 pt-3">
+              <div className="text-xs text-gray-500">
+                Current timezone:{" "}
+                <span className="font-medium text-gray-700">{selectedTimezone}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTimezonePicker((value) => !value)}
+                className="w-full px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+              >
+                {showTimezonePicker ? "Hide Timezone List" : "Change Timezone"}
+              </button>
+              {showTimezonePicker && (
+                <select
+                  value={selectedTimezone}
+                  onChange={(e) => onTimezoneChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm bg-white"
+                  aria-label="Select timezone"
+                >
+                  {commonTimezones.map((timezone) => (
+                    <option key={timezone} value={timezone}>
+                      {timezone}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
           </form>

@@ -22,9 +22,20 @@ export function CurrentWeatherCard({ conditions, timezone }: CurrentWeatherCardP
   // Format current date as "mm/dd"
   const formatCurrentDate = () => {
     const now = new Date();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    return `${month}/${day}`;
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        month: "numeric",
+        day: "numeric",
+        timeZone: timezone,
+      }).formatToParts(now);
+      const month = parts.find((part) => part.type === "month")?.value;
+      const day = parts.find((part) => part.type === "day")?.value;
+      return month && day ? `${month}/${day}` : "N/A";
+    } catch {
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      return `${month}/${day}`;
+    }
   };
 
   const cardTitle = `CURRENT CONDITIONS ${formatCurrentDate()}`;

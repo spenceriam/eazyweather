@@ -35,6 +35,7 @@ import {
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
+import { getInitialTimezone, persistTimezone } from "./utils/timezoneUtils";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -57,6 +58,7 @@ function App() {
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(getInitialTimezone);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -150,6 +152,11 @@ function App() {
     useState<MonthlyForecastType | null>(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(false);
+
+  function handleTimezoneChange(timezone: string) {
+    setSelectedTimezone(timezone);
+    persistTimezone(timezone);
+  }
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -621,6 +628,8 @@ function App() {
           locationName={locationName}
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
+          selectedTimezone={selectedTimezone}
+          onTimezoneChange={handleTimezoneChange}
           onRadarOpen={() => setShowRadarModal(true)}
         />
 
@@ -641,7 +650,7 @@ function App() {
                   <WeatherCarousel
                     conditions={currentConditions}
                     forecast={forecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
                   <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
@@ -661,7 +670,7 @@ function App() {
                 {hourlyForecast.length > 0 ? (
                   <HourlyForecast
                     forecast={hourlyForecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
                   <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
