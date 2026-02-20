@@ -8,8 +8,32 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    version: "1.9.7",
+    version: "1.10.2",
     date: "February 20, 2026",
+    type: "patch",
+    title: "Radar Animation and Control Polish",
+    changes: [
+      "Smoothed radar playback with frame-to-frame crossfade transitions for less abrupt visual jumps.",
+      "Updated radar playback UX with a single timeline slider that acts as both progress indicator and manual scrubber.",
+      "Added an in-modal radar refresh control and improved playback behavior to stop at the latest frame with replay support.",
+      "Refined radar modal copy and control layout for clearer, cleaner mobile and desktop interaction.",
+    ],
+  },
+  {
+    version: "1.10.1",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Radar Map With Location Pin and Recenter",
+    changes: [
+      "Replaced the radar iframe with an interactive map-based radar layer that supports panning and zooming",
+      "Added a persistent user-location pin on the radar map",
+      "Added a \"Center on Me\" control to recenter the radar after panning",
+      "Removed radar button icons for a cleaner text-only radar action",
+    ],
+  },
+  {
+    version: "1.9.7",
+    date: "February 19, 2026",
     type: "patch",
     title: "Fix Monthly Baseline Data Logic",
     changes: [
@@ -20,7 +44,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.9.6",
-    date: "February 20, 2026",
+    date: "February 19, 2026",
     type: "patch",
     title: "ZIP Code Sunrise/Sunset Date Fix",
     changes: [
@@ -30,7 +54,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.9.5",
-    date: "February 20, 2026",
+    date: "February 19, 2026",
     type: "patch",
     title: "Header Navigation Parking Fix",
     changes: [

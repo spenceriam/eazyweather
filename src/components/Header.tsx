@@ -8,9 +8,15 @@ interface HeaderProps {
   locationName: string;
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
+  onRadarOpen: () => void;
 }
 
-export function Header({ locationName, coordinates, onLocationUpdate }: HeaderProps) {
+export function Header({
+  locationName,
+  coordinates,
+  onLocationUpdate,
+  onRadarOpen,
+}: HeaderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -115,7 +121,15 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
 
           {/* Nav - Right */}
           <div className="flex items-center justify-end">
-            <nav className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onRadarOpen}
+                className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
+                aria-label="Open weather radar"
+              >
+                Radar
+              </button>
+              <nav className="flex gap-2">
               {navItems.map((item) => (
                 <a
                   key={item.id}
@@ -125,7 +139,8 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
                   {item.label}
                 </a>
               ))}
-            </nav>
+              </nav>
+            </div>
           </div>
         </div>
 
@@ -178,7 +193,15 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
           </div>
 
           {/* Row 2: Nav buttons */}
-          <nav className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
+            <button
+              onClick={onRadarOpen}
+              className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center"
+              aria-label="Open weather radar"
+            >
+              Radar
+            </button>
+            <nav className="contents">
             {navItems.map((item) => (
               <a
                 key={item.id}
@@ -188,7 +211,8 @@ export function Header({ locationName, coordinates, onLocationUpdate }: HeaderPr
                 {item.label}
               </a>
             ))}
-          </nav>
+            </nav>
+          </div>
         </div>
       </div>
     </header>
