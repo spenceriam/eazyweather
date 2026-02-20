@@ -244,11 +244,12 @@ export function LocationDropdown({
                 placeholder="Enter city, state, country, or ZIP code"
                 className={`w-full px-4 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm ${
                   isDarkMode
-                    ? "bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-400"
+                    ? "settings-search-input bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-400"
                     : "bg-white border-gray-300 text-gray-900"
                 }`}
                 disabled={isLoading}
                 autoFocus
+                autoComplete="off"
               />
               {searchQuery && (
                 <button

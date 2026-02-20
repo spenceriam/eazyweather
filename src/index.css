@@ -62,6 +62,29 @@ body {
     background: rgba(31, 41, 55, 0.98) !important;
 }
 
+.dark .settings-search-input,
+.dark .settings-search-input:focus,
+.dark .settings-search-input:hover {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+    border-color: #4b5563 !important;
+    caret-color: #f3f4f6 !important;
+}
+
+.dark .settings-search-input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .settings-search-input:-webkit-autofill,
+.dark .settings-search-input:-webkit-autofill:hover,
+.dark .settings-search-input:-webkit-autofill:focus,
+.dark .settings-search-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    -webkit-text-fill-color: #f3f4f6 !important;
+    caret-color: #f3f4f6 !important;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;
