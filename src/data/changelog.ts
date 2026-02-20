@@ -19,6 +19,62 @@ export const changelog: ChangelogEntry[] = [
     ],
   },
   {
+    version: "1.10.2",
+    date: "February 20, 2026",
+    type: "patch",
+    title: "Radar Animation and Control Polish",
+    changes: [
+      "Smoothed radar playback with frame-to-frame crossfade transitions for less abrupt visual jumps.",
+      "Updated radar playback UX with a single timeline slider that acts as both progress indicator and manual scrubber.",
+      "Added an in-modal radar refresh control and improved playback behavior to stop at the latest frame with replay support.",
+      "Refined radar modal copy and control layout for clearer, cleaner mobile and desktop interaction.",
+    ],
+  },
+  {
+    version: "1.10.1",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Radar Map With Location Pin and Recenter",
+    changes: [
+      "Replaced the radar iframe with an interactive map-based radar layer that supports panning and zooming",
+      "Added a persistent user-location pin on the radar map",
+      "Added a \"Center on Me\" control to recenter the radar after panning",
+      "Removed radar button icons for a cleaner text-only radar action",
+    ],
+  },
+  {
+    version: "1.9.7",
+    date: "February 19, 2026",
+    type: "patch",
+    title: "Fix Monthly Baseline Data Logic",
+    changes: [
+      "Monthly past days now use same-date last-year baseline data instead of current-year month-to-date history",
+      "Kept today and near-term monthly values sourced from live National Weather Service forecast data",
+      "Improved monthly date anchoring to reduce day-boundary shifts caused by timezone differences",
+    ],
+  },
+  {
+    version: "1.9.6",
+    date: "February 19, 2026",
+    type: "patch",
+    title: "ZIP Code Sunrise/Sunset Date Fix",
+    changes: [
+      "Fixed incorrect sunrise and sunset values for some ZIP-code lookups by using the location's local date instead of UTC date when querying sunrise/sunset data.",
+      "Prevents off-by-one-day sunrise/sunset results near timezone boundaries.",
+    ],
+  },
+  {
+    version: "1.9.5",
+    date: "February 19, 2026",
+    type: "patch",
+    title: "Header Navigation Parking Fix",
+    changes: [
+      "Fixed header navigation scroll positions so Current, Hourly, 7-Day, and Monthly sections no longer park under the sticky header.",
+      "Applied consistent anchor offset spacing across all weather sections and fallback section states.",
+      "Documented the required section anchor offset convention in AGENTS.md to keep navigation alignment stable in future UI updates.",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",
@@ -211,7 +267,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.1.x",
-    date: "October 31, 2025",
+    date: "October 31 - November 9, 2025",
     type: "minor",
     title: "Analytics & UI Polish",
     changes: [
@@ -229,14 +285,8 @@ export const changelog: ChangelogEntry[] = [
       "Real-time weather data from National Weather Service",
       "Current conditions with temperature, wind, and humidity",
       "Hourly, 7-day, and monthly forecasts",
-      "Weather trend comments for better context",
-      "Sunrise and sunset times integration",
-      "Auto-refresh with rate limiting",
-      "Enhanced location search with disambiguation",
-      "Mobile-responsive hourly forecast layout",
-      "Branded loading experience with duck logo",
-      "Initial location modal for better onboarding",
-      "Custom brand color scheme with warm cream backgrounds",
+      "Location search with city, state, and ZIP support",
+      "Responsive design for desktop and mobile",
     ],
   },
 ];
