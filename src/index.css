@@ -52,6 +52,16 @@ body {
     filter: brightness(0.62) contrast(1.15) saturate(0.85);
 }
 
+.radar-map-dark .leaflet-control-zoom a {
+    background: rgba(17, 24, 39, 0.92) !important;
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
+}
+
+.radar-map-dark .leaflet-control-zoom a:hover {
+    background: rgba(31, 41, 55, 0.98) !important;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;

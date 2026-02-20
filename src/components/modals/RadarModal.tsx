@@ -237,6 +237,7 @@ export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarMo
             zoom={7}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
+            className={isDarkMode ? "radar-map-dark" : undefined}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -266,8 +267,18 @@ export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarMo
             <Marker position={[pinCoords.latitude, pinCoords.longitude]} icon={userLocationIcon} />
           </MapContainer>
 
-          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[min(85%,320px)] rounded-md border border-gray-300 bg-white/95 px-3 py-2 shadow-md">
-            <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-gray-700">
+          <div
+            className={`absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[min(85%,320px)] rounded-md border px-3 py-2 shadow-md ${
+              isDarkMode
+                ? "border-gray-700 bg-gray-900/95"
+                : "border-gray-300 bg-white/95"
+            }`}
+          >
+            <div
+              className={`mb-1 flex items-center justify-between text-[11px] font-medium ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               <span>{activeFrameLabel.replace("Observed radar frame: ", "")}</span>
               {timelineRangeLabel && <span>{timelineRangeLabel}</span>}
             </div>
@@ -289,7 +300,11 @@ export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarMo
           <button
             onClick={handleTogglePlay}
             disabled={radarFrames.length <= 1}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label={
               isPlaying
                 ? "Stop radar animation"
@@ -315,7 +330,11 @@ export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarMo
             disabled={isRecentering}
             onMouseDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            className="absolute top-3 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
+            className={`absolute top-3 right-3 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-70 ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label="Recenter radar on your location"
             title="Recenter on your location"
           >
@@ -327,7 +346,11 @@ export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarMo
             disabled={isRefreshing}
             onMouseDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            className="absolute top-14 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
+            className={`absolute top-14 right-3 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-70 ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label="Refresh radar frames"
             title="Refresh radar frames"
           >
