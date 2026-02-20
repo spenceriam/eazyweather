@@ -48,6 +48,10 @@ body {
     border-color: #374151 !important;
 }
 
+.night-map-base {
+    filter: brightness(0.62) contrast(1.15) saturate(0.85);
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;

@@ -14,7 +14,7 @@ import {
 import type { Coordinates } from "../types/weather";
 import { LocationPinModal } from "./LocationPinModal";
 import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
-import type { ThemeMode } from "../utils/themeUtils";
+import { resolveThemeMode, type ThemeMode } from "../utils/themeUtils";
 
 interface LocationDropdownProps {
   coordinates: Coordinates | null;
@@ -48,6 +48,7 @@ export function LocationDropdown({
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const commonTimezones = getCommonTimezoneOptions();
+  const isDarkMode = resolveThemeMode(themeMode) === "dark";
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -440,6 +441,7 @@ export function LocationDropdown({
         onClose={handleClosePinModal}
         onLocationSelect={handlePinLocation}
         initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
+        isDarkMode={isDarkMode}
       />
     </>
   );

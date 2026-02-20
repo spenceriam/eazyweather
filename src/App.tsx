@@ -781,6 +781,7 @@ function App() {
           onClose={handlePinModalClose}
           onLocationSelect={handlePinLocationConfirm}
           initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
+          isDarkMode={resolvedTheme === "dark"}
         />
 
         {/* Location Permission Overlay */}
