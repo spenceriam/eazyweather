@@ -37,7 +37,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
   }
 
   return (
-    <section id="monthly" className="bg-gray-100">
+    <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">
