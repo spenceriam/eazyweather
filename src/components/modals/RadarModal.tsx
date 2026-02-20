@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import { Crosshair } from "lucide-react";
+import { LocateFixed } from "lucide-react";
 import { Icon, type Map as LeafletMap } from "leaflet";
 import type { Coordinates } from "../../types/weather";
 import { Modal } from "../ui/Modal";
@@ -86,25 +86,20 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
       mapRef.flyTo([latitude, longitude], mapRef.getZoom(), { duration: 0.5 });
     };
 
-    if (!navigator.geolocation) {
-      flyToCoords(userCoords.latitude, userCoords.longitude);
-      setIsRecentering(false);
-      return;
-    }
+    flyToCoords(userCoords.latitude, userCoords.longitude);
 
-    await new Promise<void>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          flyToCoords(position.coords.latitude, position.coords.longitude);
-          resolve();
-        },
-        () => {
-          flyToCoords(userCoords.latitude, userCoords.longitude);
-          resolve();
-        },
-        { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 },
-      );
-    });
+    if (navigator.geolocation) {
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            flyToCoords(position.coords.latitude, position.coords.longitude);
+            resolve();
+          },
+          () => resolve(),
+          { enableHighAccuracy: true, timeout: 7000, maximumAge: 60000 },
+        );
+      });
+    }
 
     setIsRecentering(false);
   }
@@ -143,11 +138,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
           <button
             onClick={handleRecenter}
             disabled={isRecentering}
-            className="absolute top-3 right-3 z-[1000] bg-white/95 px-3 py-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-sm font-medium text-gray-700 flex items-center gap-2"
+            className="absolute top-3 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
             aria-label="Recenter radar on your location"
+            title="Recenter on your location"
           >
-            <Crosshair className="w-4 h-4" />
-            {isRecentering ? "Centering..." : "Center on Me"}
+            <LocateFixed className={`w-4 h-4 ${isRecentering ? "animate-pulse" : ""}`} />
           </button>
         </div>
       </div>
