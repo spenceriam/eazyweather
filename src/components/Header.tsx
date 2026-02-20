@@ -26,8 +26,8 @@ export function Header({
   onThemeChange,
   onRadarOpen,
 }: HeaderProps) {
-  const lightLogoSrc = "/assets/logo-black-trans.png";
-  const darkLogoSrc = "/assets/logo-white-trans.png";
+  const lightLogoSrc = "/Eazy_Weather_Logo_Black-trans.png";
+  const darkLogoSrc = "/Eazy_Weather_Logo_White-trans.png";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -86,7 +86,7 @@ export function Header({
             <img
               src={lightLogoSrc}
               alt="EazyWeather Logo"
-              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-md bg-white/85 px-1 py-0.5 dark:hidden"
+              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = "/assets/logo.png";
@@ -190,7 +190,7 @@ export function Header({
             <img
               src={lightLogoSrc}
               alt="EazyWeather Logo"
-              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 rounded-md bg-white/85 px-1 py-0.5 dark:hidden"
+              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 dark:hidden"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = "/assets/logo.png";

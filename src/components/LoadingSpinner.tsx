@@ -1,6 +1,6 @@
 export function LoadingSpinner() {
-  const lightLogoSrc = "/assets/logo-black-trans.png";
-  const darkLogoSrc = "/assets/logo-white-trans.png";
+  const lightLogoSrc = "/Eazy_Weather_Logo_Black-trans.png";
+  const darkLogoSrc = "/Eazy_Weather_Logo_White-trans.png";
 
   return (
     <div className="flex flex-col items-center justify-center py-20">
