@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import { LocateFixed, Pause, Play } from "lucide-react";
+import { LocateFixed, Pause, Play, RefreshCcw } from "lucide-react";
 import { Icon, type Map as LeafletMap } from "leaflet";
 import type { Coordinates } from "../../types/weather";
 import { Modal } from "../ui/Modal";
@@ -27,48 +27,47 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   const [mapRef, setMapRef] = useState<LeafletMap | null>(null);
   const [pinCoords, setPinCoords] = useState(userCoords);
   const [isRecentering, setIsRecentering] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [radarFrames, setRadarFrames] = useState<RadarFrame[]>([]);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const activeRadarFrame = radarFrames[frameIndex] ?? null;
   const activeRadarTileUrl = activeRadarFrame?.tileUrl ?? null;
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadRadarLayer() {
-      try {
-        const response = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-        if (!response.ok) return;
-        const data = await response.json();
-        const host: string = data?.host || "https://tilecache.rainviewer.com";
-        const pastFrames = Array.isArray(data?.radar?.past) ? data.radar.past : [];
-        if (!pastFrames.length || !isMounted) return;
-        const recentFrames = pastFrames.slice(-8);
-        const frames = recentFrames
-          .filter(
-            (frame: { path?: string; time?: number }) =>
-              Boolean(frame.path) && typeof frame.time === "number",
-          )
-          .map((frame: { path: string; time: number }) => ({
-            tileUrl: `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
-            timestampUtcSeconds: frame.time,
-          }));
-        if (!frames.length || !isMounted) return;
-        setRadarFrames(frames);
-        setFrameIndex(frames.length - 1);
-        setIsPlaying(frames.length > 1);
-      } catch {
-        // Keep base map even if radar overlay fetch fails.
-      }
+  const loadRadarLayer = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+      if (!response.ok) return;
+      const data = await response.json();
+      const host: string = data?.host || "https://tilecache.rainviewer.com";
+      const pastFrames = Array.isArray(data?.radar?.past) ? data.radar.past : [];
+      if (!pastFrames.length) return;
+      const recentFrames = pastFrames.slice(-8);
+      const frames = recentFrames
+        .filter(
+          (frame: { path?: string; time?: number }) =>
+            Boolean(frame.path) && typeof frame.time === "number",
+        )
+        .map((frame: { path: string; time: number }) => ({
+          tileUrl: `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
+          timestampUtcSeconds: frame.time,
+        }));
+      if (!frames.length) return;
+      setRadarFrames(frames);
+      setFrameIndex(0);
+      setIsPlaying(frames.length > 1);
+    } catch {
+      // Keep base map even if radar overlay fetch fails.
+    } finally {
+      setIsRefreshing(false);
     }
+  }, []);
 
-    if (isOpen) {
-      loadRadarLayer();
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
+    void loadRadarLayer();
+  }, [isOpen, loadRadarLayer]);
 
   useEffect(() => {
     setPinCoords(userCoords);
@@ -77,7 +76,13 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   useEffect(() => {
     if (!isOpen || !isPlaying || radarFrames.length <= 1) return;
     const timer = window.setInterval(() => {
-      setFrameIndex((current) => (current + 1) % radarFrames.length);
+      setFrameIndex((current) => {
+        if (current >= radarFrames.length - 1) {
+          setIsPlaying(false);
+          return radarFrames.length - 1;
+        }
+        return current + 1;
+      });
     }, 1000);
     return () => window.clearInterval(timer);
   }, [isOpen, isPlaying, radarFrames.length]);
@@ -134,6 +139,21 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setIsRecentering(false);
   }
 
+  function handleTogglePlay() {
+    if (radarFrames.length <= 1) return;
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+    if (frameIndex >= radarFrames.length - 1) {
+      setFrameIndex(0);
+    }
+    setIsPlaying(true);
+  }
+
+  const framePercent =
+    radarFrames.length > 1 ? (frameIndex / (radarFrames.length - 1)) * 100 : 0;
+
   const activeFrameLabel = useMemo(() => {
     if (!activeRadarFrame) {
       return "Radar: unavailable";
@@ -144,6 +164,18 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     const formattedTime = frameTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     return `Observed radar frame: ${ageMinutes} min ago (${formattedTime})`;
   }, [activeRadarFrame]);
+
+  const timelineRangeLabel = useMemo(() => {
+    if (radarFrames.length < 2) return "";
+    const firstTime = new Date(radarFrames[0].timestampUtcSeconds * 1000).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    const latestTime = new Date(
+      radarFrames[radarFrames.length - 1].timestampUtcSeconds * 1000,
+    ).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return `${firstTime} -> ${latestTime}`;
+  }, [radarFrames]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Live Weather Radar">
@@ -177,16 +209,50 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             <Marker position={[pinCoords.latitude, pinCoords.longitude]} icon={userLocationIcon} />
           </MapContainer>
 
+          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[min(85%,320px)] rounded-md border border-gray-300 bg-white/95 px-3 py-2 shadow-md">
+            <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-gray-700">
+              <span>{activeFrameLabel.replace("Observed radar frame: ", "")}</span>
+              {timelineRangeLabel && <span>{timelineRangeLabel}</span>}
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, radarFrames.length - 1)}
+              value={frameIndex}
+              onChange={(event) => {
+                setFrameIndex(Number(event.target.value));
+                setIsPlaying(false);
+              }}
+              disabled={radarFrames.length <= 1}
+              className="w-full accent-blue-600"
+              aria-label="Radar timeline"
+            />
+            <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
+              <div
+                className="h-1.5 rounded-full bg-blue-500 transition-all"
+                style={{ width: `${framePercent}%` }}
+              />
+            </div>
+          </div>
+
           <button
-            onClick={() => radarFrames.length > 1 && setIsPlaying((value) => !value)}
+            onClick={handleTogglePlay}
             disabled={radarFrames.length <= 1}
             className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label={isPlaying ? "Pause radar animation" : "Play radar animation"}
+            aria-label={
+              isPlaying
+                ? "Stop radar animation"
+                : frameIndex >= radarFrames.length - 1
+                  ? "Replay radar animation"
+                  : "Play radar animation"
+            }
             title={
               radarFrames.length > 1
                 ? isPlaying
-                  ? "Pause animation"
-                  : "Play animation"
+                  ? "Stop animation"
+                  : frameIndex >= radarFrames.length - 1
+                    ? "Replay from start"
+                    : "Play animation"
                 : "Animation unavailable (single frame)"
             }
           >
@@ -203,6 +269,18 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             title="Recenter on your location"
           >
             <LocateFixed className={`w-4 h-4 ${isRecentering ? "animate-pulse" : ""}`} />
+          </button>
+
+          <button
+            onClick={() => void loadRadarLayer()}
+            disabled={isRefreshing}
+            onMouseDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            className="absolute top-14 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
+            aria-label="Refresh radar frames"
+            title="Refresh radar frames"
+          >
+            <RefreshCcw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
