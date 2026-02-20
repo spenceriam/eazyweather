@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "version": "1.9.7",
+  "version": "1.10.1",
   "license": "MIT",
   "author": "Spencer Francisco <https://x.com/spencer_i_am>",
   "type": "module",
