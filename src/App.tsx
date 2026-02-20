@@ -19,7 +19,6 @@ import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
 import { RadarModal } from "./components/modals/RadarModal";
-import { TimezoneSettingsModal } from "./components/modals/TimezoneSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
@@ -56,7 +55,6 @@ function App() {
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showRadarModal, setShowRadarModal] = useState(false);
-  const [showTimezoneSettings, setShowTimezoneSettings] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
@@ -630,7 +628,8 @@ function App() {
           locationName={locationName}
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
-          onTimezoneSettingsOpen={() => setShowTimezoneSettings(true)}
+          selectedTimezone={selectedTimezone}
+          onTimezoneChange={handleTimezoneChange}
           onRadarOpen={() => setShowRadarModal(true)}
         />
 
@@ -763,13 +762,6 @@ function App() {
           isOpen={showRadarModal}
           onClose={() => setShowRadarModal(false)}
           coordinates={coordinates}
-        />
-
-        <TimezoneSettingsModal
-          isOpen={showTimezoneSettings}
-          onClose={() => setShowTimezoneSettings(false)}
-          selectedTimezone={selectedTimezone}
-          onTimezoneChange={handleTimezoneChange}
         />
       </div>
     </div>

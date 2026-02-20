@@ -78,3 +78,7 @@ export function getTimezoneOptions(): string[] {
   const merged = new Set<string>([...COMMON_TIMEZONES, ...fromRuntime]);
   return Array.from(merged).sort((a, b) => a.localeCompare(b));
 }
+
+export function getCommonTimezoneOptions(): string[] {
+  return [...COMMON_TIMEZONES];
+}

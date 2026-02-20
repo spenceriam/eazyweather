@@ -13,16 +13,21 @@ import {
 } from "../services/locationService";
 import type { Coordinates } from "../types/weather";
 import { LocationPinModal } from "./LocationPinModal";
+import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
 
 interface LocationDropdownProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
+  selectedTimezone: string;
+  onTimezoneChange: (timezone: string) => void;
   onClose: () => void;
 }
 
 export function LocationDropdown({
   coordinates,
   onLocationUpdate,
+  selectedTimezone,
+  onTimezoneChange,
   onClose,
 }: LocationDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +40,7 @@ export function LocationDropdown({
   const [isManualPin, setIsManualPin] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const commonTimezones = getCommonTimezoneOptions();
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -218,6 +224,26 @@ export function LocationDropdown({
         className="absolute top-full right-0 mt-2 w-full md:w-[500px] bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
       >
         <div className="p-4 space-y-4">
+          {/* Timezone */}
+          <div className="space-y-2 border-b border-gray-200 pb-4">
+            <div className="text-sm font-medium text-gray-700">Timezone</div>
+            <div className="text-xs text-gray-500">
+              Current: <span className="font-medium text-gray-700">{selectedTimezone}</span>
+            </div>
+            <select
+              value={selectedTimezone}
+              onChange={(e) => onTimezoneChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm bg-white"
+              aria-label="Select timezone"
+            >
+              {commonTimezones.map((timezone) => (
+                <option key={timezone} value={timezone}>
+                  {timezone}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Search Form */}
           <form onSubmit={handleSearchSubmit} className="space-y-3">
             <div className="relative">
