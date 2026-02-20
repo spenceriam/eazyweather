@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { MapPin, Settings, Clock3 } from "lucide-react";
+import { Clock3, MapPin, Settings } from "lucide-react";
 import { LocationDropdown } from "./LocationDropdown";
 import type { Coordinates } from "../types/weather";
 import type { LocationResult } from "../services/locationService";
@@ -9,6 +9,7 @@ interface HeaderProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
   onTimezoneSettingsOpen: () => void;
+  onRadarOpen: () => void;
 }
 
 export function Header({
@@ -16,6 +17,7 @@ export function Header({
   coordinates,
   onLocationUpdate,
   onTimezoneSettingsOpen,
+  onRadarOpen,
 }: HeaderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
@@ -130,16 +132,23 @@ export function Header({
                 <Clock3 className="w-4 h-4" />
                 Time
               </button>
+              <button
+                onClick={onRadarOpen}
+                className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
+                aria-label="Open weather radar"
+              >
+                Radar
+              </button>
               <nav className="flex gap-2">
-                {navItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
-                  >
-                    {item.label}
-                  </a>
-                ))}
+              {navItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
               </nav>
             </div>
           </div>
@@ -194,7 +203,7 @@ export function Header({
           </div>
 
           {/* Row 2: Nav buttons */}
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             <button
               onClick={onTimezoneSettingsOpen}
               className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center flex items-center justify-center gap-1"
@@ -203,16 +212,23 @@ export function Header({
               <Clock3 className="w-3.5 h-3.5" />
               Time
             </button>
+            <button
+              onClick={onRadarOpen}
+              className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center"
+              aria-label="Open weather radar"
+            >
+              Radar
+            </button>
             <nav className="contents">
-              {navItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center"
-                >
-                  {item.label}
-                </a>
-              ))}
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center"
+              >
+                {item.label}
+              </a>
+            ))}
             </nav>
           </div>
         </div>

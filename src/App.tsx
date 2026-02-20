@@ -18,6 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
+import { RadarModal } from "./components/modals/RadarModal";
 import { TimezoneSettingsModal } from "./components/modals/TimezoneSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
@@ -35,10 +36,7 @@ import {
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
-import {
-  getInitialTimezone,
-  persistTimezone,
-} from "./utils/timezoneUtils";
+import { getInitialTimezone, persistTimezone } from "./utils/timezoneUtils";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -57,6 +55,7 @@ function App() {
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showRadarModal, setShowRadarModal] = useState(false);
   const [showTimezoneSettings, setShowTimezoneSettings] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
@@ -632,6 +631,7 @@ function App() {
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
           onTimezoneSettingsOpen={() => setShowTimezoneSettings(true)}
+          onRadarOpen={() => setShowRadarModal(true)}
         />
 
         <main>
@@ -654,7 +654,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="current" className="bg-gray-100">
+                  <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-16">
                       <div className="max-w-6xl mx-auto">
                         <div className="text-center">
@@ -674,7 +674,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="hourly" className="bg-gray-100">
+                  <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -689,7 +689,7 @@ function App() {
                 {forecast.length > 0 ? (
                   <SevenDayForecast forecast={forecast} />
                 ) : (
-                  <section id="forecast" className="bg-gray-100">
+                  <section id="forecast" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -704,7 +704,7 @@ function App() {
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
                 ) : isMonthlyLoading ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
@@ -717,7 +717,7 @@ function App() {
                     </div>
                   </section>
                 ) : monthlyError ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -757,6 +757,12 @@ function App() {
         <CookieConsentModal
           isOpen={showCookieConsent}
           onResolve={handleCookieConsentResolve}
+        />
+
+        <RadarModal
+          isOpen={showRadarModal}
+          onClose={() => setShowRadarModal(false)}
+          coordinates={coordinates}
         />
 
         <TimezoneSettingsModal
