@@ -8,13 +8,24 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    version: "1.9.5",
-    date: "February 19, 2026",
+    version: "1.9.6",
+    date: "February 20, 2026",
     type: "patch",
     title: "ZIP Code Sunrise/Sunset Date Fix",
     changes: [
       "Fixed incorrect sunrise and sunset values for some ZIP-code lookups by using the location's local date instead of UTC date when querying sunrise/sunset data.",
       "Prevents off-by-one-day sunrise/sunset results near timezone boundaries.",
+    ],
+  },
+  {
+    version: "1.9.5",
+    date: "February 20, 2026",
+    type: "patch",
+    title: "Header Navigation Parking Fix",
+    changes: [
+      "Fixed header navigation scroll positions so Current, Hourly, 7-Day, and Monthly sections no longer park under the sticky header.",
+      "Applied consistent anchor offset spacing across all weather sections and fallback section states.",
+      "Documented the required section anchor offset convention in AGENTS.md to keep navigation alignment stable in future UI updates.",
     ],
   },
   {
