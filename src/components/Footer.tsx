@@ -41,7 +41,7 @@ export function Footer() {
               {/* Center: Copyright, links, and version info */}
               <div className="text-center">
                 <span className="flex items-center justify-center gap-2">
-                  <span>© 2025 EazyWeather</span>
+                  <span>© 2026 EazyWeather</span>
                   <span>•</span>
                   <a
                     href="https://lionmystic.com"
@@ -165,7 +165,7 @@ export function Footer() {
             <div className="text-center">
               <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center gap-2">
-                  <span>© 2025 EazyWeather</span>
+                  <span>© 2026 EazyWeather</span>
                   <span>•</span>
                   <a
                     href="https://lionmystic.com"
