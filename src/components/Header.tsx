@@ -26,6 +26,8 @@ export function Header({
   onThemeChange,
   onRadarOpen,
 }: HeaderProps) {
+  const lightLogoSrc = "/assets/logo-black-trans.png";
+  const darkLogoSrc = "/assets/logo-white-trans.png";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -82,9 +84,31 @@ export function Header({
           {/* Logo - Left */}
           <div className="flex items-center justify-start">
             <img
-              src="/assets/logo.png"
+              src={lightLogoSrc}
               alt="EazyWeather Logo"
-              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-md bg-white/85 px-1 py-0.5"
+              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-md bg-white/85 px-1 py-0.5 dark:hidden"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/assets/logo.png";
+              }}
+              onClick={handleLogoClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleLogoClick();
+                }
+              }}
+            />
+            <img
+              src={darkLogoSrc}
+              alt="EazyWeather Logo"
+              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/assets/logo.png";
+              }}
               onClick={handleLogoClick}
               role="button"
               tabIndex={0}
@@ -164,9 +188,31 @@ export function Header({
           {/* Row 1: Logo + Location + Gear */}
           <div className="flex items-center justify-between gap-2">
             <img
-              src="/assets/logo.png"
+              src={lightLogoSrc}
               alt="EazyWeather Logo"
-              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 rounded-md bg-white/85 px-1 py-0.5"
+              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 rounded-md bg-white/85 px-1 py-0.5 dark:hidden"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/assets/logo.png";
+              }}
+              onClick={handleLogoClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleLogoClick();
+                }
+              }}
+            />
+            <img
+              src={darkLogoSrc}
+              alt="EazyWeather Logo"
+              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 hidden dark:block"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/assets/logo.png";
+              }}
               onClick={handleLogoClick}
               role="button"
               tabIndex={0}
