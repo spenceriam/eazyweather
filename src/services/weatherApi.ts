@@ -51,19 +51,24 @@ async function fetchWithUserAgent(
 ): Promise<any> {
   const cacheKey = url;
   const now = Date.now();
+  const existing = requestCache.get(cacheKey);
+
+  // If a request is already in-flight for this URL, always await it.
+  if (!options.skipCache && existing?.promise) {
+    return existing.promise;
+  }
 
   // Check cache first (unless explicitly skipped)
   if (!options.skipCache) {
     const cached = requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
+    if (
+      cached &&
+      cached.data !== null &&
+      cached.data !== undefined &&
+      now - cached.timestamp < MIN_REQUEST_INTERVAL
+    ) {
       return cached.data;
     }
-  }
-
-  // Check if there's already a pending request for this URL (unless skipping cache)
-  const cachedRequest = requestCache.get(cacheKey);
-  if (!options.skipCache && cachedRequest?.promise) {
-    return cachedRequest.promise;
   }
 
   // Create and cache the promise

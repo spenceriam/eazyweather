@@ -230,7 +230,15 @@ function App() {
         }
       } catch (weatherError) {
         console.error("❌ Weather load failed:", weatherError);
-        setError("Unable to load weather data right now. Please try again.");
+        const message =
+          weatherError instanceof Error ? weatherError.message : String(weatherError);
+        if (message.includes("Weather service not available for this location")) {
+          setError(
+            "Weather data is currently available for U.S. and U.S. territory locations only.",
+          );
+        } else {
+          setError("Unable to load weather data right now. Please try again.");
+        }
         setCurrentConditions(null);
         setForecast([]);
         setHourlyForecast([]);
