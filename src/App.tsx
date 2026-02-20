@@ -5,7 +5,7 @@
  * Contact: https://x.com/spencer_i_am
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { WeatherCarousel } from "./components/WeatherCarousel";
@@ -150,6 +150,7 @@ function App() {
     useState<MonthlyForecastType | null>(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(false);
+  const skipNextCoordinatesAutoLoadRef = useRef(false);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -462,6 +463,10 @@ function App() {
   useEffect(() => {
     // Load weather data if we have coordinates
     if (coordinates) {
+      if (skipNextCoordinatesAutoLoadRef.current) {
+        skipNextCoordinatesAutoLoadRef.current = false;
+        return;
+      }
       loadWeatherData();
     }
   }, [coordinates, loadWeatherData]);
@@ -477,6 +482,7 @@ function App() {
     setError(null);
 
     try {
+      skipNextCoordinatesAutoLoadRef.current = true;
       setCoordinates(location.coordinates);
       setLocationName(location.displayName);
       saveLocation(location);
@@ -515,6 +521,7 @@ function App() {
 
     saveManualPin(locationResult);
     saveLocation(locationResult);
+    skipNextCoordinatesAutoLoadRef.current = true;
     setCoordinates(coords);
     setLocationName(locationResult.displayName);
     updatePageTitle(locationResult.displayName);
@@ -575,6 +582,7 @@ function App() {
         // Use searched location
         const { geocodeLocation } = await import("./services/locationService");
         const locationResult = await geocodeLocation(query);
+        skipNextCoordinatesAutoLoadRef.current = true;
         setCoordinates(locationResult.coordinates);
         setLocationName(locationResult.displayName);
         saveLocation(locationResult);
