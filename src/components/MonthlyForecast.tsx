@@ -62,7 +62,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded border ${dataTypeStyles.historical.swatch}`}></div>
-                <span className="text-gray-600 dark:text-gray-300">Historical Data</span>
+                <span className="text-gray-600 dark:text-gray-300">Historical Data (Avg Temp)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded border ${dataTypeStyles.forecast.swatch}`}></div>
@@ -70,7 +70,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded border ${dataTypeStyles.prediction.swatch}`}></div>
-                <span className="text-gray-600 dark:text-gray-300">Predictions</span>
+                <span className="text-gray-600 dark:text-gray-300">Historical Projection (Avg Temp)</span>
               </div>
             </div>
           </div>
@@ -106,6 +106,10 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                     : day.dataType === "forecast"
                       ? dataTypeStyles.forecast.cell
                       : dataTypeStyles.prediction.cell;
+                const temperatureLabel =
+                  day.dataType === "historical" || day.dataType === "prediction"
+                    ? `Avg ${day.temperature}°`
+                    : `${day.temperature}°`;
 
                 const isToday = day.date === todayDate;
                 const todayBorder = isToday ? "border-2 border-gray-900 dark:border-gray-200" : "";
@@ -127,7 +131,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                         size={32}
                       />
                       <div className="text-xs font-medium text-slate-800 dark:text-gray-100">
-                        {day.temperature}°
+                        {temperatureLabel}
                       </div>
                     </div>
 

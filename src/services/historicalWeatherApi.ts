@@ -14,6 +14,19 @@ const historicalCache = new Map<
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function shiftDateByYears(dateStr: string, yearsBack: number): string {
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = Number(yearStr) - yearsBack;
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const clampedDay = Math.min(day, getDaysInMonth(year, month));
+  return `${year.toString().padStart(4, '0')}-${monthStr}-${clampedDay.toString().padStart(2, '0')}`;
+}
+
 /**
  * Open-Meteo API response structure for historical weather data
  */
@@ -50,8 +63,8 @@ const WMO_WEATHER_CODES: Record<number, string> = {
   1: 'Mostly Clear',
   2: 'Partly Cloudy',
   3: 'Cloudy',
-  45: 'Foggy',
-  48: 'Foggy',
+  45: 'Mist/Fog',
+  48: 'Rime Fog',
   51: 'Light Drizzle',
   53: 'Drizzle',
   55: 'Heavy Drizzle',
@@ -168,8 +181,8 @@ function transformHistoricalData(
 
   for (let i = 0; i < daily.time.length; i++) {
     const dateStr = daily.time[i];
-    const date = new Date(dateStr);
-    const dayOfMonth = date.getDate();
+    // Parse YYYY-MM-DD directly to avoid timezone day-shift bugs.
+    const dayOfMonth = Number(dateStr.split("-")[2]);
 
     const tempMax = daily.temperature_2m_max[i];
     const tempMin = daily.temperature_2m_min[i];
@@ -237,25 +250,14 @@ export async function getHistoricalAveragesForRange(
   yearsBack: number = 3,
 ): Promise<Map<number, { temperature: number; condition: string }>> {
   const result = new Map<number, { temperature: number; condition: string }>();
-  const currentYear = new Date().getFullYear();
-
-  // Parse start and end dates
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
   // Collect all data from previous years
   const allDataByDay = new Map<number, HistoricalDay[]>();
 
   // Fetch data for the same date range from previous years IN PARALLEL
   const yearPromises = Array.from({ length: yearsBack }, (_, i) => {
-    const year = currentYear - (i + 1);
-    const yearStartDate = new Date(start);
-    yearStartDate.setFullYear(year);
-    const yearEndDate = new Date(end);
-    yearEndDate.setFullYear(year);
-
-    const yearStartStr = yearStartDate.toISOString().split('T')[0];
-    const yearEndStr = yearEndDate.toISOString().split('T')[0];
+    const yearOffset = i + 1;
+    const yearStartStr = shiftDateByYears(startDate, yearOffset);
+    const yearEndStr = shiftDateByYears(endDate, yearOffset);
 
     return getHistoricalWeather(coordinates, yearStartStr, yearEndStr).catch(
       (error) => {
