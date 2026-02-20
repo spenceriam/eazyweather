@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { MapPin, Settings, Radar } from "lucide-react";
+import { MapPin, Settings } from "lucide-react";
 import { LocationDropdown } from "./LocationDropdown";
 import type { Coordinates } from "../types/weather";
 import type { LocationResult } from "../services/locationService";
@@ -124,10 +124,9 @@ export function Header({
             <div className="flex items-center gap-2">
               <button
                 onClick={onRadarOpen}
-                className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
                 aria-label="Open weather radar"
               >
-                <Radar className="w-4 h-4" />
                 Radar
               </button>
               <nav className="flex gap-2">
@@ -197,10 +196,9 @@ export function Header({
           <div className="grid grid-cols-5 gap-2">
             <button
               onClick={onRadarOpen}
-              className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center flex items-center justify-center gap-1"
+              className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center"
               aria-label="Open weather radar"
             >
-              <Radar className="w-3.5 h-3.5" />
               Radar
             </button>
             <nav className="contents">

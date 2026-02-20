@@ -644,7 +644,7 @@ function App() {
                     timezone={currentConditions.timezone}
                   />
                 ) : (
-                  <section id="current" className="bg-gray-100">
+                  <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-16">
                       <div className="max-w-6xl mx-auto">
                         <div className="text-center">
@@ -664,7 +664,7 @@ function App() {
                     timezone={currentConditions.timezone}
                   />
                 ) : (
-                  <section id="hourly" className="bg-gray-100">
+                  <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -679,7 +679,7 @@ function App() {
                 {forecast.length > 0 ? (
                   <SevenDayForecast forecast={forecast} />
                 ) : (
-                  <section id="forecast" className="bg-gray-100">
+                  <section id="forecast" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -694,7 +694,7 @@ function App() {
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
                 ) : isMonthlyLoading ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
@@ -707,7 +707,7 @@ function App() {
                     </div>
                   </section>
                 ) : monthlyError ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
