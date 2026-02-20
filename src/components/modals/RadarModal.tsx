@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import { LocateFixed } from "lucide-react";
+import { LocateFixed, Pause, Play } from "lucide-react";
 import { Icon, type Map as LeafletMap } from "leaflet";
 import type { Coordinates } from "../../types/weather";
 import { Modal } from "../ui/Modal";
@@ -20,9 +20,12 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     [coordinates?.latitude, coordinates?.longitude],
   );
   const [mapRef, setMapRef] = useState<LeafletMap | null>(null);
-  const [currentCenter, setCurrentCenter] = useState(userCoords);
+  const [pinCoords, setPinCoords] = useState(userCoords);
   const [isRecentering, setIsRecentering] = useState(false);
-  const [radarTileUrl, setRadarTileUrl] = useState<string | null>(null);
+  const [radarFrames, setRadarFrames] = useState<string[]>([]);
+  const [frameIndex, setFrameIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const activeRadarTileUrl = radarFrames[frameIndex] ?? null;
 
   useEffect(() => {
     let isMounted = true;
@@ -32,9 +35,16 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         if (!response.ok) return;
         const data = await response.json();
         const host: string = data?.host || "https://tilecache.rainviewer.com";
-        const latestPath: string | undefined = data?.radar?.past?.at(-1)?.path;
-        if (!latestPath || !isMounted) return;
-        setRadarTileUrl(`${host}${latestPath}/256/{z}/{x}/{y}/2/1_1.png`);
+        const pastFrames = Array.isArray(data?.radar?.past) ? data.radar.past : [];
+        if (!pastFrames.length || !isMounted) return;
+        const recentFrames = pastFrames.slice(-8);
+        const frameUrls = recentFrames
+          .map((frame: { path?: string }) => frame.path)
+          .filter((path: string | undefined): path is string => Boolean(path))
+          .map((path: string) => `${host}${path}/256/{z}/{x}/{y}/2/1_1.png`);
+        if (!frameUrls.length || !isMounted) return;
+        setRadarFrames(frameUrls);
+        setFrameIndex(frameUrls.length - 1);
       } catch {
         // Keep base map even if radar overlay fetch fails.
       }
@@ -49,14 +59,22 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    setCurrentCenter(userCoords);
+    setPinCoords(userCoords);
   }, [userCoords.latitude, userCoords.longitude]);
+
+  useEffect(() => {
+    if (!isOpen || !isPlaying || radarFrames.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setFrameIndex((current) => (current + 1) % radarFrames.length);
+    }, 700);
+    return () => window.clearInterval(timer);
+  }, [isOpen, isPlaying, radarFrames.length]);
 
   useEffect(() => {
     if (!mapRef || !isOpen) return;
     mapRef.invalidateSize();
-    mapRef.setView([currentCenter.latitude, currentCenter.longitude], mapRef.getZoom());
-  }, [mapRef, isOpen, currentCenter.latitude, currentCenter.longitude]);
+    mapRef.setView([pinCoords.latitude, pinCoords.longitude], mapRef.getZoom(), { animate: false });
+  }, [mapRef, isOpen, pinCoords.latitude, pinCoords.longitude]);
 
   const userLocationIcon = useMemo(
     () =>
@@ -81,9 +99,9 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setIsRecentering(true);
 
     const flyToCoords = (latitude: number, longitude: number) => {
-      setCurrentCenter({ latitude, longitude });
+      setPinCoords({ latitude, longitude });
       mapRef.invalidateSize();
-      mapRef.flyTo([latitude, longitude], mapRef.getZoom(), { duration: 0.5 });
+      mapRef.setView([latitude, longitude], mapRef.getZoom(), { animate: true });
     };
 
     flyToCoords(userCoords.latitude, userCoords.longitude);
@@ -112,32 +130,43 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         </p>
         <div className="w-full h-[65vh] min-h-[420px] rounded-md overflow-hidden border border-gray-200 bg-gray-100 relative">
           <MapContainer
-            center={[currentCenter.latitude, currentCenter.longitude]}
+            ref={setMapRef}
+            center={[pinCoords.latitude, pinCoords.longitude]}
             zoom={7}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
-            whenCreated={setMapRef}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {radarTileUrl && (
+            {activeRadarTileUrl && (
               <TileLayer
-                url={radarTileUrl}
+                key={activeRadarTileUrl}
+                url={activeRadarTileUrl}
                 opacity={0.6}
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
-            <Marker
-              position={[currentCenter.latitude, currentCenter.longitude]}
-              icon={userLocationIcon}
-            />
+            <Marker position={[pinCoords.latitude, pinCoords.longitude]} icon={userLocationIcon} />
           </MapContainer>
+
+          {radarFrames.length > 1 && (
+            <button
+              onClick={() => setIsPlaying((value) => !value)}
+              className="absolute top-3 left-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700"
+              aria-label={isPlaying ? "Pause radar animation" : "Play radar animation"}
+              title={isPlaying ? "Pause animation" : "Play animation"}
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </button>
+          )}
 
           <button
             onClick={handleRecenter}
             disabled={isRecentering}
+            onMouseDown={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
             className="absolute top-3 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
             aria-label="Recenter radar on your location"
             title="Recenter on your location"
