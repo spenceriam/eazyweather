@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.9.5",
+    date: "February 20, 2026",
+    type: "patch",
+    title: "Fix Monthly Baseline Data Logic",
+    changes: [
+      "Monthly past days now use same-date last-year baseline data instead of current-year month-to-date history",
+      "Kept today and near-term monthly values sourced from live National Weather Service forecast data",
+      "Improved monthly date anchoring to reduce day-boundary shifts caused by timezone differences",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",
