@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.11.0",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Expanded Postal Code Coverage",
+    changes: [
+      "Added support for Canadian and LATAM postal code lookup in direct URL location routing",
+      "Extended postal code search and multi-result search to support Canada and LATAM formats",
+      "Added fallback geocoding path when strict postal lookup returns no matches",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",

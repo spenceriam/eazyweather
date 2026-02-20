@@ -13,24 +13,98 @@ export interface LocationResult {
 const STORAGE_EXPIRATION_DAYS = 180;
 const STORAGE_EXPIRATION_MS = STORAGE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
-// ZIP Code validation utilities
-function isValidZipCode(zip: string): boolean {
-  // US ZIP: 5 digits or ZIP+4: 5-4 digits
-  const zipPattern = /^\d{5}(-\d{4})?$/;
-  return zipPattern.test(zip);
-}
+type PostalContext = {
+  normalizedPostalCode: string;
+  displayPostalCode: string;
+  countryCodes?: string;
+};
 
-function isZipCode(query: string): boolean {
-  return isValidZipCode(query.trim());
-}
+const LATAM_COUNTRY_CODES =
+  "ar,bo,br,cl,co,cr,cu,do,ec,sv,gt,hn,mx,ni,pa,py,pe,uy,ve";
 
-function normalizeZipCode(zip: string): string {
-  // For ZIP+4, use only the first 5 digits for better search results
+function normalizeUSZip(zip: string): string {
   const trimmed = zip.trim();
   if (trimmed.includes("-")) {
     return trimmed.split("-")[0];
   }
   return trimmed;
+}
+
+function normalizeCanadianPostalCode(postalCode: string): string {
+  const compact = postalCode.toUpperCase().replace(/\s+/g, "");
+  return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+}
+
+function detectPostalContext(query: string): PostalContext | null {
+  const trimmed = query.trim();
+  const upperTrimmed = trimmed.toUpperCase();
+
+  // US ZIP: 12345 or 12345-6789
+  if (/^\d{5}(-\d{4})?$/.test(trimmed)) {
+    const normalized = normalizeUSZip(trimmed);
+    return {
+      normalizedPostalCode: normalized,
+      displayPostalCode: trimmed,
+      countryCodes: "us,mx",
+    };
+  }
+
+  // Canada postal code: A1A 1A1 or A1A1A1
+  if (/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i.test(trimmed)) {
+    const displayCode = normalizeCanadianPostalCode(trimmed);
+    return {
+      normalizedPostalCode: displayCode.replace(/\s+/g, ""),
+      displayPostalCode: displayCode,
+      countryCodes: "ca",
+    };
+  }
+
+  // Brazil: 12345-678 or 12345678
+  if (/^\d{5}-?\d{3}$/.test(trimmed)) {
+    return {
+      normalizedPostalCode: trimmed.replace("-", ""),
+      displayPostalCode: trimmed,
+      countryCodes: "br",
+    };
+  }
+
+  // Argentina: A1234AAA
+  if (/^[A-Z]\d{4}[A-Z]{3}$/i.test(upperTrimmed)) {
+    return {
+      normalizedPostalCode: upperTrimmed,
+      displayPostalCode: upperTrimmed,
+      countryCodes: "ar",
+    };
+  }
+
+  // Chile: 7 digits
+  if (/^\d{7}$/.test(trimmed)) {
+    return {
+      normalizedPostalCode: trimmed,
+      displayPostalCode: trimmed,
+      countryCodes: "cl",
+    };
+  }
+
+  // Colombia: 6 digits
+  if (/^\d{6}$/.test(trimmed)) {
+    return {
+      normalizedPostalCode: trimmed,
+      displayPostalCode: trimmed,
+      countryCodes: "co",
+    };
+  }
+
+  // General LATAM fallback when query looks like a postal code.
+  if (!trimmed.includes(",") && /^[A-Za-z0-9-]{3,10}$/.test(trimmed) && /\d/.test(trimmed)) {
+    return {
+      normalizedPostalCode: trimmed.toUpperCase(),
+      displayPostalCode: trimmed.toUpperCase(),
+      countryCodes: LATAM_COUNTRY_CODES,
+    };
+  }
+
+  return null;
 }
 
 // Chicago fallback location for consistent behavior
@@ -216,23 +290,16 @@ export async function reverseGeocode(
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
-    let searchQuery = query.trim();
-    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
-
-    // Store original query for display (preserve ZIP code format)
+    const searchQuery = query.trim();
     const originalQuery = searchQuery;
+    const postalContext = detectPostalContext(searchQuery);
 
-    // Handle ZIP code searches
-    if (isZipCode(searchQuery)) {
-      if (!isValidZipCode(searchQuery)) {
-        throw new Error(
-          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
-        );
-      }
-
-      // Normalize ZIP code (use only 5 digits for better results)
-      const normalizedZip = normalizeZipCode(searchQuery);
-      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=1&addressdetails=1`;
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
+    if (postalContext) {
+      const countryCodeParam = postalContext.countryCodes
+        ? `&countrycodes=${postalContext.countryCodes}`
+        : "";
+      searchParams = `format=json&postalcode=${encodeURIComponent(postalContext.normalizedPostalCode)}${countryCodeParam}&limit=1&addressdetails=1`;
     }
 
     const response = await fetch(
@@ -248,7 +315,23 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       throw new Error("Geocoding failed");
     }
 
-    const data = await response.json();
+    let data = await response.json();
+
+    // Postal fallback: if strict postal query returns no rows, retry with free-form q search.
+    if (postalContext && (!data || data.length === 0)) {
+      const fallbackResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`,
+        {
+          headers: {
+            "User-Agent": "EazyWeather/1.0",
+          },
+        },
+      );
+
+      if (fallbackResponse.ok) {
+        data = await fallbackResponse.json();
+      }
+    }
 
     if (!data || data.length === 0) {
       throw new Error("Location not found");
@@ -277,8 +360,8 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
     let displayName = "";
 
     // If original query was a ZIP code, show the ZIP code
-    if (isZipCode(originalQuery)) {
-      displayName = originalQuery;
+    if (postalContext) {
+      displayName = postalContext.displayPostalCode;
     } else if (country === "United States" || country === "Canada") {
       // For US and Canada, always require city + state/province
       if (city && state) {
@@ -321,23 +404,16 @@ export async function geocodeLocationMultiple(
   query: string,
 ): Promise<LocationResult[]> {
   try {
-    let searchQuery = query.trim();
-    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
-
-    // Store original query for display (preserve ZIP code format)
+    const searchQuery = query.trim();
     const originalQuery = searchQuery;
+    const postalContext = detectPostalContext(searchQuery);
 
-    // Handle ZIP code searches
-    if (isZipCode(searchQuery)) {
-      if (!isValidZipCode(searchQuery)) {
-        throw new Error(
-          "Invalid ZIP code format. Please use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).",
-        );
-      }
-
-      // Normalize ZIP code (use only 5 digits for better results)
-      const normalizedZip = normalizeZipCode(searchQuery);
-      searchParams = `format=json&postalcode=${encodeURIComponent(normalizedZip)}&countrycodes=us&limit=5&addressdetails=1`;
+    let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
+    if (postalContext) {
+      const countryCodeParam = postalContext.countryCodes
+        ? `&countrycodes=${postalContext.countryCodes}`
+        : "";
+      searchParams = `format=json&postalcode=${encodeURIComponent(postalContext.normalizedPostalCode)}${countryCodeParam}&limit=5&addressdetails=1`;
     }
 
     const response = await fetch(
@@ -353,7 +429,23 @@ export async function geocodeLocationMultiple(
       throw new Error("Geocoding failed");
     }
 
-    const data = await response.json();
+    let data = await response.json();
+
+    // Postal fallback: if strict postal query returns no rows, retry with free-form q search.
+    if (postalContext && (!data || data.length === 0)) {
+      const fallbackResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`,
+        {
+          headers: {
+            "User-Agent": "EazyWeather/1.0",
+          },
+        },
+      );
+
+      if (fallbackResponse.ok) {
+        data = await fallbackResponse.json();
+      }
+    }
 
     if (!data || data.length === 0) {
       throw new Error("Location not found");
@@ -382,8 +474,8 @@ export async function geocodeLocationMultiple(
       let displayName = "";
 
       // If original query was a ZIP code, show the ZIP code with city/state context
-      if (isZipCode(originalQuery)) {
-        displayName = `${originalQuery} - ${city && state ? `${city}, ${state}` : city || "Location"}`;
+      if (postalContext) {
+        displayName = `${postalContext.displayPostalCode} - ${city && state ? `${city}, ${state}` : city || "Location"}`;
       } else if (city && state && country) {
         displayName = `${city}, ${state}, ${country}`;
       } else if (city && country) {
