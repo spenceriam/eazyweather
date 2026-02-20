@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.10.2",
+    date: "February 20, 2026",
+    type: "patch",
+    title: "Radar Animation and Control Polish",
+    changes: [
+      "Smoothed radar playback with frame-to-frame crossfade transitions for less abrupt visual jumps.",
+      "Updated radar playback UX with a single timeline slider that acts as both progress indicator and manual scrubber.",
+      "Added an in-modal radar refresh control and improved playback behavior to stop at the latest frame with replay support.",
+      "Refined radar modal copy and control layout for clearer, cleaner mobile and desktop interaction.",
+    ],
+  },
+  {
     version: "1.10.1",
     date: "February 20, 2026",
     type: "minor",
