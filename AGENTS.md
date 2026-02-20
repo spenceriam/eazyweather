@@ -237,6 +237,7 @@ The application displays all weather information in a single scrollable page wit
 
 ## Component guidelines
 - **Header**: Uses anchor links for section navigation with sticky positioning
+  - Section anchor targets (`#current`, `#hourly`, `#forecast`, `#monthly`) must keep sticky-header-safe scroll offsets (`scroll-mt-24 md:scroll-mt-28`) so nav buttons park with section titles/content fully visible
 - **LocationSection**: Integrated location display, search, and 4-location history management
 - **WeatherCarousel**: Interactive Embla carousel with 5 cards (current conditions + 3-day forecast + navigation card), supports touch/drag, 2 cards visible on desktop, 1 on mobile, hover-visible navigation arrows
   - Cards use shadow-lg with proper padding to prevent clipping
