@@ -180,7 +180,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
           <button
             onClick={() => radarFrames.length > 1 && setIsPlaying((value) => !value)}
             disabled={radarFrames.length <= 1}
-            className="absolute top-3 left-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={isPlaying ? "Pause radar animation" : "Play radar animation"}
             title={
               radarFrames.length > 1
