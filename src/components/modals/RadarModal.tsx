@@ -9,6 +9,7 @@ interface RadarModalProps {
   isOpen: boolean;
   onClose: () => void;
   coordinates: Coordinates | null;
+  isDarkMode: boolean;
 }
 
 interface RadarFrame {
@@ -16,7 +17,7 @@ interface RadarFrame {
   timestampUtcSeconds: number;
 }
 
-export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
+export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarModalProps) {
   const userCoords = useMemo(
     () => ({
       latitude: coordinates?.latitude ?? 41.8781,
@@ -87,7 +88,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         }
         return current + 1;
       });
-    }, 1000);
+    }, 1250);
     return () => window.clearInterval(timer);
   }, [isOpen, isPlaying, radarFrames.length]);
 
@@ -107,7 +108,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setRenderedRadarTileUrl(activeRadarTileUrl);
     setFadeProgress(0);
 
-    const durationMs = 350;
+    const durationMs = 650;
     const startedAt = performance.now();
 
     const animate = (now: number) => {
@@ -223,6 +224,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     ).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     return `${firstTime} -> ${latestTime}`;
   }, [radarFrames]);
+  const radarOverlayOpacity = isDarkMode ? 0.6 : 0.5;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Radar">
@@ -235,16 +237,18 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             zoom={7}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
+            className={isDarkMode ? "radar-map-dark" : undefined}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              className={isDarkMode ? "night-map-base" : undefined}
             />
             {previousRadarTileUrl && (
               <TileLayer
                 key={`prev-${previousRadarTileUrl}`}
                 url={previousRadarTileUrl}
-                opacity={Math.max(0, 0.6 * (1 - fadeProgress))}
+                opacity={Math.max(0, radarOverlayOpacity * (1 - fadeProgress))}
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
@@ -252,15 +256,29 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
               <TileLayer
                 key={`current-${renderedRadarTileUrl}`}
                 url={renderedRadarTileUrl}
-                opacity={previousRadarTileUrl ? Math.min(0.6, 0.6 * fadeProgress) : 0.6}
+                opacity={
+                  previousRadarTileUrl
+                    ? Math.min(radarOverlayOpacity, radarOverlayOpacity * fadeProgress)
+                    : radarOverlayOpacity
+                }
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
             <Marker position={[pinCoords.latitude, pinCoords.longitude]} icon={userLocationIcon} />
           </MapContainer>
 
-          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[min(85%,320px)] rounded-md border border-gray-300 bg-white/95 px-3 py-2 shadow-md">
-            <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-gray-700">
+          <div
+            className={`absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[min(85%,320px)] rounded-md border px-3 py-2 shadow-md ${
+              isDarkMode
+                ? "border-gray-700 bg-gray-900/95"
+                : "border-gray-300 bg-white/95"
+            }`}
+          >
+            <div
+              className={`mb-1 flex items-center justify-between text-[11px] font-medium ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               <span>{activeFrameLabel.replace("Observed radar frame: ", "")}</span>
               {timelineRangeLabel && <span>{timelineRangeLabel}</span>}
             </div>
@@ -282,7 +300,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
           <button
             onClick={handleTogglePlay}
             disabled={radarFrames.length <= 1}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label={
               isPlaying
                 ? "Stop radar animation"
@@ -308,7 +330,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             disabled={isRecentering}
             onMouseDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            className="absolute top-3 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
+            className={`absolute top-3 right-3 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-70 ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label="Recenter radar on your location"
             title="Recenter on your location"
           >
@@ -320,7 +346,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             disabled={isRefreshing}
             onMouseDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            className="absolute top-14 right-3 z-[1000] bg-white/95 p-2 rounded-md shadow-md border border-gray-300 hover:bg-white transition-colors text-gray-700 disabled:opacity-70"
+            className={`absolute top-14 right-3 z-[1000] p-2 rounded-md shadow-md border transition-colors disabled:opacity-70 ${
+              isDarkMode
+                ? "bg-gray-900/95 border-gray-700 hover:bg-gray-800 text-gray-200"
+                : "bg-white/95 border-gray-300 hover:bg-white text-gray-700"
+            }`}
             aria-label="Refresh radar frames"
             title="Refresh radar frames"
           >

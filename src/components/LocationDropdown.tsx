@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, Monitor, Moon, Sun, X } from "lucide-react";
 import {
   geocodeLocationMultiple,
   getBrowserLocation,
@@ -14,12 +14,15 @@ import {
 import type { Coordinates } from "../types/weather";
 import { LocationPinModal } from "./LocationPinModal";
 import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
+import { resolveThemeMode, type ThemeMode } from "../utils/themeUtils";
 
 interface LocationDropdownProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
   selectedTimezone: string;
   onTimezoneChange: (timezone: string) => void;
+  themeMode: ThemeMode;
+  onThemeChange: (mode: ThemeMode) => void;
   onClose: () => void;
 }
 
@@ -28,6 +31,8 @@ export function LocationDropdown({
   onLocationUpdate,
   selectedTimezone,
   onTimezoneChange,
+  themeMode,
+  onThemeChange,
   onClose,
 }: LocationDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,9 +44,11 @@ export function LocationDropdown({
   const [showPinModal, setShowPinModal] = useState(false);
   const [isManualPin, setIsManualPin] = useState(false);
   const [showTimezonePicker, setShowTimezonePicker] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const commonTimezones = getCommonTimezoneOptions();
+  const isDarkMode = resolveThemeMode(themeMode) === "dark";
 
   // Load search history and check for manual pin on mount
   useEffect(() => {
@@ -222,7 +229,9 @@ export function LocationDropdown({
           e.stopPropagation();
           e.nativeEvent.stopImmediatePropagation();
         }}
-        className="absolute top-full right-0 mt-2 w-full md:w-[500px] bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto"
+        className={`absolute top-full right-0 mt-2 w-full md:w-[500px] rounded-lg shadow-xl border z-50 max-h-[600px] overflow-y-auto ${
+          isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+        }`}
       >
         <div className="p-4 space-y-4">
           {/* Search Form */}
@@ -233,15 +242,22 @@ export function LocationDropdown({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Enter city, state, country, or ZIP code"
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm"
+                className={`w-full px-4 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm ${
+                  isDarkMode
+                    ? "settings-search-input bg-gray-800 border-gray-600 text-gray-100 placeholder:text-gray-400"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
                 disabled={isLoading}
                 autoFocus
+                autoComplete="off"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={handleSearchClear}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${
+                    isDarkMode ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -250,17 +266,25 @@ export function LocationDropdown({
 
             {/* Search Results */}
             {showSearchResults && (
-              <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+              <div
+                className={`space-y-1 max-h-48 overflow-y-auto border rounded-lg ${
+                  isDarkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"
+                }`}
+              >
                 {searchResults.map((location, index) => (
                   <button
                     key={index}
                     onClick={() => handleSearchResultSelect(location)}
-                    className="w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-brand text-sm"
+                    className={`w-full text-left p-3 transition-colors border-b last:border-b-0 focus:outline-none focus:ring-2 focus:ring-brand text-sm ${
+                      isDarkMode
+                        ? "hover:bg-gray-800 border-gray-800"
+                        : "hover:bg-gray-50 border-gray-100"
+                    }`}
                   >
-                    <div className="font-medium text-gray-900">
+                    <div className={isDarkMode ? "font-medium text-gray-100" : "font-medium text-gray-900"}>
                       {location.displayName}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>
                       {location.city && location.state && location.country
                         ? `${location.city}, ${location.state}, ${location.country}`
                         : location.displayName}
@@ -300,10 +324,10 @@ export function LocationDropdown({
             </div>
 
             {/* Timezone (under action buttons) */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <div className="text-xs text-gray-500">
+            <div className={`space-y-2 border-t pt-3 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+              <div className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>
                 Current timezone:{" "}
-                <span className="font-medium text-gray-700">{selectedTimezone}</span>
+                <span className={isDarkMode ? "font-medium text-gray-200" : "font-medium text-gray-700"}>{selectedTimezone}</span>
               </div>
               <button
                 type="button"
@@ -316,7 +340,11 @@ export function LocationDropdown({
                 <select
                   value={selectedTimezone}
                   onChange={(e) => onTimezoneChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm bg-white"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand text-sm ${
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-600 text-gray-100"
+                      : "bg-white border-gray-300 text-gray-900"
+                  }`}
                   aria-label="Select timezone"
                 >
                   {commonTimezones.map((timezone) => (
@@ -327,11 +355,75 @@ export function LocationDropdown({
                 </select>
               )}
             </div>
+
+            {/* Theme (under timezone settings) */}
+            <div className={`space-y-2 border-t pt-3 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+              <div className={isDarkMode ? "text-xs text-gray-400" : "text-xs text-gray-500"}>
+                Current theme:{" "}
+                <span className={isDarkMode ? "font-medium text-gray-200 capitalize" : "font-medium text-gray-700 capitalize"}>{themeMode}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowThemePicker((value) => !value)}
+                className="w-full px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+              >
+                {showThemePicker ? "Hide Theme Options" : "Change Theme"}
+              </button>
+              {showThemePicker && (
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("light")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "light"
+                        ? "bg-brand text-white border-brand"
+                        : isDarkMode
+                          ? "bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use light theme"
+                  >
+                    <Sun className="w-3.5 h-3.5" />
+                    Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("dark")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "dark"
+                        ? "bg-brand text-white border-brand"
+                        : isDarkMode
+                          ? "bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use dark theme"
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("system")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "system"
+                        ? "bg-brand text-white border-brand"
+                        : isDarkMode
+                          ? "bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use system theme"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    System
+                  </button>
+                </div>
+              )}
+            </div>
           </form>
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className={`p-3 border rounded-md ${isDarkMode ? "bg-red-950/30 border-red-900" : "bg-red-50 border-red-200"}`}>
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -340,8 +432,8 @@ export function LocationDropdown({
           {searchHistory.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">
+                <Clock className={`w-4 h-4 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`} />
+                <span className={`text-sm font-medium ${isDarkMode ? "text-gray-200" : "text-gray-700"}`}>
                   Recent Searches
                 </span>
               </div>
@@ -349,11 +441,13 @@ export function LocationDropdown({
                 {searchHistory.map((location, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                    className={`flex items-center justify-between p-2 rounded-md transition-colors ${
+                      isDarkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-50 hover:bg-gray-100"
+                    }`}
                   >
                     <button
                       onClick={() => handleHistoryClick(location)}
-                      className="flex-1 text-left text-sm text-gray-700 hover:text-gray-900"
+                      className={`flex-1 text-left text-sm ${isDarkMode ? "text-gray-200 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
                     >
                       {location.displayName}
                     </button>
@@ -377,6 +471,7 @@ export function LocationDropdown({
         onClose={handleClosePinModal}
         onLocationSelect={handlePinLocation}
         initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
+        isDarkMode={isDarkMode}
       />
     </>
   );

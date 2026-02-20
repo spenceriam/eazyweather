@@ -35,6 +35,12 @@ import {
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
+import {
+  getInitialThemeMode,
+  persistThemeMode,
+  resolveThemeMode,
+  type ThemeMode,
+} from "./utils/themeUtils";
 import { getInitialTimezone, persistTimezone } from "./utils/timezoneUtils";
 import type {
   Coordinates,
@@ -58,6 +64,10 @@ function App() {
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() =>
+    resolveThemeMode(getInitialThemeMode()),
+  );
   const [selectedTimezone, setSelectedTimezone] = useState<string>(getInitialTimezone);
 
   // Refresh state
@@ -157,6 +167,28 @@ function App() {
     setSelectedTimezone(timezone);
     persistTimezone(timezone);
   }
+
+  function handleThemeChange(mode: ThemeMode) {
+    setThemeMode(mode);
+    persistThemeMode(mode);
+  }
+
+  useEffect(() => {
+    const applyTheme = () => {
+      const resolved = resolveThemeMode(themeMode);
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+      setResolvedTheme(resolved);
+    };
+
+    applyTheme();
+
+    if (themeMode !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const listener = () => applyTheme();
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, [themeMode]);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -620,7 +652,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 pb-24 md:pb-20">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-800 pb-24 md:pb-20">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
@@ -628,6 +660,8 @@ function App() {
           locationName={locationName}
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
+          themeMode={themeMode}
+          onThemeChange={handleThemeChange}
           selectedTimezone={selectedTimezone}
           onTimezoneChange={handleTimezoneChange}
           onRadarOpen={() => setShowRadarModal(true)}
@@ -635,7 +669,7 @@ function App() {
 
         <main>
           {/* Centered white content area */}
-          <div className="bg-white">
+          <div className="bg-slate-100 dark:bg-slate-800">
             {isLoading || (error && !coordinates) ? (
               <div className="flex items-center justify-center py-16">
                 <LoadingSpinner />
@@ -653,7 +687,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="current" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-16">
                       <div className="max-w-6xl mx-auto">
                         <div className="text-center">
@@ -673,7 +707,7 @@ function App() {
                     timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="hourly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -688,7 +722,7 @@ function App() {
                 {forecast.length > 0 ? (
                   <SevenDayForecast forecast={forecast} />
                 ) : (
-                  <section id="forecast" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="forecast" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -703,7 +737,7 @@ function App() {
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
                 ) : isMonthlyLoading ? (
-                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="monthly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
@@ -716,7 +750,7 @@ function App() {
                     </div>
                   </section>
                 ) : monthlyError ? (
-                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+                  <section id="monthly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -747,6 +781,7 @@ function App() {
           onClose={handlePinModalClose}
           onLocationSelect={handlePinLocationConfirm}
           initialCoordinates={pendingGPSCoordinates || coordinates || undefined}
+          isDarkMode={resolvedTheme === "dark"}
         />
 
         {/* Location Permission Overlay */}
@@ -762,6 +797,7 @@ function App() {
           isOpen={showRadarModal}
           onClose={() => setShowRadarModal(false)}
           coordinates={coordinates}
+          isDarkMode={resolvedTheme === "dark"}
         />
       </div>
     </div>

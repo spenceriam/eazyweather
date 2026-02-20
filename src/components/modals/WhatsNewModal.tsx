@@ -12,44 +12,44 @@ export function WhatsNewModal({
     <Modal isOpen={isOpen} onClose={onClose} title="What's New">
       <div className="space-y-6">
         {/* Latest version highlight */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-brand mb-3">
+        <div className="p-4 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-lg">
+          <h3 className="text-lg font-semibold text-brand dark:text-blue-300 mb-3">
             Version {changelog[0].version} - {changelog[0].title}
           </h3>
           <ul className="space-y-2">
             {changelog[0].changes.map((change, idx) => (
               <li key={idx} className="flex items-start gap-2">
-                <span className="text-brand mt-1">•</span>
-                <span className="text-sm text-gray-700">{change}</span>
+                <span className="text-brand dark:text-blue-300 mt-1">•</span>
+                <span className="text-sm text-gray-700 dark:text-gray-200">{change}</span>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-gray-500 mt-3">{changelog[0].date}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">{changelog[0].date}</p>
         </div>
 
         {/* Previous versions */}
         {changelog.length > 1 && (
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               Previous Updates
             </h4>
             {changelog.slice(1).map((entry) => (
               <div
                 key={entry.version}
-                className="border-l-2 border-gray-200 pl-4"
+                className="border-l-2 border-gray-200 dark:border-gray-700 pl-4"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     v{entry.version}
                   </span>
-                  <span className="text-xs text-gray-500">• {entry.date}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">• {entry.date}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   {entry.title}
                 </p>
                 <ul className="space-y-1">
                   {entry.changes.map((change, idx) => (
-                    <li key={idx} className="text-sm text-gray-600">
+                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-300">
                       • {change}
                     </li>
                   ))}

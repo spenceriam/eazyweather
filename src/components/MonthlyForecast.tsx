@@ -31,43 +31,57 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
   const today = new Date();
   const isCurrentMonth = today.getMonth() === forecast.month && today.getFullYear() === forecast.year;
   const todayDate = isCurrentMonth ? today.getDate() : null;
+  const dataTypeStyles = {
+    historical: {
+      swatch: "bg-blue-100 dark:bg-blue-900/45 border-blue-300 dark:border-blue-700",
+      cell: "bg-blue-100 hover:bg-blue-100 dark:bg-blue-900/45 dark:hover:bg-blue-900/55",
+    },
+    forecast: {
+      swatch: "bg-cyan-50 dark:bg-cyan-900/35 border-cyan-200 dark:border-cyan-700",
+      cell: "bg-cyan-50 hover:bg-cyan-50 dark:bg-cyan-900/35 dark:hover:bg-cyan-900/45",
+    },
+    prediction: {
+      swatch: "bg-amber-100 dark:bg-amber-800/35 border-amber-300 dark:border-amber-700",
+      cell: "bg-amber-100 hover:bg-amber-100 dark:bg-amber-800/35 dark:hover:bg-amber-800/45",
+    },
+  };
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
-    <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
+    <section id="monthly" className="bg-slate-100 dark:bg-slate-800 scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6">
             Monthly Forecast - {monthNames[forecast.month]} {forecast.year}
           </h2>
 
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 mb-6 border border-gray-200 dark:border-gray-700">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
-                <span className="text-gray-600">Historical Data</span>
+                <div className={`w-4 h-4 rounded border ${dataTypeStyles.historical.swatch}`}></div>
+                <span className="text-gray-600 dark:text-gray-300">Historical Data</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-cyan-50 border border-cyan-200 rounded"></div>
-                <span className="text-gray-600">7-Day Forecast</span>
+                <div className={`w-4 h-4 rounded border ${dataTypeStyles.forecast.swatch}`}></div>
+                <span className="text-gray-600 dark:text-gray-300">7-Day Forecast</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-brand-cream border border-gray-300 rounded"></div>
-                <span className="text-gray-600">Predictions</span>
+                <div className={`w-4 h-4 rounded border ${dataTypeStyles.prediction.swatch}`}></div>
+                <span className="text-gray-600 dark:text-gray-300">Predictions</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
             {/* Calendar header */}
-            <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               {weekDays.map((day) => (
                 <div
                   key={day}
-                  className="px-2 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-200 last:border-r-0"
+                  className="px-2 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 last:border-r-0"
                 >
                   {day}
                 </div>
@@ -80,7 +94,7 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
               {Array.from({ length: startDay }).map((_, index) => (
                 <div
                   key={`empty-${index}`}
-                  className="min-h-[100px] border-r border-b border-gray-200 last:border-r-0 bg-gray-50"
+                  className="min-h-[100px] border-r border-b border-gray-200 dark:border-gray-700 last:border-r-0 bg-gray-50 dark:bg-gray-800"
                 />
               ))}
 
@@ -88,21 +102,21 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
               {forecast.days.map((day) => {
                 const bgColor =
                   day.dataType === "historical"
-                    ? "bg-blue-100 hover:bg-blue-100"
+                    ? dataTypeStyles.historical.cell
                     : day.dataType === "forecast"
-                      ? "bg-cyan-50 hover:bg-cyan-50"
-                      : "bg-brand-cream hover:bg-brand-cream";
+                      ? dataTypeStyles.forecast.cell
+                      : dataTypeStyles.prediction.cell;
 
                 const isToday = day.date === todayDate;
-                const todayBorder = isToday ? "border-2 border-gray-900" : "";
+                const todayBorder = isToday ? "border-2 border-gray-900 dark:border-gray-200" : "";
 
                 return (
                 <div
                   key={day.date}
-                  className={`min-h-[100px] border-r border-b border-gray-200 last:border-r-0 p-2 ${bgColor} ${todayBorder} transition-colors`}
+                  className={`min-h-[100px] border-r border-b border-gray-200 dark:border-gray-700 last:border-r-0 p-2 ${bgColor} ${todayBorder} transition-colors`}
                 >
                   <div className="flex flex-col items-start justify-between h-full">
-                    <div className="text-sm font-bold text-gray-700 w-full">
+                    <div className="text-sm font-bold text-slate-700 dark:text-gray-100 w-full">
                       {day.date}
                     </div>
 
@@ -112,12 +126,12 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                         isDaytime={true}
                         size={32}
                       />
-                      <div className="text-xs font-medium text-gray-800">
+                      <div className="text-xs font-medium text-slate-800 dark:text-gray-100">
                         {day.temperature}°
                       </div>
                     </div>
 
-                    <div className="text-xs text-gray-500 text-center leading-tight max-w-full truncate w-full">
+                    <div className="text-xs text-slate-600 dark:text-gray-300 text-center leading-tight max-w-full truncate w-full">
                       {day.condition}
                     </div>
                   </div>
@@ -125,14 +139,6 @@ export function MonthlyForecast({ forecast }: MonthlyForecastProps) {
                 );
               })}
             </div>
-          </div>
-
-          <div className="mt-6 text-sm text-gray-600">
-            <p>
-              <strong>Note:</strong> Dark blue shows actual past weather from this month.
-              Light cyan shows the 7-day forecast from the National Weather Service.
-              Cream shows predictions based on historical weather patterns.
-            </p>
           </div>
 
           <button

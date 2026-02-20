@@ -6,6 +6,118 @@ html {
     scroll-behavior: smooth;
 }
 
+body {
+    @apply transition-colors duration-200;
+}
+
+.dark .bg-white {
+    background-color: #111827 !important;
+}
+
+.dark .bg-gray-50 {
+    background-color: #0f172a !important;
+}
+
+.dark .bg-gray-100 {
+    background-color: #111827 !important;
+}
+
+.dark .bg-brand-cream {
+    background-color: #0f172a !important;
+}
+
+.dark .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+
+.dark .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+.dark .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+.dark .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+    border-color: #374151 !important;
+}
+
+.night-map-base {
+    filter: brightness(0.62) contrast(1.15) saturate(0.85);
+}
+
+.radar-map-dark .leaflet-control-zoom a {
+    background: rgba(17, 24, 39, 0.92) !important;
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
+}
+
+.radar-map-dark .leaflet-control-zoom a:hover {
+    background: rgba(31, 41, 55, 0.98) !important;
+}
+
+.pin-map-dark .leaflet-control-zoom a {
+    background: rgba(17, 24, 39, 0.92) !important;
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
+}
+
+.pin-map-dark .leaflet-control-zoom a:hover {
+    background: rgba(31, 41, 55, 0.98) !important;
+}
+
+.dark .settings-search-input,
+.dark .settings-search-input:focus,
+.dark .settings-search-input:hover {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+    border-color: #4b5563 !important;
+    caret-color: #f3f4f6 !important;
+}
+
+.dark .settings-search-input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .settings-search-input:-webkit-autofill,
+.dark .settings-search-input:-webkit-autofill:hover,
+.dark .settings-search-input:-webkit-autofill:focus,
+.dark .settings-search-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    -webkit-text-fill-color: #f3f4f6 !important;
+    caret-color: #f3f4f6 !important;
+}
+
+.dark .initial-location-input,
+.dark .initial-location-input:focus,
+.dark .initial-location-input:hover {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+    border-color: #4b5563 !important;
+    caret-color: #f3f4f6 !important;
+}
+
+.dark .initial-location-input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .initial-location-input:-webkit-autofill,
+.dark .initial-location-input:-webkit-autofill:hover,
+.dark .initial-location-input:-webkit-autofill:focus,
+.dark .initial-location-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    box-shadow: 0 0 0 1000px #1f2937 inset !important;
+    -webkit-text-fill-color: #f3f4f6 !important;
+    caret-color: #f3f4f6 !important;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;

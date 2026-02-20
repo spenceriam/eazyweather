@@ -13,26 +13,25 @@ export function Footer() {
   return (
     <>
       <footer
-        className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-200"
-        style={{ backgroundColor: "#f9f6ee" }}
+        className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-200 dark:border-slate-700 bg-[#f9f6ee] dark:bg-slate-900"
       >
         {/* Desktop: Enhanced three-column layout with existing functionality */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
               {/* Left: Data sources + What's New */}
               <div className="text-left">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                   <button
                     onClick={() => setIsDataSourcesOpen(true)}
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     Website Data Sources
                   </button>
                   <span>•</span>
                   <button
                     onClick={() => setIsWhatsNewOpen(true)}
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     What's New
                   </button>
@@ -42,13 +41,13 @@ export function Footer() {
               {/* Center: Copyright, links, and version info */}
               <div className="text-center">
                 <span className="flex items-center justify-center gap-2">
-                  <span>© 2025 EazyWeather</span>
+                  <span>© 2026 EazyWeather</span>
                   <span>•</span>
                   <a
                     href="https://lionmystic.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     Lion Mystic
                   </a>
@@ -57,7 +56,7 @@ export function Footer() {
                     href="https://x.com/spencer_i_am"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 transition-colors flex items-center gap-1"
                     aria-label="Follow Spencer Francisco on X.com"
                   >
                     <svg
@@ -70,14 +69,14 @@ export function Footer() {
                     spencer_i_am
                   </a>
                 </span>
-                <div className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
                   <span>EazyWeather v{__APP_VERSION__ || "1.0"}</span>
                   <span>•</span>
                   <a
                     href={`https://github.com/spenceriam/eazyweather/commit/${__COMMIT_HASH__ || ""}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 transition-colors flex items-center gap-1"
                     aria-label="View commit on GitHub"
                   >
                     <svg
@@ -105,17 +104,17 @@ export function Footer() {
 
               {/* Right: Privacy and Terms - same formatting as Website Data Sources */}
               <div className="text-right">
-                <div className="flex items-center justify-end gap-2 text-sm text-gray-600">
+                <div className="flex items-center justify-end gap-2 text-sm text-gray-600 dark:text-gray-300">
                   <button
                     onClick={() => setIsPrivacyOpen(true)}
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     Privacy Policy
                   </button>
                   <span>•</span>
                   <button
                     onClick={() => setIsTermsOpen(true)}
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     Terms of Use
                   </button>
@@ -127,20 +126,20 @@ export function Footer() {
 
         {/* Mobile: Two-row layout */}
         <div className="md:hidden">
-          <div className="px-4 py-3 text-xs text-gray-600 space-y-2">
+          <div className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 space-y-2">
             {/* Row 1: Data Sources + What's New on left, Privacy/Terms on right */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsDataSourcesOpen(true)}
-                  className="text-brand hover:text-brand-dark underline transition-colors"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                 >
                   Website Data Sources
                 </button>
                 <span>•</span>
                 <button
                   onClick={() => setIsWhatsNewOpen(true)}
-                  className="text-brand hover:text-brand-dark underline transition-colors"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                 >
                   What's New
                 </button>
@@ -148,14 +147,14 @@ export function Footer() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsPrivacyOpen(true)}
-                  className="text-brand hover:text-brand-dark underline transition-colors"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                 >
                   Privacy Policy
                 </button>
                 <span>•</span>
                 <button
                   onClick={() => setIsTermsOpen(true)}
-                  className="text-brand hover:text-brand-dark underline transition-colors"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                 >
                   Terms of Use
                 </button>
@@ -166,13 +165,13 @@ export function Footer() {
             <div className="text-center">
               <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center gap-2">
-                  <span>© 2025 EazyWeather</span>
+                  <span>© 2026 EazyWeather</span>
                   <span>•</span>
                   <a
                     href="https://lionmystic.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark underline transition-colors"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
                   >
                     Lion Mystic
                   </a>
@@ -181,7 +180,7 @@ export function Footer() {
                     href="https://x.com/spencer_i_am"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 transition-colors flex items-center gap-1"
                     aria-label="Follow Spencer Francisco on X.com"
                   >
                     <svg
@@ -194,14 +193,14 @@ export function Footer() {
                     spencer_i_am
                   </a>
                 </div>
-                <div className="text-gray-500 flex items-center justify-center gap-1">
+                <div className="text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                   <span>EazyWeather v{__APP_VERSION__ || "1.0"}</span>
                   <span>•</span>
                   <a
                     href={`https://github.com/spenceriam/eazyweather/commit/${__COMMIT_HASH__ || ""}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand hover:text-brand-dark transition-colors flex items-center gap-1"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 transition-colors flex items-center gap-1"
                     aria-label="View commit on GitHub"
                   >
                     <svg
