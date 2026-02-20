@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.12.0",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Timezone Settings and App-Wide Time Control",
+    changes: [
+      "Added timezone settings in the header so users can choose their preferred timezone",
+      "Default timezone now starts from device detection with Central US fallback when unavailable",
+      "Applied selected timezone consistently to carousel and hourly time displays",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",

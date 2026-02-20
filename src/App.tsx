@@ -18,6 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
+import { TimezoneSettingsModal } from "./components/modals/TimezoneSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
@@ -34,6 +35,10 @@ import {
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
+import {
+  getInitialTimezone,
+  persistTimezone,
+} from "./utils/timezoneUtils";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -52,9 +57,11 @@ function App() {
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showTimezoneSettings, setShowTimezoneSettings] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(getInitialTimezone);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -148,6 +155,11 @@ function App() {
     useState<MonthlyForecastType | null>(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(false);
+
+  function handleTimezoneChange(timezone: string) {
+    setSelectedTimezone(timezone);
+    persistTimezone(timezone);
+  }
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -619,6 +631,7 @@ function App() {
           locationName={locationName}
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
+          onTimezoneSettingsOpen={() => setShowTimezoneSettings(true)}
         />
 
         <main>
@@ -638,7 +651,7 @@ function App() {
                   <WeatherCarousel
                     conditions={currentConditions}
                     forecast={forecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
                   <section id="current" className="bg-gray-100">
@@ -658,7 +671,7 @@ function App() {
                 {hourlyForecast.length > 0 ? (
                   <HourlyForecast
                     forecast={hourlyForecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
                   <section id="hourly" className="bg-gray-100">
@@ -744,6 +757,13 @@ function App() {
         <CookieConsentModal
           isOpen={showCookieConsent}
           onResolve={handleCookieConsentResolve}
+        />
+
+        <TimezoneSettingsModal
+          isOpen={showTimezoneSettings}
+          onClose={() => setShowTimezoneSettings(false)}
+          selectedTimezone={selectedTimezone}
+          onTimezoneChange={handleTimezoneChange}
         />
       </div>
     </div>
