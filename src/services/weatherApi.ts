@@ -9,6 +9,7 @@ import type {
 } from "../types/weather";
 import {
   getHistoricalAveragesForRange,
+  getHistoricalWeather,
 } from "./historicalWeatherApi";
 
 const BASE_URL = "https://api.weather.gov";
@@ -377,19 +378,18 @@ export async function getMonthlyForecast(
     const monthStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
     const pastEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(currentDay - 1).padStart(2, "0")}`;
 
-    // Fetch historical data and prediction data IN PARALLEL (non-blocking)
+    // Fetch actual historical month-to-date and last-year prediction data IN PARALLEL.
     const [historicalResult, predictionResult] = await Promise.allSettled([
-      // Past days use baseline from the same dates last year.
+      // Past days use actual observed weather for current month through yesterday.
       currentDay > 1
-        ? getHistoricalAveragesForRange(
+        ? getHistoricalWeather(
             coords,
             monthStartDate,
             pastEndDate,
-            1, // 1 year back
           )
-        : Promise.resolve(new Map<number, { temperature: number; condition: string }>()),
+        : Promise.resolve([]),
 
-      // Prediction data for future days
+      // Future prediction uses same calendar day from last year.
       (firstPredictionDay <= daysInMonth
         ? (async () => {
             const predictionStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(firstPredictionDay).padStart(2, '0')}`;
@@ -404,17 +404,17 @@ export async function getMonthlyForecast(
         : Promise.resolve(new Map())),
     ]);
 
-    // Extract historical data
+    // Extract historical actual current-month data.
     const historicalData: Map<number, { temp: number; condition: string }> = new Map();
     if (historicalResult.status === 'fulfilled') {
-      historicalResult.value.forEach((dayData, dayNum) => {
-        historicalData.set(dayNum, {
-          temp: dayData.temperature,
+      historicalResult.value.forEach((dayData) => {
+        historicalData.set(dayData.dayOfMonth, {
+          temp: dayData.temperatureAvg,
           condition: dayData.condition,
         });
       });
       console.log(
-        `✅ Fetched last-year baseline data for ${historicalData.size} past days`,
+        `✅ Fetched current-month observed data for ${historicalData.size} past days`,
       );
     } else {
       console.warn("Could not fetch historical data:", historicalResult.reason);
@@ -428,11 +428,32 @@ export async function getMonthlyForecast(
 
     if (predictionResult.status === 'fulfilled') {
       console.log(
-        `✅ Fetched historical averages for ${predictionData.size} prediction days`,
+        `✅ Fetched last-year same-date data for ${predictionData.size} prediction days`,
       );
     } else {
       console.warn("Could not fetch prediction data:", predictionResult.reason);
     }
+
+    // Prefer source-based fallback values instead of fixed placeholders.
+    const fallbackPrediction = (() => {
+      const lastForecastDay = Array.from(forecastByDay.keys()).sort((a, b) => b - a)[0];
+      if (lastForecastDay !== undefined) {
+        const forecast = forecastByDay.get(lastForecastDay);
+        if (forecast) {
+          return { temperature: forecast.temperature, condition: forecast.shortForecast };
+        }
+      }
+
+      const lastHistoricalDay = Array.from(historicalData.keys()).sort((a, b) => b - a)[0];
+      if (lastHistoricalDay !== undefined) {
+        const historical = historicalData.get(lastHistoricalDay);
+        if (historical) {
+          return { temperature: historical.temp, condition: historical.condition };
+        }
+      }
+
+      return { temperature: 0, condition: "Unknown" };
+    })();
 
     // Build the monthly calendar
     for (let day = 1; day <= daysInMonth; day++) {
@@ -467,7 +488,7 @@ export async function getMonthlyForecast(
           // Use prediction data as fallback, but still mark as historical
           const prediction = hasPrediction
             ? predictionData.get(day)!
-            : { temperature: 65, condition: "Partly Cloudy" }; // fallback
+            : fallbackPrediction;
           days.push({
             date: day,
             temperature: prediction.temperature,
@@ -490,7 +511,7 @@ export async function getMonthlyForecast(
         // Use historical averages for prediction (days beyond forecast)
         const prediction = hasPrediction
           ? predictionData.get(day)!
-          : { temperature: 65, condition: "Partly Cloudy" }; // fallback
+          : fallbackPrediction;
 
         days.push({
           date: day,
