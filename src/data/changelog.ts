@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.10.0",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Weather Radar Modal Preview",
+    changes: [
+      "Added a new Radar button in the header on desktop and mobile",
+      "Introduced an in-app radar modal with interactive live precipitation view",
+      "Radar opens centered on the active location with Chicago as fallback",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",
