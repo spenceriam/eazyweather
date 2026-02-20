@@ -487,6 +487,8 @@ function App() {
     } catch (error) {
       console.error("Location change error:", error);
       setError("Failed to set location");
+    } finally {
+      // Defensive clear: location-change flow should never leave global spinner stuck.
       setIsLoading(false);
     }
   }
