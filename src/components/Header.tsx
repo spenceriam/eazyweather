@@ -20,7 +20,6 @@ export function Header({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const hasCoordinates = coordinates !== null;
 
   const navItems = [
     { id: "current", label: "Current" },
@@ -124,15 +123,8 @@ export function Header({
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  if (hasCoordinates) onRadarOpen();
-                }}
-                disabled={!hasCoordinates}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                  hasCoordinates
-                    ? "bg-brand text-white hover:bg-brand-dark"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                onClick={onRadarOpen}
+                className="px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors flex items-center gap-2"
                 aria-label="Open weather radar"
               >
                 <Radar className="w-4 h-4" />
@@ -204,15 +196,8 @@ export function Header({
           {/* Row 2: Nav buttons */}
           <div className="grid grid-cols-5 gap-2">
             <button
-              onClick={() => {
-                if (hasCoordinates) onRadarOpen();
-              }}
-              disabled={!hasCoordinates}
-              className={`px-2 py-2 rounded-md text-xs font-medium transition-colors text-center flex items-center justify-center gap-1 ${
-                hasCoordinates
-                  ? "bg-brand text-white hover:bg-brand-dark"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              onClick={onRadarOpen}
+              className="px-2 py-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center flex items-center justify-center gap-1"
               aria-label="Open weather radar"
             >
               <Radar className="w-3.5 h-3.5" />
