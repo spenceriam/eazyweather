@@ -175,14 +175,9 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   }, [radarFrames]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Live Weather Radar">
+    <Modal isOpen={isOpen} onClose={onClose} title="Radar">
       <div className="space-y-3">
-        <p className="text-sm text-gray-600">
-          Animated observed radar (past frames only), centered on your location.
-        </p>
-        <p className="text-xs text-gray-500">
-          {activeFrameLabel}. This is not a future precipitation forecast.
-        </p>
+        <p className="text-xs text-gray-500">{activeFrameLabel}</p>
         <div className="w-full h-[65vh] min-h-[420px] rounded-md overflow-hidden border border-gray-200 bg-gray-100 relative">
           <MapContainer
             ref={setMapRef}
