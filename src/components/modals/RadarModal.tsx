@@ -151,9 +151,6 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setIsPlaying(true);
   }
 
-  const framePercent =
-    radarFrames.length > 1 ? (frameIndex / (radarFrames.length - 1)) * 100 : 0;
-
   const activeFrameLabel = useMemo(() => {
     if (!activeRadarFrame) {
       return "Radar: unavailable";
@@ -227,12 +224,6 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
               className="w-full accent-blue-600"
               aria-label="Radar timeline"
             />
-            <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
-              <div
-                className="h-1.5 rounded-full bg-blue-500 transition-all"
-                style={{ width: `${framePercent}%` }}
-              />
-            </div>
           </div>
 
           <button
