@@ -18,6 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
+import { ThemeSettingsModal } from "./components/modals/ThemeSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
@@ -34,6 +35,13 @@ import {
 import { getCookieConsent, setCookieConsent } from "./utils/cookieUtils";
 import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
+import {
+  getInitialThemeMode,
+  getNextThemeMode,
+  persistThemeMode,
+  resolveThemeMode,
+  type ThemeMode,
+} from "./utils/themeUtils";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -50,11 +58,13 @@ function App() {
   const [showInitialModal, setShowInitialModal] = useState(false);
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -148,6 +158,32 @@ function App() {
     useState<MonthlyForecastType | null>(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(false);
+
+  function handleThemeChange(mode: ThemeMode) {
+    setThemeMode(mode);
+    persistThemeMode(mode);
+  }
+
+  function handleThemeToggle() {
+    const nextMode = getNextThemeMode(themeMode);
+    handleThemeChange(nextMode);
+  }
+
+  useEffect(() => {
+    const applyTheme = () => {
+      const resolved = resolveThemeMode(themeMode);
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+    };
+
+    applyTheme();
+
+    if (themeMode !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const listener = () => applyTheme();
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, [themeMode]);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -611,7 +647,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 pb-24 md:pb-20">
+    <div className="min-h-screen bg-[#c4bda9] dark:bg-gray-950 pb-24 md:pb-20 transition-colors">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
@@ -619,6 +655,9 @@ function App() {
           locationName={locationName}
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
+          themeMode={themeMode}
+          onThemeToggle={handleThemeToggle}
+          onThemeSettingsOpen={() => setShowThemeSettings(true)}
         />
 
         <main>
@@ -744,6 +783,13 @@ function App() {
         <CookieConsentModal
           isOpen={showCookieConsent}
           onResolve={handleCookieConsentResolve}
+        />
+
+        <ThemeSettingsModal
+          isOpen={showThemeSettings}
+          onClose={() => setShowThemeSettings(false)}
+          themeMode={themeMode}
+          onThemeChange={handleThemeChange}
         />
       </div>
     </div>

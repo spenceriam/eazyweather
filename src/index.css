@@ -6,6 +6,48 @@ html {
     scroll-behavior: smooth;
 }
 
+body {
+    @apply transition-colors duration-200;
+}
+
+.dark .bg-white {
+    background-color: #111827 !important;
+}
+
+.dark .bg-gray-50 {
+    background-color: #0f172a !important;
+}
+
+.dark .bg-gray-100 {
+    background-color: #111827 !important;
+}
+
+.dark .bg-brand-cream {
+    background-color: #0f172a !important;
+}
+
+.dark .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+
+.dark .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+.dark .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+.dark .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+    border-color: #374151 !important;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;

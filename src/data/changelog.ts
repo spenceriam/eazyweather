@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.13.0",
+    date: "February 20, 2026",
+    type: "minor",
+    title: "Dark, Light, and System Theme Modes",
+    changes: [
+      "Added three theme modes: Light, Dark, and System preference",
+      "Added a theme toggle in the header positioned left of the settings button",
+      "Added theme settings modal and persistent theme preference across sessions",
+    ],
+  },
+  {
     version: "1.9.4",
     date: "December 9, 2025",
     type: "patch",
