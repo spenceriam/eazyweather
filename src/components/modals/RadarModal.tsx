@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import { LocateFixed, Pause, Play, RefreshCcw } from "lucide-react";
 import { Icon, type Map as LeafletMap } from "leaflet";
@@ -33,6 +33,10 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const activeRadarFrame = radarFrames[frameIndex] ?? null;
   const activeRadarTileUrl = activeRadarFrame?.tileUrl ?? null;
+  const [renderedRadarTileUrl, setRenderedRadarTileUrl] = useState<string | null>(null);
+  const [previousRadarTileUrl, setPreviousRadarTileUrl] = useState<string | null>(null);
+  const [fadeProgress, setFadeProgress] = useState(1);
+  const fadeAnimationRef = useRef<number | null>(null);
 
   const loadRadarLayer = useCallback(async () => {
     setIsRefreshing(true);
@@ -86,6 +90,52 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [isOpen, isPlaying, radarFrames.length]);
+
+  useEffect(() => {
+    if (!activeRadarTileUrl) return;
+
+    if (!renderedRadarTileUrl) {
+      setRenderedRadarTileUrl(activeRadarTileUrl);
+      setPreviousRadarTileUrl(null);
+      setFadeProgress(1);
+      return;
+    }
+
+    if (activeRadarTileUrl === renderedRadarTileUrl) return;
+
+    setPreviousRadarTileUrl(renderedRadarTileUrl);
+    setRenderedRadarTileUrl(activeRadarTileUrl);
+    setFadeProgress(0);
+
+    const durationMs = 350;
+    const startedAt = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startedAt;
+      const progress = Math.min(1, elapsed / durationMs);
+      setFadeProgress(progress);
+
+      if (progress < 1) {
+        fadeAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        setPreviousRadarTileUrl(null);
+        fadeAnimationRef.current = null;
+      }
+    };
+
+    if (fadeAnimationRef.current !== null) {
+      cancelAnimationFrame(fadeAnimationRef.current);
+    }
+    fadeAnimationRef.current = requestAnimationFrame(animate);
+  }, [activeRadarTileUrl, renderedRadarTileUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeAnimationRef.current !== null) {
+        cancelAnimationFrame(fadeAnimationRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!mapRef || !isOpen) return;
@@ -190,11 +240,19 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {activeRadarTileUrl && (
+            {previousRadarTileUrl && (
               <TileLayer
-                key={activeRadarTileUrl}
-                url={activeRadarTileUrl}
-                opacity={0.6}
+                key={`prev-${previousRadarTileUrl}`}
+                url={previousRadarTileUrl}
+                opacity={Math.max(0, 0.6 * (1 - fadeProgress))}
+                attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
+              />
+            )}
+            {renderedRadarTileUrl && (
+              <TileLayer
+                key={`current-${renderedRadarTileUrl}`}
+                url={renderedRadarTileUrl}
+                opacity={previousRadarTileUrl ? Math.min(0.6, 0.6 * fadeProgress) : 0.6}
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
