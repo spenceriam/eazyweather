@@ -200,6 +200,9 @@ function App() {
           setError(
             "Weather data unavailable for this location. Try searching for a nearby city.",
           );
+          if (!hasWeatherLoaded) {
+            setIsLoading(false);
+          }
         } else {
           setError(null);
 
@@ -223,6 +226,15 @@ function App() {
             setHasWeatherLoaded(true);
             setIsLoading(false);
           }
+        }
+      } catch (weatherError) {
+        console.error("❌ Weather load failed:", weatherError);
+        setError("Unable to load weather data right now. Please try again.");
+        setCurrentConditions(null);
+        setForecast([]);
+        setHourlyForecast([]);
+        if (!hasWeatherLoaded) {
+          setIsLoading(false);
         }
       } finally {
         // Only clear loading if weather has loaded
@@ -566,18 +578,30 @@ function App() {
         saveLocation(locationResult);
         updatePageTitle(locationResult.displayName);
 
-        // Load weather data for new location
-        await loadWeatherData(true, locationResult.coordinates); // skipRateLimit=true for location changes
+        // Load weather data for new location.
+        // If this fails, keep the selected location instead of reverting to Chicago.
+        try {
+          await loadWeatherData(true, locationResult.coordinates); // skipRateLimit=true for location changes
+        } catch (weatherError) {
+          console.error("Weather load failed after initial location select:", weatherError);
+          setError("Location saved, but weather could not load. Please refresh and try again.");
+        }
       }
     } catch (error) {
       // Dismiss overlay on error
       setIsRequestingLocationPermission(false);
 
-      // Fall back to Chicago
-      const chicagoLocation = getChicagoFallback();
-      setCoordinates(chicagoLocation.coordinates);
-      setLocationName(chicagoLocation.displayName);
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      if (useGPS) {
+        // GPS path fallback
+        const chicagoLocation = getChicagoFallback();
+        setCoordinates(chicagoLocation.coordinates);
+        setLocationName(chicagoLocation.displayName);
+        updatePageTitle("Chicago, IL Weather - EazyWeather");
+      } else {
+        // Search path: keep current location and reopen modal instead of forcing Chicago.
+        setError("Could not find that location. Try city, state, or postal code.");
+      }
+      setShowInitialModal(true);
     } finally {
       setIsLoading(false);
     }
