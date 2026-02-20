@@ -11,12 +11,13 @@ export const changelog: ChangelogEntry[] = [
     version: "1.12.1",
     date: "February 20, 2026",
     type: "patch",
-    title: "Monthly Forecast Source Alignment",
+    title: "Monthly Forecast Accuracy and Labeling",
     changes: [
       "Monthly past days now use current-month observed weather history instead of last-year baseline placeholders.",
       "Remaining days beyond near-term forecast continue using same-calendar-day last-year historical values.",
       "Removed fixed fallback placeholder values and now derive fallback values from available forecast or historical data.",
-      "Updated monthly source logging to clearly separate observed history from last-year prediction sources.",
+      "Fixed historical day mapping to avoid timezone-related day shifts for monthly cells.",
+      "Updated monthly temperature labels so historical and projected values are clearly marked as average temperatures.",
     ],
   },
   {
