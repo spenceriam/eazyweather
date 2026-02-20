@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { MapPin, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { MapPin, Settings } from "lucide-react";
 import { LocationDropdown } from "./LocationDropdown";
 import type { Coordinates } from "../types/weather";
 import type { LocationResult } from "../services/locationService";
@@ -9,11 +9,10 @@ interface HeaderProps {
   locationName: string;
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
-  themeMode: ThemeMode;
-  onThemeToggle: () => void;
-  onThemeSettingsOpen: () => void;
   selectedTimezone: string;
   onTimezoneChange: (timezone: string) => void;
+  themeMode: ThemeMode;
+  onThemeChange: (mode: ThemeMode) => void;
   onRadarOpen: () => void;
 }
 
@@ -21,17 +20,15 @@ export function Header({
   locationName,
   coordinates,
   onLocationUpdate,
-  themeMode,
-  onThemeToggle,
-  onThemeSettingsOpen,
   selectedTimezone,
   onTimezoneChange,
+  themeMode,
+  onThemeChange,
   onRadarOpen,
 }: HeaderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const ThemeIcon = themeMode === "dark" ? Moon : themeMode === "light" ? Sun : Monitor;
 
   const navItems = [
     { id: "current", label: "Current" },
@@ -77,8 +74,7 @@ export function Header({
 
   return (
     <header
-      className="shadow-sm border-b border-gray-200 sticky top-0 z-10"
-      style={{ backgroundColor: "#f9f6ee" }}
+      className="shadow-sm border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10 bg-[#f9f6ee] dark:bg-slate-900"
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Desktop: 3-column layout */}
@@ -88,7 +84,7 @@ export function Header({
             <img
               src="/assets/logo.png"
               alt="EazyWeather Logo"
-              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-md bg-white/85 px-1 py-0.5"
               onClick={handleLogoClick}
               role="button"
               tabIndex={0}
@@ -104,7 +100,10 @@ export function Header({
           {/* Location - Center */}
           <div className="flex items-center justify-center gap-2 relative">
             <MapPin className="w-5 h-5 text-brand flex-shrink-0" />
-            <span className="text-gray-800 font-medium truncate max-w-[300px]" title={locationName}>
+            <span
+              className="text-gray-800 dark:text-gray-100 font-medium truncate max-w-[300px]"
+              title={locationName}
+            >
               {locationName}
             </span>
             <button
@@ -112,7 +111,7 @@ export function Header({
                 e.stopPropagation();
                 setIsDropdownOpen(!isDropdownOpen);
               }}
-              className="p-1.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
+              className="p-2.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
               aria-label="Change location"
             >
               <Settings className="w-5 h-5 text-brand" />
@@ -128,6 +127,8 @@ export function Header({
                 }}
                 selectedTimezone={selectedTimezone}
                 onTimezoneChange={onTimezoneChange}
+                themeMode={themeMode}
+                onThemeChange={onThemeChange}
                 onClose={() => setIsDropdownOpen(false)}
               />
             )}
@@ -136,23 +137,6 @@ export function Header({
           {/* Nav - Right */}
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
-              <button
-                onClick={onThemeToggle}
-                className="h-10 min-w-[78px] px-3 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                aria-label="Toggle theme mode"
-                title={`Theme: ${themeMode}`}
-              >
-                <ThemeIcon className="w-4 h-4" />
-                Theme
-              </button>
-              <button
-                onClick={onThemeSettingsOpen}
-                className="h-10 min-w-[78px] px-3 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                aria-label="Open theme settings"
-              >
-                <Settings className="w-4 h-4" />
-                Settings
-              </button>
               <button
                 onClick={onRadarOpen}
                 className="h-10 min-w-[78px] px-4 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors inline-flex items-center justify-center whitespace-nowrap"
@@ -182,7 +166,7 @@ export function Header({
             <img
               src="/assets/logo.png"
               alt="EazyWeather Logo"
-              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 rounded-md bg-white/85 px-1 py-0.5"
               onClick={handleLogoClick}
               role="button"
               tabIndex={0}
@@ -195,7 +179,7 @@ export function Header({
             />
             <div className="flex items-center gap-2 flex-1 min-w-0 relative">
               <MapPin className="w-4 h-4 text-brand flex-shrink-0" />
-              <span className="text-sm text-gray-800 font-medium truncate" title={locationName}>
+              <span className="text-sm text-gray-800 dark:text-gray-100 font-medium truncate" title={locationName}>
                 {locationName}
               </span>
               <button
@@ -203,7 +187,7 @@ export function Header({
                   e.stopPropagation();
                   setIsDropdownOpen(!isDropdownOpen);
                 }}
-                className="p-1.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
+                className="p-2.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
                 aria-label="Change location"
               >
                 <Settings className="w-5 h-5 text-brand" />
@@ -219,6 +203,8 @@ export function Header({
                   }}
                   selectedTimezone={selectedTimezone}
                   onTimezoneChange={onTimezoneChange}
+                  themeMode={themeMode}
+                  onThemeChange={onThemeChange}
                   onClose={() => setIsDropdownOpen(false)}
                 />
               )}
@@ -226,23 +212,7 @@ export function Header({
           </div>
 
           {/* Row 2: Nav buttons */}
-          <div className="grid grid-cols-7 gap-2">
-            <button
-              onClick={onThemeToggle}
-              className="h-9 px-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center inline-flex items-center justify-center gap-1 whitespace-nowrap"
-              aria-label="Toggle theme mode"
-            >
-              <ThemeIcon className="w-3.5 h-3.5" />
-              Theme
-            </button>
-            <button
-              onClick={onThemeSettingsOpen}
-              className="h-9 px-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center inline-flex items-center justify-center gap-1 whitespace-nowrap"
-              aria-label="Open theme settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              Settings
-            </button>
+          <div className="grid grid-cols-5 gap-2">
             <button
               onClick={onRadarOpen}
               className="h-9 px-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center inline-flex items-center justify-center whitespace-nowrap"

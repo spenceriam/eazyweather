@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, Monitor, Moon, Sun, X } from "lucide-react";
 import {
   geocodeLocationMultiple,
   getBrowserLocation,
@@ -14,12 +14,15 @@ import {
 import type { Coordinates } from "../types/weather";
 import { LocationPinModal } from "./LocationPinModal";
 import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
+import type { ThemeMode } from "../utils/themeUtils";
 
 interface LocationDropdownProps {
   coordinates: Coordinates | null;
   onLocationUpdate: (location: LocationResult) => void;
   selectedTimezone: string;
   onTimezoneChange: (timezone: string) => void;
+  themeMode: ThemeMode;
+  onThemeChange: (mode: ThemeMode) => void;
   onClose: () => void;
 }
 
@@ -28,6 +31,8 @@ export function LocationDropdown({
   onLocationUpdate,
   selectedTimezone,
   onTimezoneChange,
+  themeMode,
+  onThemeChange,
   onClose,
 }: LocationDropdownProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +44,7 @@ export function LocationDropdown({
   const [showPinModal, setShowPinModal] = useState(false);
   const [isManualPin, setIsManualPin] = useState(false);
   const [showTimezonePicker, setShowTimezonePicker] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const commonTimezones = getCommonTimezoneOptions();
@@ -325,6 +331,63 @@ export function LocationDropdown({
                     </option>
                   ))}
                 </select>
+              )}
+            </div>
+
+            {/* Theme (under timezone settings) */}
+            <div className="space-y-2 border-t border-gray-200 pt-3">
+              <div className="text-xs text-gray-500">
+                Current theme: <span className="font-medium text-gray-700 capitalize">{themeMode}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowThemePicker((value) => !value)}
+                className="w-full px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+              >
+                {showThemePicker ? "Hide Theme Options" : "Change Theme"}
+              </button>
+              {showThemePicker && (
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("light")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "light"
+                        ? "bg-brand text-white border-brand"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use light theme"
+                  >
+                    <Sun className="w-3.5 h-3.5" />
+                    Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("dark")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "dark"
+                        ? "bg-brand text-white border-brand"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use dark theme"
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange("system")}
+                    className={`px-2 py-2 rounded-md border text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                      themeMode === "system"
+                        ? "bg-brand text-white border-brand"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                    aria-label="Use system theme"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    System
+                  </button>
+                </div>
               )}
             </div>
           </form>

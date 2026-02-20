@@ -19,7 +19,6 @@ import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
 import { RadarModal } from "./components/modals/RadarModal";
-import { ThemeSettingsModal } from "./components/modals/ThemeSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
 import {
@@ -38,7 +37,6 @@ import { getPotentialLocationFromUrl } from "./utils/urlUtils";
 import { refreshService } from "./services/refreshService";
 import {
   getInitialThemeMode,
-  getNextThemeMode,
   persistThemeMode,
   resolveThemeMode,
   type ThemeMode,
@@ -60,7 +58,6 @@ function App() {
   const [showInitialModal, setShowInitialModal] = useState(false);
   const [hasWeatherLoaded, setHasWeatherLoaded] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
-  const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showRadarModal, setShowRadarModal] = useState(false);
@@ -68,6 +65,9 @@ function App() {
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() =>
+    resolveThemeMode(getInitialThemeMode()),
+  );
   const [selectedTimezone, setSelectedTimezone] = useState<string>(getInitialTimezone);
 
   // Refresh state
@@ -173,15 +173,11 @@ function App() {
     persistThemeMode(mode);
   }
 
-  function handleThemeToggle() {
-    const nextMode = getNextThemeMode(themeMode);
-    handleThemeChange(nextMode);
-  }
-
   useEffect(() => {
     const applyTheme = () => {
       const resolved = resolveThemeMode(themeMode);
       document.documentElement.classList.toggle("dark", resolved === "dark");
+      setResolvedTheme(resolved);
     };
 
     applyTheme();
@@ -665,8 +661,7 @@ function App() {
           coordinates={coordinates}
           onLocationUpdate={handleLocationSelect}
           themeMode={themeMode}
-          onThemeToggle={handleThemeToggle}
-          onThemeSettingsOpen={() => setShowThemeSettings(true)}
+          onThemeChange={handleThemeChange}
           selectedTimezone={selectedTimezone}
           onTimezoneChange={handleTimezoneChange}
           onRadarOpen={() => setShowRadarModal(true)}
@@ -801,13 +796,7 @@ function App() {
           isOpen={showRadarModal}
           onClose={() => setShowRadarModal(false)}
           coordinates={coordinates}
-        />
-
-        <ThemeSettingsModal
-          isOpen={showThemeSettings}
-          onClose={() => setShowThemeSettings(false)}
-          themeMode={themeMode}
-          onThemeChange={handleThemeChange}
+          isDarkMode={resolvedTheme === "dark"}
         />
       </div>
     </div>

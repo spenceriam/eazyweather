@@ -9,6 +9,7 @@ interface RadarModalProps {
   isOpen: boolean;
   onClose: () => void;
   coordinates: Coordinates | null;
+  isDarkMode: boolean;
 }
 
 interface RadarFrame {
@@ -16,7 +17,7 @@ interface RadarFrame {
   timestampUtcSeconds: number;
 }
 
-export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
+export function RadarModal({ isOpen, onClose, coordinates, isDarkMode }: RadarModalProps) {
   const userCoords = useMemo(
     () => ({
       latitude: coordinates?.latitude ?? 41.8781,
@@ -87,7 +88,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
         }
         return current + 1;
       });
-    }, 1000);
+    }, 1250);
     return () => window.clearInterval(timer);
   }, [isOpen, isPlaying, radarFrames.length]);
 
@@ -107,7 +108,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     setRenderedRadarTileUrl(activeRadarTileUrl);
     setFadeProgress(0);
 
-    const durationMs = 350;
+    const durationMs = 650;
     const startedAt = performance.now();
 
     const animate = (now: number) => {
@@ -223,6 +224,7 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
     ).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     return `${firstTime} -> ${latestTime}`;
   }, [radarFrames]);
+  const radarOverlayOpacity = isDarkMode ? 0.6 : 0.5;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Radar">
@@ -237,14 +239,22 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
             scrollWheelZoom={true}
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution={
+                isDarkMode
+                  ? '&copy; OpenStreetMap contributors, &copy; CARTO'
+                  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              }
+              url={
+                isDarkMode
+                  ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              }
             />
             {previousRadarTileUrl && (
               <TileLayer
                 key={`prev-${previousRadarTileUrl}`}
                 url={previousRadarTileUrl}
-                opacity={Math.max(0, 0.6 * (1 - fadeProgress))}
+                opacity={Math.max(0, radarOverlayOpacity * (1 - fadeProgress))}
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
@@ -252,7 +262,11 @@ export function RadarModal({ isOpen, onClose, coordinates }: RadarModalProps) {
               <TileLayer
                 key={`current-${renderedRadarTileUrl}`}
                 url={renderedRadarTileUrl}
-                opacity={previousRadarTileUrl ? Math.min(0.6, 0.6 * fadeProgress) : 0.6}
+                opacity={
+                  previousRadarTileUrl
+                    ? Math.min(radarOverlayOpacity, radarOverlayOpacity * fadeProgress)
+                    : radarOverlayOpacity
+                }
                 attribution='Radar: <a href="https://www.rainviewer.com">RainViewer</a>'
               />
             )}
