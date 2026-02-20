@@ -33,7 +33,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.9.7",
-    date: "February 20, 2026",
+    date: "February 19, 2026",
     type: "patch",
     title: "Fix Monthly Baseline Data Logic",
     changes: [
@@ -44,7 +44,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.9.6",
-    date: "February 20, 2026",
+    date: "February 19, 2026",
     type: "patch",
     title: "ZIP Code Sunrise/Sunset Date Fix",
     changes: [
@@ -54,7 +54,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     version: "1.9.5",
-    date: "February 20, 2026",
+    date: "February 19, 2026",
     type: "patch",
     title: "Header Navigation Parking Fix",
     changes: [
