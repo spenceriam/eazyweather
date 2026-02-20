@@ -8,7 +8,6 @@ import type {
   MonthlyDay,
 } from "../types/weather";
 import {
-  getHistoricalWeatherForCurrentMonth,
   getHistoricalAveragesForRange,
 } from "./historicalWeatherApi";
 
@@ -338,20 +337,23 @@ export async function getMonthlyForecast(
   options: { skipRateLimit?: boolean } = {},
 ): Promise<MonthlyForecast> {
   try {
-    // Get current date information
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    const currentDay = currentDate.getDate();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    const days: MonthlyDay[] = [];
-
     // Get 7-day forecast first (required, fast)
     const sevenDayForecast = await get7DayForecast(coords, {
       ...options,
       skipCache: true, // Don't use cache for forecast data
     });
+
+    // Use forecast-local date when available to avoid UTC day-boundary shifts.
+    const referenceDate =
+      sevenDayForecast[0]?.startTime?.slice(0, 10) ??
+      new Date().toISOString().slice(0, 10);
+    const [yearStr, monthStr, dayStr] = referenceDate.split("-");
+    const currentYear = Number(yearStr);
+    const currentMonth = Number(monthStr) - 1;
+    const currentDay = Number(dayStr);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const days: MonthlyDay[] = [];
 
     // Create a map of forecast data by day number
     const forecastByDay = new Map<number, ForecastPeriod>();
@@ -372,11 +374,20 @@ export async function getMonthlyForecast(
     const forecastDays = Array.from(forecastByDay.keys());
     const maxForecastDay = forecastDays.length > 0 ? Math.max(...forecastDays) : currentDay;
     const firstPredictionDay = maxForecastDay + 1;
+    const monthStartDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+    const pastEndDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(currentDay - 1).padStart(2, "0")}`;
 
     // Fetch historical data and prediction data IN PARALLEL (non-blocking)
     const [historicalResult, predictionResult] = await Promise.allSettled([
-      // Historical data for past days
-      getHistoricalWeatherForCurrentMonth(coords).catch(() => []),
+      // Past days use baseline from the same dates last year.
+      currentDay > 1
+        ? getHistoricalAveragesForRange(
+            coords,
+            monthStartDate,
+            pastEndDate,
+            1, // 1 year back
+          )
+        : Promise.resolve(new Map<number, { temperature: number; condition: string }>()),
 
       // Prediction data for future days
       (firstPredictionDay <= daysInMonth
@@ -396,14 +407,14 @@ export async function getMonthlyForecast(
     // Extract historical data
     const historicalData: Map<number, { temp: number; condition: string }> = new Map();
     if (historicalResult.status === 'fulfilled') {
-      historicalResult.value.forEach((day) => {
-        historicalData.set(day.dayOfMonth, {
-          temp: day.temperatureAvg,
-          condition: day.condition,
+      historicalResult.value.forEach((dayData, dayNum) => {
+        historicalData.set(dayNum, {
+          temp: dayData.temperature,
+          condition: dayData.condition,
         });
       });
       console.log(
-        `✅ Fetched historical data for ${historicalResult.value.length} days of current month`,
+        `✅ Fetched last-year baseline data for ${historicalData.size} past days`,
       );
     } else {
       console.warn("Could not fetch historical data:", historicalResult.reason);
@@ -759,7 +770,22 @@ export async function getAllWeatherData(
         // Get timezone for accurate local times
         const timezone = await getTimezoneFromCoords(coords);
 
-        const today = new Date().toISOString().split("T")[0];
+        // Use the location's local calendar date (not UTC date) to avoid
+        // requesting sunrise/sunset for the wrong day near timezone boundaries.
+        const dateParts = new Intl.DateTimeFormat("en-US", {
+          timeZone: timezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(new Date());
+
+        const year = dateParts.find((part) => part.type === "year")?.value;
+        const month = dateParts.find((part) => part.type === "month")?.value;
+        const day = dateParts.find((part) => part.type === "day")?.value;
+        const today =
+          year && month && day
+            ? `${year}-${month}-${day}`
+            : new Date().toISOString().split("T")[0];
         const url = `https://api.sunrise-sunset.org/json?lat=${coords.latitude}&lng=${coords.longitude}&date=${today}&formatted=0&tzid=${timezone}`;
 
         // fetchWithUserAgent returns parsed JSON data, not a Response object

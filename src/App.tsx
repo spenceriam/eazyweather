@@ -18,6 +18,7 @@ import { InitialLocationModal } from "./components/InitialLocationModal";
 import { LocationPinModal } from "./components/LocationPinModal";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { CookieConsentModal } from "./components/modals/CookieConsentModal";
+import { RadarModal } from "./components/modals/RadarModal";
 import { ThemeSettingsModal } from "./components/modals/ThemeSettingsModal";
 
 import { getAllWeatherData, getMonthlyForecast } from "./services/weatherApi";
@@ -42,6 +43,7 @@ import {
   resolveThemeMode,
   type ThemeMode,
 } from "./utils/themeUtils";
+import { getInitialTimezone, persistTimezone } from "./utils/timezoneUtils";
 import type {
   Coordinates,
   CurrentConditions as CurrentConditionsType,
@@ -61,10 +63,12 @@ function App() {
   const [showThemeSettings, setShowThemeSettings] = useState(false);
   const [isConsentResolved, setIsConsentResolved] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showRadarModal, setShowRadarModal] = useState(false);
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [isInitialChicagoLoad, setIsInitialChicagoLoad] = useState(true);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(getInitialTimezone);
 
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
@@ -158,6 +162,11 @@ function App() {
     useState<MonthlyForecastType | null>(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(false);
+
+  function handleTimezoneChange(timezone: string) {
+    setSelectedTimezone(timezone);
+    persistTimezone(timezone);
+  }
 
   function handleThemeChange(mode: ThemeMode) {
     setThemeMode(mode);
@@ -647,7 +656,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#c4bda9] dark:bg-gray-950 pb-24 md:pb-20 transition-colors">
+    <div className="min-h-screen bg-gray-200 pb-24 md:pb-20">
       {/* Darker sides background */}
       <div className="min-h-screen">
         {/* Header with full width */}
@@ -658,6 +667,9 @@ function App() {
           themeMode={themeMode}
           onThemeToggle={handleThemeToggle}
           onThemeSettingsOpen={() => setShowThemeSettings(true)}
+          selectedTimezone={selectedTimezone}
+          onTimezoneChange={handleTimezoneChange}
+          onRadarOpen={() => setShowRadarModal(true)}
         />
 
         <main>
@@ -677,10 +689,10 @@ function App() {
                   <WeatherCarousel
                     conditions={currentConditions}
                     forecast={forecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="current" className="bg-gray-100">
+                  <section id="current" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-16">
                       <div className="max-w-6xl mx-auto">
                         <div className="text-center">
@@ -697,10 +709,10 @@ function App() {
                 {hourlyForecast.length > 0 ? (
                   <HourlyForecast
                     forecast={hourlyForecast}
-                    timezone={currentConditions.timezone}
+                    timezone={selectedTimezone}
                   />
                 ) : (
-                  <section id="hourly" className="bg-gray-100">
+                  <section id="hourly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -715,7 +727,7 @@ function App() {
                 {forecast.length > 0 ? (
                   <SevenDayForecast forecast={forecast} />
                 ) : (
-                  <section id="forecast" className="bg-gray-100">
+                  <section id="forecast" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -730,7 +742,7 @@ function App() {
                 {monthlyForecast ? (
                   <MonthlyForecast forecast={monthlyForecast} />
                 ) : isMonthlyLoading ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <div className="bg-brand-cream rounded-lg shadow-md p-8 flex items-center justify-center">
@@ -743,7 +755,7 @@ function App() {
                     </div>
                   </section>
                 ) : monthlyError ? (
-                  <section id="monthly" className="bg-gray-100">
+                  <section id="monthly" className="bg-gray-100 scroll-mt-24 md:scroll-mt-28">
                     <div className="max-w-7xl mx-auto px-4 py-8">
                       <div className="max-w-6xl mx-auto">
                         <ErrorMessage
@@ -783,6 +795,12 @@ function App() {
         <CookieConsentModal
           isOpen={showCookieConsent}
           onResolve={handleCookieConsentResolve}
+        />
+
+        <RadarModal
+          isOpen={showRadarModal}
+          onClose={() => setShowRadarModal(false)}
+          coordinates={coordinates}
         />
 
         <ThemeSettingsModal
