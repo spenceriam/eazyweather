@@ -8,7 +8,7 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    version: "1.13.0",
+    version: "1.12.0",
     date: "February 20, 2026",
     type: "minor",
     title: "Dark, Light, and System Theme Modes",
