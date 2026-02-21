@@ -1,21 +1,39 @@
 # Explicit AI/Search crawler allow rules
 User-agent: GPTBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: CCBot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /.well-known/
 
 User-agent: *
 Allow: /
