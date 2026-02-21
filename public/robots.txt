@@ -1,13 +1,29 @@
-User-agent: *
+# Explicit AI/Search crawler allow rules
+User-agent: GPTBot
 Allow: /
 
-# Sitemap location
-Sitemap: https://eazyweather.vercel.app/sitemap.xml
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: *
+Allow: /
 
 # Block common non-content paths
 Disallow: /admin/
 Disallow: /api/
 Disallow: /.well-known/
 
-# Allow search engines to crawl all content
-Crawl-delay: 1
+# Sitemap location
+Sitemap: https://www.eazyweather.com/sitemap.xml

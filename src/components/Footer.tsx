@@ -105,6 +105,20 @@ export function Footer() {
               {/* Right: Privacy and Terms - same formatting as Website Data Sources */}
               <div className="text-right">
                 <div className="flex items-center justify-end gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <a
+                    href="/about"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
+                  >
+                    About
+                  </a>
+                  <span>•</span>
+                  <a
+                    href="/contact"
+                    className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
+                  >
+                    Contact
+                  </a>
+                  <span>•</span>
                   <button
                     onClick={() => setIsPrivacyOpen(true)}
                     className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
@@ -145,6 +159,20 @@ export function Footer() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
+                <a
+                  href="/about"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
+                >
+                  About
+                </a>
+                <span>•</span>
+                <a
+                  href="/contact"
+                  className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
+                >
+                  Contact
+                </a>
+                <span>•</span>
                 <button
                   onClick={() => setIsPrivacyOpen(true)}
                   className="text-brand hover:text-brand-dark dark:text-blue-300 dark:hover:text-blue-200 underline transition-colors"
