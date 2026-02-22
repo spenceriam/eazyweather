@@ -1,4 +1,5 @@
 # Explicit AI/Search crawler allow rules
+# Disallow entries below are preventive guardrails for future non-content routes.
 User-agent: GPTBot
 Allow: /
 Disallow: /admin/
