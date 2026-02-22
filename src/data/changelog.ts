@@ -8,6 +8,19 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.14.1",
+    date: "February 21, 2026",
+    type: "patch",
+    title: "SEO Baseline Fixes",
+    changes: [
+      "Added stronger search metadata with cleaner title and description lengths for better search snippet quality.",
+      "Added explicit crawler allow rules for major AI/search bots in robots.txt and updated sitemap domain links.",
+      "Added crawlable About and Contact pages and linked them from the footer.",
+      "Expanded structured data with Organization schema and improved WebApplication schema references.",
+      "Added a clear page-level H1 for better semantic search understanding.",
+    ],
+  },
+  {
     version: "1.14.0",
     date: "February 20, 2026",
     type: "minor",

@@ -73,14 +73,27 @@ function App() {
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
   // Update page title for SEO
-  function updatePageTitle(location: string) {
-    const baseTitle = "EazyWeather - Free Local Weather Forecast";
+  function normalizeTitleLocation(location: string) {
+    const normalized = location.trim();
+    if (!normalized) return "";
+
+    const lower = normalized.toLowerCase();
     if (
-      location &&
-      location !== "Loading..." &&
-      location !== "Enter your location"
+      lower === "loading..." ||
+      lower === "enter your location" ||
+      lower === "your location"
     ) {
-      document.title = `${location} Weather Forecast | ${baseTitle}`;
+      return "";
+    }
+
+    return normalized;
+  }
+
+  function updatePageTitle(location: string) {
+    const baseTitle = "EazyWeather";
+    const titleLocation = normalizeTitleLocation(location);
+    if (titleLocation) {
+      document.title = `${titleLocation} Weather Forecast | ${baseTitle}`;
     } else {
       document.title = baseTitle;
     }
@@ -445,7 +458,7 @@ function App() {
       };
       setCoordinates(chicagoCoords);
       setLocationName("Chicago, Illinois");
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle("Chicago, Illinois");
       setShowInitialModal(true);
       // Don't set loading state - let weather load silently for Chicago default
     } catch (locationError) {
@@ -453,7 +466,7 @@ function App() {
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
       setLocationName(chicagoLocation.displayName);
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle(chicagoLocation.displayName);
       setShowInitialModal(true);
       // Don't set loading state - let weather load silently for Chicago default
     }
@@ -616,7 +629,7 @@ function App() {
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
       setLocationName(chicagoLocation.displayName);
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle(chicagoLocation.displayName);
     } finally {
       setIsLoading(false);
     }
@@ -668,6 +681,9 @@ function App() {
         />
 
         <main>
+          <h1 className="max-w-7xl mx-auto px-4 pt-3 pb-1 text-lg md:text-xl font-semibold text-slate-700 dark:text-slate-200">
+            {locationName} weather forecast, radar, and severe weather alerts
+          </h1>
           {/* Centered white content area */}
           <div className="bg-slate-100 dark:bg-slate-800">
             {isLoading || (error && !coordinates) ? (
