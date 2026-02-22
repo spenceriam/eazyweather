@@ -86,11 +86,7 @@ function App() {
       return "";
     }
 
-    return normalized
-      .replace(/\s*weather\s*forecast\s*\|\s*eazyweather\s*$/i, "")
-      .replace(/\s*weather\s*-\s*eazyweather\s*$/i, "")
-      .replace(/\s*-\s*eazyweather\s*$/i, "")
-      .trim();
+    return normalized;
   }
 
   function updatePageTitle(location: string) {
@@ -685,7 +681,7 @@ function App() {
         />
 
         <main>
-          <h1 className="max-w-7xl mx-auto px-4 pt-3 pb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <h1 className="max-w-7xl mx-auto px-4 pt-3 pb-1 text-lg md:text-xl font-semibold text-slate-700 dark:text-slate-200">
             {locationName} weather forecast, radar, and severe weather alerts
           </h1>
           {/* Centered white content area */}
