@@ -73,14 +73,31 @@ function App() {
   // Refresh state
   const [refreshState, setRefreshState] = useState(refreshService.getState());
   // Update page title for SEO
+  function normalizeTitleLocation(location: string) {
+    const normalized = location.trim();
+    if (!normalized) return "";
+
+    const lower = normalized.toLowerCase();
+    if (
+      lower === "loading..." ||
+      lower === "enter your location" ||
+      lower === "your location"
+    ) {
+      return "";
+    }
+
+    return normalized
+      .replace(/\s*weather\s*forecast\s*\|\s*eazyweather\s*$/i, "")
+      .replace(/\s*weather\s*-\s*eazyweather\s*$/i, "")
+      .replace(/\s*-\s*eazyweather\s*$/i, "")
+      .trim();
+  }
+
   function updatePageTitle(location: string) {
     const baseTitle = "EazyWeather";
-    if (
-      location &&
-      location !== "Loading..." &&
-      location !== "Enter your location"
-    ) {
-      document.title = `${location} Weather Forecast | ${baseTitle}`;
+    const titleLocation = normalizeTitleLocation(location);
+    if (titleLocation) {
+      document.title = `${titleLocation} Weather Forecast | ${baseTitle}`;
     } else {
       document.title = baseTitle;
     }
@@ -445,7 +462,7 @@ function App() {
       };
       setCoordinates(chicagoCoords);
       setLocationName("Chicago, Illinois");
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle("Chicago, Illinois");
       setShowInitialModal(true);
       // Don't set loading state - let weather load silently for Chicago default
     } catch (locationError) {
@@ -453,7 +470,7 @@ function App() {
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
       setLocationName(chicagoLocation.displayName);
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle(chicagoLocation.displayName);
       setShowInitialModal(true);
       // Don't set loading state - let weather load silently for Chicago default
     }
@@ -616,7 +633,7 @@ function App() {
       const chicagoLocation = getChicagoFallback();
       setCoordinates(chicagoLocation.coordinates);
       setLocationName(chicagoLocation.displayName);
-      updatePageTitle("Chicago, IL Weather - EazyWeather");
+      updatePageTitle(chicagoLocation.displayName);
     } finally {
       setIsLoading(false);
     }
