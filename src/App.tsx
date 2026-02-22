@@ -681,7 +681,7 @@ function App() {
         />
 
         <main>
-          <h1 className="max-w-7xl mx-auto px-4 pt-3 pb-1 text-lg md:text-xl font-semibold text-slate-700 dark:text-slate-200">
+          <h1 className="sr-only">
             {locationName} weather forecast, radar, and severe weather alerts
           </h1>
           {/* Centered white content area */}
