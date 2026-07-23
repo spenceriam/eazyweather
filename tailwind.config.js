@@ -21,6 +21,7 @@ export default {
         ink: "var(--ink)",
         ink2: "var(--ink2)",
         "ui-body": "var(--body)",
+        brand2: "var(--brand2)",
         soft: "var(--soft)",
         mut: "var(--mut)",
         mut2: "var(--mut2)",

@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
+import { useIsDarkTheme } from "../../hooks/useIsDarkTheme";
 
 /**
  * Line-icon set ported verbatim from the ui-refresh prototype's icon()
@@ -59,30 +60,6 @@ const DARK_PALETTE: IconPalette = {
 const STROKE = 1.6;
 const CLOUD_PATH = "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z";
 const CLOUD_UP_TRANSFORM = "scale(0.86) translate(2,-1.6)";
-
-/**
- * Tracks the app's live theme via the `dark` class on <html> so icons stay
- * in sync without requiring PrefsProvider as an ancestor (both the
- * pre-paint script and PrefsProvider keep that class current).
- */
-function useIsDarkTheme(): boolean {
-  const [isDark, setIsDark] = useState(
-    () =>
-      typeof document !== "undefined" &&
-      document.documentElement.classList.contains("dark"),
-  );
-
-  useEffect(() => {
-    const target = document.documentElement;
-    const observer = new MutationObserver(() => {
-      setIsDark(target.classList.contains("dark"));
-    });
-    observer.observe(target, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  return isDark;
-}
 
 function getIconType(condition: string, isDaytime: boolean): WeatherIconType {
   const lower = condition.toLowerCase();

@@ -1,282 +1,276 @@
-import { useRef, useState } from "react";
-import { MapPin, Settings } from "lucide-react";
-import { LocationDropdown } from "./LocationDropdown";
-import type { Coordinates } from "../types/weather";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, MapPin, Settings } from "lucide-react";
+import { usePrefs } from "../hooks/usePrefs";
+import { getCommonTimezoneOptions } from "../utils/timezoneUtils";
+import { LocationPanel } from "./LocationPanel";
 import type { LocationResult } from "../services/locationService";
-import type { ThemeMode } from "../utils/themeUtils";
+import type { ThemeMode } from "../types/prefs";
 
 interface HeaderProps {
   locationName: string;
-  coordinates: Coordinates | null;
-  onLocationUpdate: (location: LocationResult) => void;
-  selectedTimezone: string;
-  onTimezoneChange: (timezone: string) => void;
-  themeMode: ThemeMode;
-  onThemeChange: (mode: ThemeMode) => void;
-  onRadarOpen: () => void;
+  isPinned: boolean;
+  onLocationSelect: (location: LocationResult) => void;
+  onRequestGps: () => void;
+  onEnterEditMode: () => void;
 }
+
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
 
 export function Header({
   locationName,
-  coordinates,
-  onLocationUpdate,
-  selectedTimezone,
-  onTimezoneChange,
-  themeMode,
-  onThemeChange,
-  onRadarOpen,
+  isPinned,
+  onLocationSelect,
+  onRequestGps,
+  onEnterEditMode,
 }: HeaderProps) {
-  const lightLogoSrc = "/Eazy_Weather_Logo_Black-trans.png";
-  const darkLogoSrc = "/Eazy_Weather_Logo_White-trans.png";
+  const { prefs, setTheme, setTimezone } = usePrefs();
+  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [isGearOpen, setIsGearOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const gearRef = useRef<HTMLDivElement>(null);
 
-  const navItems = [
-    { id: "current", label: "Current" },
-    { id: "hourly", label: "Hourly" },
-    { id: "forecast", label: "7-Day" },
-    { id: "monthly", label: "Monthly" },
-  ];
-
-  const handleLogoClick = () => {
-    // Prevent spam - only play if not currently playing
-    if (isPlayingRef.current) {
-      return;
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (isLocationOpen && locationRef.current && !locationRef.current.contains(target)) {
+        setIsLocationOpen(false);
+      }
+      if (isGearOpen && gearRef.current && !gearRef.current.contains(target)) {
+        setIsGearOpen(false);
+      }
     }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsLocationOpen(false);
+        setIsGearOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isLocationOpen, isGearOpen]);
 
-    // Create audio element if it doesn't exist
+  function handleLogoClick() {
+    if (isPlayingRef.current) return;
+
     if (!audioRef.current) {
       audioRef.current = new Audio("/assets/quack.mp3");
-      audioRef.current.volume = 0.5; // Set volume to 50%
+      audioRef.current.volume = 0.5;
     }
 
-    // Reset audio to beginning if it was played before
     audioRef.current.currentTime = 0;
-
-    // Mark as playing
     isPlayingRef.current = true;
 
-    // Play the sound
     audioRef.current
       .play()
-      .then(() => {
-        // Successfully started playing
-      })
+      .then(() => {})
       .catch(() => {
-        // Handle error silently (e.g., user hasn't interacted with page yet)
         isPlayingRef.current = false;
       });
 
-    // Reset playing flag when audio ends
     audioRef.current.onended = () => {
       isPlayingRef.current = false;
     };
-  };
+  }
+
+  function handleLogoKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleLogoClick();
+    }
+  }
+
+  function handleGpsRequest() {
+    setIsLocationOpen(false);
+    onRequestGps();
+  }
+
+  const timezones = getCommonTimezoneOptions();
 
   return (
     <header
-      className="shadow-sm border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10 bg-[#f9f6ee] dark:bg-slate-900"
+      className="sticky top-0 z-30 border-b border-line bg-headbg"
+      style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        {/* Desktop: 3-column layout */}
-        <div className="hidden md:grid md:grid-cols-3 md:items-center gap-4">
-          {/* Logo - Left */}
-          <div className="flex items-center justify-start">
-            <img
-              src={lightLogoSrc}
-              alt="EazyWeather Logo"
-              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity dark:hidden"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "/assets/logo.png";
-              }}
-              onClick={handleLogoClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleLogoClick();
-                }
-              }}
-            />
-            <img
-              src={darkLogoSrc}
-              alt="EazyWeather Logo"
-              className="h-12 lg:h-14 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity hidden dark:block"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "/assets/logo.png";
-              }}
-              onClick={handleLogoClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleLogoClick();
-                }
-              }}
-            />
-          </div>
+      <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+        {/* Logo: full wordmark on desktop, duck mark on mobile; white variants in dark mode */}
+        <button
+          type="button"
+          onClick={handleLogoClick}
+          onKeyDown={handleLogoKeyDown}
+          className="flex-shrink-0 rounded-control focus:outline-none focus-visible:ring-2 focus-visible:ring-link"
+          aria-label="EazyWeather logo — plays a quack sound"
+        >
+          <img
+            src="/Eazy_Weather_Logo_Black-trans.png"
+            alt="EazyWeather"
+            className="hidden md:block h-9 w-auto object-contain dark:hidden"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/assets/logo.png";
+            }}
+          />
+          <img
+            src="/Eazy_Weather_Logo_White-trans.png"
+            alt="EazyWeather"
+            className="hidden md:dark:block h-9 w-auto object-contain"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/assets/logo.png";
+            }}
+          />
+          <img
+            src="/mark_black.png"
+            alt="EazyWeather"
+            className="md:hidden h-9 w-9 object-contain dark:hidden"
+          />
+          <img
+            src="/mark_white.png"
+            alt="EazyWeather"
+            className="md:hidden hidden dark:block h-9 w-9 object-contain"
+          />
+        </button>
 
-          {/* Location - Center */}
-          <div className="flex items-center justify-center gap-2 relative">
-            <MapPin className="w-5 h-5 text-brand flex-shrink-0" />
+        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+          {prefs.consent === "denied" && (
             <span
-              className="text-gray-800 dark:text-gray-100 font-medium truncate max-w-[300px]"
-              title={locationName}
+              className="hidden sm:inline-flex items-center px-2 py-1 rounded-control border border-dashed border-line text-[11px] font-semibold text-mut"
+              title="Cookies declined — your settings are kept only for this browser session and are not written to a cookie."
             >
-              {locationName}
+              Session only
             </span>
+          )}
+
+          {/* Location button + panel */}
+          <div className="relative" ref={locationRef}>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDropdownOpen(!isDropdownOpen);
+              type="button"
+              onClick={() => {
+                setIsGearOpen(false);
+                setIsLocationOpen((v) => !v);
               }}
-              className="p-2.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
+              className={`flex items-center gap-1.5 h-9 md:h-9 min-h-[44px] md:min-h-[36px] px-2.5 rounded-control transition-colors ${
+                isLocationOpen ? "bg-chip" : "hover:bg-chip"
+              }`}
               aria-label="Change location"
+              aria-expanded={isLocationOpen}
             >
-              <Settings className="w-5 h-5 text-brand" />
+              <MapPin
+                className="w-4 h-4 flex-shrink-0"
+                style={{ color: isPinned ? "#E8862E" : "var(--link)" }}
+              />
+              <span
+                className="text-sm font-medium text-ink truncate max-w-[110px] sm:max-w-[180px]"
+                title={locationName}
+              >
+                {locationName}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-mut flex-shrink-0" />
             </button>
 
-            {/* Dropdown */}
-            {isDropdownOpen && (
-              <LocationDropdown
-                coordinates={coordinates}
-                onLocationUpdate={(location) => {
-                  onLocationUpdate(location);
-                  setIsDropdownOpen(false);
+            {isLocationOpen && (
+              <LocationPanel
+                onLocationSelect={(location) => {
+                  onLocationSelect(location);
+                  setIsLocationOpen(false);
                 }}
-                selectedTimezone={selectedTimezone}
-                onTimezoneChange={onTimezoneChange}
-                themeMode={themeMode}
-                onThemeChange={onThemeChange}
-                onClose={() => setIsDropdownOpen(false)}
+                onRequestGps={handleGpsRequest}
+                onClose={() => setIsLocationOpen(false)}
               />
             )}
           </div>
 
-          {/* Nav - Right */}
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onRadarOpen}
-                className="h-10 min-w-[78px] px-4 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors inline-flex items-center justify-center whitespace-nowrap"
-                aria-label="Open weather radar"
-              >
-                Radar
-              </button>
-              <nav className="flex gap-2">
-              {navItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="h-10 min-w-[78px] px-4 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-dark transition-colors inline-flex items-center justify-center whitespace-nowrap"
-                >
-                  {item.label}
-                </a>
-              ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile: Multi-row layout (Option A) */}
-        <div className="md:hidden space-y-3">
-          {/* Row 1: Logo + Location + Gear */}
-          <div className="flex items-center justify-between gap-2">
-            <img
-              src={lightLogoSrc}
-              alt="EazyWeather Logo"
-              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 dark:hidden"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "/assets/logo.png";
-              }}
-              onClick={handleLogoClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleLogoClick();
-                }
-              }}
-            />
-            <img
-              src={darkLogoSrc}
-              alt="EazyWeather Logo"
-              className="h-10 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0 hidden dark:block"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "/assets/logo.png";
-              }}
-              onClick={handleLogoClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleLogoClick();
-                }
-              }}
-            />
-            <div className="flex items-center gap-2 flex-1 min-w-0 relative">
-              <MapPin className="w-4 h-4 text-brand flex-shrink-0" />
-              <span className="text-sm text-gray-800 dark:text-gray-100 font-medium truncate" title={locationName}>
-                {locationName}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDropdownOpen(!isDropdownOpen);
-                }}
-                className="p-2.5 hover:bg-brand-lighter rounded-md transition-colors flex-shrink-0"
-                aria-label="Change location"
-              >
-                <Settings className="w-5 h-5 text-brand" />
-              </button>
-
-              {/* Dropdown for mobile */}
-              {isDropdownOpen && (
-                <LocationDropdown
-                  coordinates={coordinates}
-                  onLocationUpdate={(location) => {
-                    onLocationUpdate(location);
-                    setIsDropdownOpen(false);
-                  }}
-                  selectedTimezone={selectedTimezone}
-                  onTimezoneChange={onTimezoneChange}
-                  themeMode={themeMode}
-                  onThemeChange={onThemeChange}
-                  onClose={() => setIsDropdownOpen(false)}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Row 2: Nav buttons */}
-          <div className="grid grid-cols-5 gap-2">
+          {/* Gear / preferences button + panel */}
+          <div className="relative" ref={gearRef}>
             <button
-              onClick={onRadarOpen}
-              className="h-9 px-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center inline-flex items-center justify-center whitespace-nowrap"
-              aria-label="Open weather radar"
+              type="button"
+              onClick={() => {
+                setIsLocationOpen(false);
+                setIsGearOpen((v) => !v);
+              }}
+              className={`flex items-center justify-center h-9 w-9 min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-[36px] rounded-control transition-colors ${
+                isGearOpen ? "bg-chip" : "hover:bg-chip"
+              }`}
+              aria-label="Preferences"
+              aria-expanded={isGearOpen}
             >
-              Radar
+              <Settings className="w-4 h-4 text-ink" />
             </button>
-            <nav className="contents">
-            {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className="h-9 px-2 bg-brand text-white rounded-md text-xs font-medium hover:bg-brand-dark transition-colors text-center inline-flex items-center justify-center whitespace-nowrap"
-              >
-                {item.label}
-              </a>
-            ))}
-            </nav>
+
+            {isGearOpen && (
+              <div className="absolute top-full right-0 mt-2 w-[240px] bg-surface border border-line rounded-card shadow-card z-50 p-3 space-y-4">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-mut mb-2">
+                    Theme
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {THEME_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setTheme(opt.value)}
+                        className={`text-xs font-medium py-1.5 rounded-control border transition-colors ${
+                          prefs.theme === opt.value
+                            ? "bg-brand text-brandink border-brand"
+                            : "bg-panel border-line text-ink hover:bg-chip"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-mut mb-2">
+                    Timezone
+                  </div>
+                  <select
+                    value={prefs.timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="w-full text-sm bg-panel border border-line rounded-control px-2 py-1.5 text-ink"
+                    aria-label="Select timezone"
+                  >
+                    {timezones.map((tz) => (
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-mut mb-2">
+                    Cards
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGearOpen(false);
+                      onEnterEditMode();
+                    }}
+                    className="w-full text-sm font-semibold py-1.5 rounded-control border border-line text-ink hover:bg-chip transition-colors"
+                  >
+                    Edit cards
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-mut leading-snug border-t border-hair pt-2">
+                  {prefs.consent === "denied"
+                    ? "Settings are kept for this browser session only (cookies declined)."
+                    : "Settings are saved to this browser."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
