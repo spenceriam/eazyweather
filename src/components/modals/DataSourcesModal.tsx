@@ -29,7 +29,7 @@ export function DataSourcesModal({
       <div className="space-y-4">
         {dataSources.map((source, index) => (
           <div key={index} className="space-y-2">
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">{source.type}:</h3>
+            <h3 className="font-medium text-ink">{source.type}:</h3>
             <div className="space-y-1">
               <a
                 href={source.url}
@@ -39,13 +39,13 @@ export function DataSourcesModal({
               >
                 {source.source}
               </a>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{source.description}</p>
+              <p className="text-sm text-ui-body">{source.description}</p>
             </div>
           </div>
         ))}
 
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="pt-4 border-t border-line">
+          <p className="text-sm text-mut">
             Data is aggregated from multiple official sources to provide
             comprehensive weather information.
           </p>

@@ -9,10 +9,10 @@ export function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4">
       <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+      <h3 className="text-xl font-semibold text-ink mb-2">
         Something went wrong
       </h3>
-      <p className="text-gray-600 text-center mb-6 max-w-md">{message}</p>
+      <p className="text-ui-body text-center mb-6 max-w-md">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
