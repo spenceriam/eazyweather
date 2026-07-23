@@ -66,9 +66,18 @@
         />
 
         <!-- Additional SEO Meta Tags -->
-        <meta name="theme-color" content="#3b82f6" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F0E9" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#12181D" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
         <link rel="canonical" href="https://www.eazyweather.com/" />
+
+        <!-- Fonts: system UI stack for body/UI, Source Serif 4 for display numerals only -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,200..700;1,200..700&display=swap"
+            rel="stylesheet"
+        />
 
         <!-- Favicon -->
         <link rel="apple-touch-icon" href="/duck_favicon.png" />
@@ -159,6 +168,37 @@
         </script>
     </head>
     <body>
+        <script>
+            (function () {
+                try {
+                    var mode = null;
+                    var raw = localStorage.getItem("ezw-prefs");
+                    if (raw) {
+                        var parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed.theme === "string") {
+                            mode = parsed.theme;
+                        }
+                    }
+                    if (!mode) {
+                        mode = localStorage.getItem("eazyweather_theme_mode");
+                    }
+                    if (mode !== "light" && mode !== "dark" && mode !== "system") {
+                        mode = "system";
+                    }
+                    var resolved =
+                        mode === "system"
+                            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                                ? "dark"
+                                : "light"
+                            : mode;
+                    document.documentElement.classList.toggle("dark", resolved === "dark");
+                    document.documentElement.dataset.theme = resolved;
+                    document.body.dataset.theme = resolved;
+                } catch (e) {
+                    /* Storage unavailable; default light palette renders. */
+                }
+            })();
+        </script>
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
