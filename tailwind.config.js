@@ -6,7 +6,9 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#364247",
+          // Bound to the theme token so dark mode gets the designed blue
+          // (#3E6E93) instead of the light theme's static charcoal.
+          DEFAULT: "var(--brand)",
           dark: "#2a3337",
           light: "#4a5459",
           lighter: "#e8eaeb",

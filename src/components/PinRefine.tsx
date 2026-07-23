@@ -167,7 +167,7 @@ export function PinRefine({ initialCoordinates, onConfirm, onCancel }: PinRefine
           type="button"
           onClick={handleConfirm}
           disabled={isLoadingName}
-          className="px-4 py-2 text-sm font-semibold bg-brand text-brandink rounded-control hover:bg-brand-dark transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+          className="px-4 py-2 text-sm font-semibold bg-brand text-brandink rounded-control hover:bg-brand2 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
         >
           <MapPin className="w-4 h-4" />
           Use this spot

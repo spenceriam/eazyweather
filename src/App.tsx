@@ -5,7 +5,7 @@
  * Contact: https://x.com/spencer_i_am
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PrefsProvider, usePrefs } from "./hooks/usePrefs";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
@@ -126,13 +126,22 @@ function updateStructuredData(location: LocationResult, conditions: CurrentCondi
   }
 }
 
-/** True when a geocode result's country is known and isn't the US (NWS coverage). */
+/**
+ * True when a geocode result is known to be outside the US (NWS coverage).
+ * Prefers the locale-independent ISO country code — Nominatim localizes the
+ * `country` display name to the browser's Accept-Language, so a French
+ * browser reverse-geocoding Texas gets country "États-Unis" and a name
+ * comparison would wrongly gate a US user out of their forecast.
+ */
 function isNonUsLocation(location: LocationResult): boolean {
+  if (location.countryCode) {
+    return location.countryCode.toLowerCase() !== "us";
+  }
   return Boolean(location.country) && location.country !== "United States";
 }
 
 function AppShell() {
-  const { prefs, setConsent } = usePrefs();
+  const { prefs, setConsent, pruneAlerts } = usePrefs();
 
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState(CHICAGO_NAME);
@@ -159,11 +168,16 @@ function AppShell() {
   const [monthlyForecast, setMonthlyForecast] = useState<MonthlyForecastType | null>(null);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
 
+  // Monotonic sequence so a slow response for a previous location can't
+  // clobber state after the user has already switched somewhere else.
+  const loadSeqRef = useRef(0);
+
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
       const activeCoords = coordsOverride || coordinates;
       if (!activeCoords) return;
 
+      const seq = ++loadSeqRef.current;
       setError(null);
 
       try {
@@ -173,13 +187,20 @@ function AppShell() {
           skipRateLimit,
           includeMonthly: shouldIncludeMonthly,
         });
+        if (seq !== loadSeqRef.current) return;
 
         setCurrentConditions(current);
         setForecast(sevenDay);
         setHourlyForecast(hourly);
         if (monthly) setMonthlyForecast(monthly);
 
-        void getActiveAlerts(activeCoords).then(setAlerts);
+        void getActiveAlerts(activeCoords).then((activeAlerts) => {
+          if (seq !== loadSeqRef.current) return;
+          setAlerts(activeAlerts);
+          // Drop hidden ids for alerts that are no longer active so the
+          // hiddenAlertIds pref (and its cookie mirror) can't grow forever.
+          pruneAlerts(activeAlerts.map((alert) => alert.id));
+        });
 
         const hasData = current || sevenDay.length > 0 || hourly.length > 0;
         if (!hasData) {
@@ -202,10 +223,12 @@ function AppShell() {
           setHasWeatherLoaded(true);
         }
       } catch {
-        setError("Weather data unavailable for this location. Try searching for a nearby city.");
+        if (seq === loadSeqRef.current) {
+          setError("Weather data unavailable for this location. Try searching for a nearby city.");
+        }
       }
     },
-    [coordinates, locationName, isInitialChicagoLoad],
+    [coordinates, locationName, isInitialChicagoLoad, pruneAlerts],
   );
 
   // Track when the user changes location from the initial Chicago default.
@@ -218,6 +241,7 @@ function AppShell() {
   // Async monthly load for every location change after the initial Chicago load.
   useEffect(() => {
     if (!coordinates || !hasWeatherLoaded) return;
+    if (coverageNotice) return; // non-US: an NWS monthly fetch would only 404
     if (isInitialChicagoLoad && locationName === CHICAGO_NAME) return;
 
     let cancelled = false;
@@ -232,7 +256,7 @@ function AppShell() {
     return () => {
       cancelled = true;
     };
-  }, [coordinates, hasWeatherLoaded, isInitialChicagoLoad, locationName]);
+  }, [coordinates, hasWeatherLoaded, isInitialChicagoLoad, locationName, coverageNotice]);
 
   // Auto-refresh plumbing (unchanged from the pre-refresh app).
   useEffect(() => {
@@ -248,7 +272,9 @@ function AppShell() {
       }
     });
 
-    if (coordinates && locationName !== CHICAGO_NAME) {
+    // Gate on the *initial* Chicago default, not the name — a user whose real
+    // saved location is Chicago still deserves auto-refresh.
+    if (coordinates && !isInitialChicagoLoad) {
       refreshService.startAutoRefresh();
     }
 
@@ -265,18 +291,28 @@ function AppShell() {
     return () => {
       unsubscribe();
       clearInterval(intervalId);
-      refreshService.destroy();
+      // No refreshService.destroy() here: it's a module singleton whose
+      // visibilitychange handler is attached once in its constructor and
+      // never re-attached, so destroying it on every effect re-run (this
+      // effect re-runs on each location change) permanently killed
+      // visibility-based refresh for the rest of the session.
     };
-  }, [coordinates, locationName, loadWeatherData]);
+  }, [coordinates, locationName, isInitialChicagoLoad, loadWeatherData]);
 
-  /** Central entry point for every "the user/app picked a location" path. Gates on NWS (US) coverage. */
+  /**
+   * Central entry point for every "the user/app picked a location" path.
+   * Gates on NWS (US) coverage. The actual weather fetch is owned by the
+   * [coordinates] effect below — calling loadWeatherData here as well
+   * double-fetched everything and ran with the previous render's stale
+   * locationName (wrong structured data, spurious monthly fetches).
+   */
   const applyLocation = useCallback(
-    (location: LocationResult, options: { persist?: boolean } = {}) => {
-      const { persist = true } = options;
+    (location: LocationResult, options: { persist?: boolean; pinned?: boolean } = {}) => {
+      const { persist = true, pinned = false } = options;
 
       setCoordinates(location.coordinates);
       setLocationName(location.displayName);
-      setIsPinned(false);
+      setIsPinned(pinned);
       updatePageTitle(location.displayName);
       if (persist) saveLocation(location);
 
@@ -291,14 +327,14 @@ function AppShell() {
 
       setCoverageNotice(null);
       setPreviousUsLocation(location);
-      void loadWeatherData(true, location.coordinates);
     },
-    [loadWeatherData],
+    [],
   );
 
   const initializeLocation = useCallback(async () => {
     setError(null);
-    const consentUnset = getCookieConsent() === null;
+    const consent = getCookieConsent();
+    const consentUnset = consent === null;
 
     const potentialLocationCode = getPotentialLocationFromUrl();
     if (potentialLocationCode) {
@@ -321,28 +357,31 @@ function AppShell() {
       }
     }
 
-    const manualPin = getManualPin();
-    if (manualPin) {
-      setIsPinned(true);
-      applyLocation(manualPin, { persist: false });
-      if (consentUnset) setShowConsentBanner(true);
-      return;
-    }
+    // Declined consent promises "We'll ask for a location each visit" — honor
+    // it by not restoring a remembered location on boot.
+    if (consent !== "denied") {
+      const manualPin = getManualPin();
+      if (manualPin) {
+        applyLocation(manualPin, { persist: false, pinned: true });
+        if (consentUnset) setShowConsentBanner(true);
+        return;
+      }
 
-    const saved = getSavedLocation();
-    if (saved) {
-      if (saved.displayName === "Your Location" || saved.displayName.includes(",")) {
-        try {
-          const locationResult = await reverseGeocode(saved.coordinates);
-          applyLocation(locationResult);
-        } catch {
+      const saved = getSavedLocation();
+      if (saved) {
+        if (saved.displayName === "Your Location" || saved.displayName.includes(",")) {
+          try {
+            const locationResult = await reverseGeocode(saved.coordinates);
+            applyLocation(locationResult);
+          } catch {
+            applyLocation(saved, { persist: false });
+          }
+        } else {
           applyLocation(saved, { persist: false });
         }
-      } else {
-        applyLocation(saved, { persist: false });
+        if (consentUnset) setShowConsentBanner(true);
+        return;
       }
-      if (consentUnset) setShowConsentBanner(true);
-      return;
     }
 
     // No saved/pinned/URL location: default to Chicago, load silently, and
@@ -364,7 +403,9 @@ function AppShell() {
 
   useEffect(() => {
     if (coordinates && !coverageNotice) {
-      loadWeatherData();
+      // Location changes skip the client-side rate limiter (the pre-redesign
+      // behavior for user-initiated switches).
+      loadWeatherData(true);
     }
     // Only (re)fetch when coordinates or coverage-gating actually change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -374,6 +415,20 @@ function AppShell() {
     setShowWelcomeCard(false);
     setShowConsentBanner(false);
     setConsent(remember);
+  }
+
+  function handleWelcomeSkip(remember: boolean) {
+    setShowWelcomeCard(false);
+    if (!remember) {
+      // Actively switched the toggle off — a real decline.
+      setConsent(false);
+      setShowConsentBanner(false);
+      return;
+    }
+    // Skipped with the toggle untouched at its default: a passive dismissal
+    // isn't valid consent, so leave the decision unset and let the
+    // non-blocking banner ask explicitly.
+    setShowConsentBanner(true);
   }
 
   function handleLocationSelect(location: LocationResult) {
@@ -389,8 +444,12 @@ function AppShell() {
       setPendingGPSCoordinates(coords);
       setShowPinRefine(true);
     } catch {
-      const chicago = getChicagoFallback();
-      applyLocation(chicago, { persist: false });
+      // Denied/failed geolocation: keep whatever location is already loaded
+      // rather than silently teleporting the user to Chicago. Chicago is only
+      // the fallback when nothing is loaded yet (the first-run GPS path).
+      if (!coordinates) {
+        applyLocation(getChicagoFallback(), { persist: false });
+      }
     } finally {
       setIsRequestingLocationPermission(false);
     }
@@ -405,8 +464,7 @@ function AppShell() {
     }
 
     saveManualPin(locationResult);
-    setIsPinned(true);
-    applyLocation(locationResult);
+    applyLocation(locationResult, { pinned: true });
     setShowPinRefine(false);
     setPendingGPSCoordinates(null);
   }
@@ -508,9 +566,7 @@ function AppShell() {
             applyWelcomeConsent(remember);
             void handleRequestGps();
           }}
-          onSkip={(remember) => {
-            applyWelcomeConsent(remember);
-          }}
+          onSkip={handleWelcomeSkip}
         />
       )}
 

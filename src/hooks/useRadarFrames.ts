@@ -81,8 +81,20 @@ export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
   const intervalRef = useRef<number | null>(null);
+
+  const reducedMotion = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
+
+  // Autoplay preference and reduced-motion only decide whether playback
+  // STARTS on its own — an explicit play() always works. Gating the manual
+  // control on them made the play button dead for reduced-motion users.
+  const [isPlaying, setIsPlaying] = useState(autoplay && !reducedMotion);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -103,7 +115,6 @@ export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
       const firstForecastIndex = nextFrames.findIndex((f) => f.isForecast);
       const boundaryIndex = firstForecastIndex === -1 ? nextFrames.length - 1 : firstForecastIndex - 1;
       setActiveIndex(Math.max(0, boundaryIndex));
-      setIsPlaying(true);
     } catch (err) {
       console.warn("Radar frame fetch failed:", err);
       setError("Radar unavailable");
@@ -117,18 +128,10 @@ export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
     void load();
   }, [load]);
 
-  const reducedMotion = useMemo(
-    () =>
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    [],
-  );
-
-  const shouldAutoplay = autoplay && !reducedMotion && frames.length > 1;
+  const canPlay = frames.length > 1;
 
   useEffect(() => {
-    if (!shouldAutoplay || !isPlaying) return;
+    if (!canPlay || !isPlaying) return;
     intervalRef.current = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % frames.length);
     }, LOOP_INTERVAL_MS);
@@ -138,7 +141,7 @@ export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
         intervalRef.current = null;
       }
     };
-  }, [shouldAutoplay, isPlaying, frames.length]);
+  }, [canPlay, isPlaying, frames.length]);
 
   const play = useCallback(() => setIsPlaying(true), []);
   const pause = useCallback(() => setIsPlaying(false), []);
@@ -172,7 +175,7 @@ export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
     hasForecast,
     ageMinutes,
     isLoading,
-    isPlaying: shouldAutoplay && isPlaying,
+    isPlaying: canPlay && isPlaying,
     error,
     play,
     pause,

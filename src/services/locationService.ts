@@ -11,6 +11,8 @@ interface NominatimAddress {
   state?: string;
   province?: string;
   country?: string;
+  /** ISO 3166-1 alpha-2, lowercase — locale-independent, unlike `country`. */
+  country_code?: string;
 }
 
 interface NominatimResult {
@@ -26,6 +28,12 @@ export interface LocationResult {
   city: string;
   state: string;
   country: string;
+  /**
+   * ISO 3166-1 alpha-2 country code (lowercase), when the geocoder provided
+   * one. Nominatim localizes the `country` display name to the browser's
+   * Accept-Language, so coverage gating must prefer this field.
+   */
+  countryCode?: string;
   /** True when this result came from a ZIP/postal-code query. */
   isZip?: boolean;
 }
@@ -79,6 +87,7 @@ export function getChicagoFallback(): LocationResult {
     city: "Chicago",
     state: "Illinois",
     country: "United States",
+    countryCode: "us",
     isZip: false,
   };
 }
@@ -201,6 +210,7 @@ export async function reverseGeocode(
       "";
     const state = address.state || address.province || "";
     const country = address.country || "";
+    const countryCode = address.country_code || "";
 
     // Format display name based on location type
     let displayName = "";
@@ -236,6 +246,7 @@ export async function reverseGeocode(
       city,
       state,
       country,
+      countryCode,
       isZip: false,
     };
   } catch (error) {
@@ -247,6 +258,7 @@ export async function reverseGeocode(
       city: "",
       state: "",
       country: "",
+      countryCode: "",
       isZip: false,
     };
   }
@@ -310,6 +322,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       "";
     const state = address.state || address.province || "";
     const country = address.country || "";
+    const countryCode = address.country_code || "";
 
     // Format display name based on location type - same logic as reverse geocoding
     let displayName = "";
@@ -348,6 +361,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       city,
       state,
       country,
+      countryCode,
       isZip: isZipCode(originalQuery),
     };
   } catch (error) {
@@ -416,6 +430,7 @@ export async function geocodeLocationMultiple(
         "";
       const state = address.state || address.province || "";
       const country = address.country || "";
+      const countryCode = address.country_code || "";
 
       // Format full display name with complete context
       let displayName = "";
@@ -442,6 +457,7 @@ export async function geocodeLocationMultiple(
         city,
         state,
         country,
+        countryCode,
         isZip: isZipCode(originalQuery),
       };
     });
@@ -505,6 +521,7 @@ export function getSavedLocation(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      countryCode: data.countryCode,
       isZip: data.isZip ?? false,
     };
   } catch {
@@ -536,6 +553,28 @@ export function saveLocationToHistory(locationResult: LocationResult): void {
   } catch (error) {
     console.error("Error saving location history:", error);
   }
+}
+
+/**
+ * Removes one entry from the recents list in BOTH storage layers. Writing
+ * only localStorage left the cookie copy intact, and since reads prefer the
+ * cookie under granted consent, removed entries silently reappeared.
+ */
+export function removeLocationFromHistory(displayName: string): LocationResult[] {
+  const updated = getLocationHistory().filter((loc) => loc.displayName !== displayName);
+  const json = JSON.stringify(updated);
+
+  try {
+    localStorage.setItem("eazyweather_location_history", json);
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  if (getCookieConsent() === "granted") {
+    setCookie("eazyweather_location_history", json, STORAGE_EXPIRATION_DAYS);
+  }
+
+  return updated;
 }
 
 export function getLocationHistory(): LocationResult[] {
@@ -602,6 +641,7 @@ export function getManualPin(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      countryCode: data.countryCode,
       isZip: data.isZip ?? false,
     };
   } catch {

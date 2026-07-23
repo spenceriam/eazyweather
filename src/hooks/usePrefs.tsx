@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  eraseCookie,
   getCookieConsent,
   readPrefsBlob,
   setCookieConsent,
@@ -42,6 +43,27 @@ interface StoredPrefs {
   hiddenAlertIds: string[];
 }
 
+/**
+ * Merges a stored layout with the defaults key-by-key so a future release
+ * that adds a new CardId doesn't strand returning users: without this, a
+ * stored `order` array from an older version would never include the new
+ * card (it could neither render nor be added) and its span/visibility
+ * lookups would be undefined.
+ */
+function normalizeLayout(stored: Partial<CardLayout> | undefined): CardLayout {
+  if (!stored) return DEFAULT_CARD_LAYOUT;
+  const knownOrder = (stored.order ?? []).filter((id) => DEFAULT_CARD_LAYOUT.order.includes(id));
+  const missing = DEFAULT_CARD_LAYOUT.order.filter((id) => !knownOrder.includes(id));
+  return {
+    order: [...knownOrder, ...missing],
+    visible: { ...DEFAULT_CARD_LAYOUT.visible, ...(stored.visible ?? {}) },
+    spans: { ...DEFAULT_CARD_LAYOUT.spans, ...(stored.spans ?? {}) },
+    columns: stored.columns ?? DEFAULT_CARD_LAYOUT.columns,
+    hourlyVariant: stored.hourlyVariant ?? DEFAULT_CARD_LAYOUT.hourlyVariant,
+    sevenDayVariant: stored.sevenDayVariant ?? DEFAULT_CARD_LAYOUT.sevenDayVariant,
+  };
+}
+
 function readStoredPrefs(): StoredPrefs | null {
   try {
     const raw = readPrefsBlob(PREFS_KEY);
@@ -52,7 +74,7 @@ function readStoredPrefs(): StoredPrefs | null {
       v: PREFS_VERSION,
       theme: parsed.theme ?? "system",
       timezone: parsed.timezone ?? getInitialTimezone(),
-      layout: parsed.layout ?? DEFAULT_CARD_LAYOUT,
+      layout: normalizeLayout(parsed.layout),
       radarLoop: parsed.radarLoop ?? true,
       hiddenAlertIds: parsed.hiddenAlertIds ?? [],
     };
@@ -194,6 +216,14 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
 
   const setConsent = useCallback((granted: boolean) => {
     setCookieConsent(granted);
+    if (!granted) {
+      // Revoking (or declining after a granted period) must clear every
+      // cookie previously written under consent, not just the prefs blob —
+      // the location cookies otherwise linger for up to 180 days.
+      eraseCookie("eazyweather_location");
+      eraseCookie("eazyweather_location_history");
+      eraseCookie("eazyweather_manual_pin");
+    }
     const next: "granted" | "denied" = granted ? "granted" : "denied";
     consentRef.current = next;
     setConsentState(next);

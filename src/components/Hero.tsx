@@ -105,7 +105,7 @@ export function Hero({ currentConditions, isDaytime, timezone, coverageGap = fal
   let label = "No forecast yet";
   let sub = "This region isn't covered by our current data source — radar below still works";
 
-  if (!coverageGap && currentConditions) {
+  if (!coverageGap && currentConditions && currentConditions.temperature != null) {
     const unit = currentConditions.temperatureUnit;
     tempText = String(Math.round(toFahrenheit(currentConditions.temperature, unit)));
     label =
@@ -131,7 +131,9 @@ export function Hero({ currentConditions, isDaytime, timezone, coverageGap = fal
       parts.push(tail);
     }
     sub = parts.join(" · ");
-  } else if (!coverageGap && !currentConditions) {
+  } else if (!coverageGap) {
+    // No conditions at all, or a QC-failed null temperature — either way,
+    // never fabricate a number.
     label = "Weather unavailable";
     sub = "Current conditions couldn't be loaded — forecast cards below may still work";
   }

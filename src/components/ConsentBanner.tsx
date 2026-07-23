@@ -55,14 +55,17 @@ export function ConsentBanner({ onAccept, onDecline, onOpenPrivacy }: ConsentBan
         </div>
       </div>
 
-      {/* Mobile bottom sheet */}
-      <div
-        className="md:hidden fixed inset-0 z-[105] flex items-end"
-        style={{ background: "rgba(20,27,32,.45)", backdropFilter: "blur(2px)" }}
-      >
+      {/* Mobile bottom sheet — anchored to the bottom with NO full-screen
+          scrim: consent must never block using the page (the design's scrim
+          variant traded that away; the slim-sheet keeps the visual without
+          trapping the user). */}
+      <div className="md:hidden fixed left-0 right-0 bottom-0 z-[105]">
         <div
           className="w-full bg-surface border-t border-panelbrd rounded-t-card px-5 pt-2.5"
-          style={{ paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))" }}
+          style={{
+            paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))",
+            boxShadow: "0 -6px 24px rgba(0,0,0,.18)",
+          }}
         >
           <div className="w-9 h-1 rounded-full bg-barbg mx-auto mb-3.5" />
           <div className="flex items-center gap-2.5">

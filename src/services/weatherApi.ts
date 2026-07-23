@@ -150,6 +150,15 @@ async function fetchWithUserAgent(
       timestamp: now,
       promise,
     });
+    // A rejected promise must not stay cached: leaving the placeholder in
+    // place handed the same rejection to every later caller (including the
+    // UI's Retry button) until a full page reload.
+    promise.then(undefined, () => {
+      const cached = requestCache.get(cacheKey);
+      if (cached?.promise === promise) {
+        requestCache.delete(cacheKey);
+      }
+    });
   }
 
   return promise;
@@ -280,10 +289,10 @@ export async function getCurrentConditions(
     }
 
     return {
-      temperature: props.temperature.value,
+      temperature: props.temperature?.value ?? null,
       temperatureUnit:
         props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
-      relativeHumidity: props.relativeHumidity.value,
+      relativeHumidity: props.relativeHumidity?.value ?? null,
       windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
       windDirection: props.windDirection.value || 0,
       textDescription: textDescription || "Unknown",
@@ -645,10 +654,10 @@ export async function getAllWeatherData(
         }
 
         current = {
-          temperature: props.temperature.value,
+          temperature: props.temperature?.value ?? null,
           temperatureUnit:
             props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
-          relativeHumidity: props.relativeHumidity.value,
+          relativeHumidity: props.relativeHumidity?.value ?? null,
           windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
           windDirection: props.windDirection.value ?? 0,
           textDescription: textDescription || "Unknown",
@@ -704,7 +713,7 @@ export async function getAllWeatherData(
       if (isToday && firstPeriod.isDaytime) {
         // It's still daytime today - use forecast high
         todayHigh = firstPeriod.temperature;
-      } else if (currentHour >= 6 && currentHour < 20) {
+      } else if (currentHour >= 6 && currentHour < 20 && current.temperature != null) {
         // It's daytime but forecast starts with tonight - use current temp as high
         // Convert to Fahrenheit if needed
         const currentTempF =

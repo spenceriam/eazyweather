@@ -20,16 +20,26 @@ const HOT_HIGH_THRESHOLD = 88;
 
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 
+/** The period's calendar date in its own local offset (startTime carries the NWS offset). */
+function periodDateKey(startTime: string): string {
+  // e.g. "2026-07-23T18:00:00-05:00" — the leading date segment is already
+  // location-local, so no timezone math is needed.
+  return startTime.slice(0, 10);
+}
+
 /**
  * Groups the flat 14-period NWS forecast array into up to 7 calendar-day
  * rows, pairing each daytime period with the night period immediately
  * following it. A lone leading night-only period (the array occasionally
  * starts with "Tonight" for late-day fetches) is skipped since it has no
  * daytime partner to anchor a row. Labels follow the design's daysRaw:
- * "Today" first, then short weekday names ("Tue", "Wed", ...).
+ * "Today" first, then short weekday names ("Tue", "Wed", ...) — but "Today"
+ * is only used when the first day row really is today: on an evening fetch
+ * NWS starts with "Tonight", making the first full day row tomorrow.
  */
 function buildDayRows(forecast: ForecastPeriod[]): DayRow[] {
   const rows: DayRow[] = [];
+  const todayKey = forecast.length > 0 ? periodDateKey(forecast[0].startTime) : "";
 
   for (let i = 0; i < forecast.length && rows.length < 7; i++) {
     const period = forecast[i];
@@ -39,7 +49,7 @@ function buildDayRows(forecast: ForecastPeriod[]): DayRow[] {
     const night = next && !next.isDaytime ? next : null;
 
     let label: string;
-    if (rows.length === 0) {
+    if (rows.length === 0 && periodDateKey(period.startTime) === todayKey) {
       label = "Today";
     } else {
       const parsed = new Date(period.startTime);

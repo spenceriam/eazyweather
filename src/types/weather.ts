@@ -16,9 +16,11 @@ export interface WeatherPoint {
 }
 
 export interface CurrentConditions {
-  temperature: number;
+  /** Null when the station observation failed QC — never coerce to 0. */
+  temperature: number | null;
   temperatureUnit: string;
-  relativeHumidity: number;
+  /** Null when the station observation failed QC — never coerce to 0. */
+  relativeHumidity: number | null;
   windSpeedValue?: number;
   windDirection: number;
   textDescription: string;

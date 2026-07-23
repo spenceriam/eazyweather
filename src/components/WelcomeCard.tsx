@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   geocodeLocationMultiple,
   getZipFormatError,
   type LocationResult,
 } from "../services/locationService";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface WelcomeCardProps {
   /** remember reflects the card's "Remember my location on this device" toggle. */
@@ -36,13 +38,18 @@ export function WelcomeCard({ onLocationSelect, onRequestGps, onSkip }: WelcomeC
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<LocationResult[]>([]);
   const [remember, setRemember] = useState(true);
+  const requestIdRef = useRef(0);
 
-  async function handleQueryChange(value: string) {
-    setQuery(value);
+  // Debounced search-as-you-type with a request-id guard, mirroring
+  // LocationPanel — per-keystroke fetches both violate Nominatim's 1 req/s
+  // policy and let a slow early response clobber a newer one.
+  useEffect(() => {
+    const trimmed = query.trim();
     setError(null);
-    const trimmed = value.trim();
+
     if (trimmed.length < 2) {
       setResults([]);
+      setIsSearching(false);
       return;
     }
 
@@ -50,25 +57,35 @@ export function WelcomeCard({ onLocationSelect, onRequestGps, onSkip }: WelcomeC
     if (zipError) {
       setError(zipError);
       setResults([]);
+      setIsSearching(false);
       return;
     }
 
-    setIsSearching(true);
-    try {
-      const found = await geocodeLocationMultiple(trimmed);
-      if (found.length === 0) {
+    const timeoutId = setTimeout(async () => {
+      const requestId = ++requestIdRef.current;
+      setIsSearching(true);
+      try {
+        const found = await geocodeLocationMultiple(trimmed);
+        if (requestId !== requestIdRef.current) return;
+        if (found.length === 0) {
+          setError("No matches — try a ZIP code or “city, state”.");
+          setResults([]);
+        } else {
+          setResults(found.slice(0, 5));
+        }
+      } catch {
+        if (requestId !== requestIdRef.current) return;
         setError("No matches — try a ZIP code or “city, state”.");
         setResults([]);
-      } else {
-        setResults(found.slice(0, 5));
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsSearching(false);
+        }
       }
-    } catch {
-      setError("No matches — try a ZIP code or “city, state”.");
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
 
   return (
     <div
@@ -80,8 +97,8 @@ export function WelcomeCard({ onLocationSelect, onRequestGps, onSkip }: WelcomeC
         style={{ boxShadow: "0 24px 60px rgba(0,0,0,.4)" }}
       >
         <div className="pt-[22px] px-6 flex items-center gap-3.5">
-          <img src="/mark_black.png" alt="Zae" className="h-[46px] w-auto dark:hidden" />
-          <img src="/mark_white.png" alt="Zae" className="h-[46px] w-auto hidden dark:block" />
+          <img src="/mark_black.png" alt="" className="h-[46px] w-auto dark:hidden" />
+          <img src="/mark_white.png" alt="" className="h-[46px] w-auto hidden dark:block" />
           <div>
             <div className="text-[17px] font-bold text-ink">Welcome to EazyWeather</div>
             <div className="text-[12.5px] text-mut2 mt-0.5">Set your location to personalize your forecast.</div>
@@ -97,7 +114,7 @@ export function WelcomeCard({ onLocationSelect, onRequestGps, onSkip }: WelcomeC
             <input
               type="text"
               value={query}
-              onChange={(e) => void handleQueryChange(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder={'City, state, or ZIP — “Austin, TX” or 78701'}
               className="w-full box-border h-11 border-[1.5px] border-panelbrd rounded-control pl-[38px] pr-3 text-[13.5px] text-ink2 bg-surface outline-none placeholder:text-mut"
               autoFocus

@@ -166,6 +166,11 @@ export function CardGrid({ data, editing, onDoneEditing }: CardGridProps) {
             onDragStart={() => {
               dragIdRef.current = id;
             }}
+            onDragEnd={() => {
+              // Clears cancelled drags (Esc / dropped outside the grid) so a
+              // later foreign drop can't replay a stale reorder.
+              dragIdRef.current = null;
+            }}
             onDragOver={(e) => {
               if (editing) e.preventDefault();
             }}

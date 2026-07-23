@@ -4,6 +4,7 @@ import {
   getZipFormatError,
   saveLocationToHistory,
   getLocationHistory,
+  removeLocationFromHistory,
   clearManualPin,
   hasManualPin,
   type LocationResult,
@@ -64,20 +65,21 @@ export function LocationPanel({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // Close on outside click (small delay so the click that opened the panel
-  // doesn't immediately close it again).
+  // Close on outside press. mousedown (not click) so a text-selection drag
+  // that starts inside the search input and releases outside the panel
+  // doesn't count as an outside click and slam the panel shut.
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handlePressOutside(event: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         onClose();
       }
     }
     const timeoutId = setTimeout(() => {
-      document.addEventListener("click", handleClickOutside);
+      document.addEventListener("mousedown", handlePressOutside);
     }, 0);
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("mousedown", handlePressOutside);
     };
   }, [onClose]);
 
@@ -108,6 +110,9 @@ export function LocationPanel({
       if (zipError) {
         setResults([]);
         setSearchError(zipError);
+        // This run supersedes any in-flight request (whose finally can no
+        // longer reset the flag) — clear the spinner here or it sticks.
+        setIsSearching(false);
         return;
       }
     }
@@ -144,9 +149,7 @@ export function LocationPanel({
 
   function removeHistoryEntry(entry: LocationResult, event: React.MouseEvent) {
     event.stopPropagation();
-    const updated = history.filter((loc) => loc.displayName !== entry.displayName);
-    setHistory(updated);
-    localStorage.setItem("eazyweather_location_history", JSON.stringify(updated));
+    setHistory(removeLocationFromHistory(entry.displayName));
   }
 
   function handleClearPin() {

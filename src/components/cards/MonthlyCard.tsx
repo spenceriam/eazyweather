@@ -68,11 +68,33 @@ export function MonthlyCard({ data }: CardBodyProps) {
   }
 
   // Grid-position math ported from the pre-redesign MonthlyForecast component.
+  // "Today" is computed in the FORECAST LOCATION's timezone, not the
+  // viewer's — a viewer several zones away would otherwise see the today
+  // ring on the wrong cell for part of each day.
   const startDay = new Date(forecast.year, forecast.month, 1).getDay();
-  const today = new Date();
-  const isCurrentMonth =
-    today.getMonth() === forecast.month && today.getFullYear() === forecast.year;
-  const todayDate = isCurrentMonth ? today.getDate() : null;
+  let todayYear: number;
+  let todayMonth: number; // 0-indexed to match forecast.month
+  let todayDay: number;
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: data.timezone || undefined,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .format(new Date())
+      .split("-");
+    todayYear = Number(parts[0]);
+    todayMonth = Number(parts[1]) - 1;
+    todayDay = Number(parts[2]);
+  } catch {
+    const now = new Date();
+    todayYear = now.getFullYear();
+    todayMonth = now.getMonth();
+    todayDay = now.getDate();
+  }
+  const isCurrentMonth = todayMonth === forecast.month && todayYear === forecast.year;
+  const todayDate = isCurrentMonth ? todayDay : null;
 
   const allCells: CalendarCell[] = [
     ...Array.from({ length: startDay }, (_, index): CalendarCell => ({

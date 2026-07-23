@@ -39,6 +39,8 @@ export function DetailsCard({ data }: CardBodyProps) {
     );
   }
 
+  // QC-failed station fields arrive as null — rows are omitted rather than
+  // rendering fabricated zeros.
   const stats: StatEntry[] = [
     {
       label: "Wind",
@@ -47,13 +49,13 @@ export function DetailsCard({ data }: CardBodyProps) {
         degreesToAbbreviatedDirection(current.windDirection),
       ),
     },
-    {
-      label: "Humidity",
-      value: `${Math.round(current.relativeHumidity)}%`,
-    },
   ];
 
-  if (current.dewpoint !== undefined) {
+  if (current.relativeHumidity != null) {
+    stats.push({ label: "Humidity", value: `${Math.round(current.relativeHumidity)}%` });
+  }
+
+  if (current.dewpoint != null) {
     // NWS observations report dew point in Celsius; convert before display.
     stats.push({
       label: "Dew point",
@@ -61,7 +63,7 @@ export function DetailsCard({ data }: CardBodyProps) {
     });
   }
 
-  if (current.pressureInHg !== undefined) {
+  if (current.pressureInHg != null) {
     stats.push({ label: "Pressure", value: `${current.pressureInHg.toFixed(2)} in` });
   }
 

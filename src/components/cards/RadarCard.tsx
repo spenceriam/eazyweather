@@ -55,6 +55,14 @@ export function RadarCard({ data }: CardBodyProps) {
     mapRef.invalidateSize();
   }, [mapRef]);
 
+  // react-leaflet's `center` prop is creation-time only, and this card never
+  // remounts (CardGrid keys it by stable id) — recenter imperatively when the
+  // user picks a new location.
+  useEffect(() => {
+    if (!mapRef) return;
+    mapRef.setView([coords.latitude, coords.longitude], mapRef.getZoom(), { animate: false });
+  }, [mapRef, coords.latitude, coords.longitude]);
+
   useEffect(() => {
     const el = mapWrapperRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -92,6 +100,16 @@ export function RadarCard({ data }: CardBodyProps) {
 
   const observedTint = isDark ? "rgba(127,178,217,.3)" : "rgba(62,113,143,.24)";
   const forecastHatchColor = isDark ? "rgba(127,178,217,.35)" : "rgba(74,123,166,.28)";
+
+  // The header's "Updated N min ago" is pinned to the newest OBSERVED frame —
+  // deriving it from the animated frame made the label churn every tick and
+  // go negative on forecast frames.
+  const newestObservedAgeMinutes = useMemo(() => {
+    const observed = frames.filter((f) => !f.isForecast);
+    if (observed.length === 0) return 0;
+    const newest = observed[observed.length - 1].time;
+    return Math.max(0, Math.round((Date.now() / 1000 - newest) / 60));
+  }, [frames]);
 
   // Frame chip (design: rdFrameChip). "NOW" is the newest observed frame.
   const currentFrame = radar.activeFrame;
@@ -154,7 +172,7 @@ export function RadarCard({ data }: CardBodyProps) {
         <span className="font-serif text-base font-semibold text-ink2">Radar</span>
         <span className="flex items-center gap-2">
           <span className="text-[11px] text-mut">
-            {frameCount > 0 ? `Updated ${radar.ageMinutes} min ago` : "Radar frames load here"}
+            {frameCount > 0 ? `Updated ${newestObservedAgeMinutes} min ago` : "Radar frames load here"}
           </span>
           {frameCount > 0 && <span className="text-[11px] font-bold text-link">LIVE</span>}
         </span>
@@ -176,13 +194,17 @@ export function RadarCard({ data }: CardBodyProps) {
           zoomControl={false}
         >
           <TileLayer attribution={CARTO_ATTRIBUTION} url={basemapUrl} />
-          {radar.activeFrame && (
+          {/* All frame layers stay mounted with only the active one visible —
+              remounting a single keyed layer each 900ms tick blanked the
+              overlay while the next frame's tiles loaded. Inactive layers keep
+              their tiles cached, so the loop plays without flicker. */}
+          {frames.map((frame, index) => (
             <TileLayer
-              key={radar.activeFrame.url}
-              url={radar.activeFrame.url}
-              opacity={radarOpacity}
+              key={frame.url}
+              url={frame.url}
+              opacity={index === radar.activeIndex ? radarOpacity : 0}
             />
-          )}
+          ))}
           <Marker position={[coords.latitude, coords.longitude]} icon={locationIcon} />
         </MapContainer>
       </div>
