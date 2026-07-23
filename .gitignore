@@ -21,3 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Local design spec handoff package (not part of the repo)
+EazyWeather UI polish/
