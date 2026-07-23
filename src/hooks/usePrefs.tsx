@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -103,6 +104,12 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [consent, setConsentState] = useState<"granted" | "denied" | "unset">(
     () => getCookieConsent() ?? "unset",
   );
+  // Mirrors `consent` synchronously so a setter that fires in the same tick
+  // as setConsent() (before React re-renders) reads the up-to-date value
+  // instead of the stale one captured in its closure.
+  const consentRef = useRef(consent);
+  consentRef.current = consent;
+
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() =>
     resolveThemeMode(stored.theme),
   );
@@ -121,69 +128,80 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     return () => mediaQuery.removeEventListener("change", apply);
   }, [stored.theme]);
 
-  const persist = useCallback(
-    (next: StoredPrefs) => {
-      setStored(next);
-      writeStoredPrefs(next, consent === "granted");
-      // Keep legacy keys in sync in case any not-yet-migrated code path reads them.
+  // Every setter goes through this so concurrent calls in the same tick
+  // (before React re-renders) always compute from the latest state instead
+  // of a stale closure — React's functional setState guarantees `prev` is
+  // current even across a batch of several setState calls.
+  const persistWith = useCallback((updater: (prev: StoredPrefs) => StoredPrefs) => {
+    setStored((prev) => {
+      const next = updater(prev);
+      if (next === prev) return prev; // updater declined to change anything
+      writeStoredPrefs(next, consentRef.current === "granted");
       persistThemeModeLegacy(next.theme);
       persistTimezoneLegacy(next.timezone);
-    },
-    [consent],
-  );
+      return next;
+    });
+  }, []);
 
   const setTheme = useCallback(
-    (mode: ThemeMode) => persist({ ...stored, theme: mode }),
-    [stored, persist],
+    (mode: ThemeMode) => persistWith((prev) => ({ ...prev, theme: mode })),
+    [persistWith],
   );
 
   const setTimezone = useCallback(
-    (tz: string) => persist({ ...stored, timezone: tz }),
-    [stored, persist],
+    (tz: string) => persistWith((prev) => ({ ...prev, timezone: tz })),
+    [persistWith],
   );
 
   const setLayout = useCallback(
     (updater: CardLayout | ((prev: CardLayout) => CardLayout)) => {
-      const nextLayout =
-        typeof updater === "function" ? updater(stored.layout) : updater;
-      persist({ ...stored, layout: nextLayout });
+      persistWith((prev) => ({
+        ...prev,
+        layout: typeof updater === "function" ? updater(prev.layout) : updater,
+      }));
     },
-    [stored, persist],
+    [persistWith],
   );
 
   const setRadarLoop = useCallback(
-    (enabled: boolean) => persist({ ...stored, radarLoop: enabled }),
-    [stored, persist],
+    (enabled: boolean) => persistWith((prev) => ({ ...prev, radarLoop: enabled })),
+    [persistWith],
   );
 
   const hideAlert = useCallback(
     (id: string) => {
-      if (stored.hiddenAlertIds.includes(id)) return;
-      persist({ ...stored, hiddenAlertIds: [...stored.hiddenAlertIds, id] });
+      persistWith((prev) =>
+        prev.hiddenAlertIds.includes(id)
+          ? prev
+          : { ...prev, hiddenAlertIds: [...prev.hiddenAlertIds, id] },
+      );
     },
-    [stored, persist],
+    [persistWith],
   );
 
   const pruneAlerts = useCallback(
     (activeIds: string[]) => {
-      const activeSet = new Set(activeIds);
-      const pruned = stored.hiddenAlertIds.filter((id) => activeSet.has(id));
-      if (pruned.length !== stored.hiddenAlertIds.length) {
-        persist({ ...stored, hiddenAlertIds: pruned });
-      }
+      persistWith((prev) => {
+        const activeSet = new Set(activeIds);
+        const pruned = prev.hiddenAlertIds.filter((id) => activeSet.has(id));
+        return pruned.length !== prev.hiddenAlertIds.length
+          ? { ...prev, hiddenAlertIds: pruned }
+          : prev;
+      });
     },
-    [stored, persist],
+    [persistWith],
   );
 
-  const setConsent = useCallback(
-    (granted: boolean) => {
-      setCookieConsent(granted);
-      const next: "granted" | "denied" = granted ? "granted" : "denied";
-      setConsentState(next);
-      writeStoredPrefs(stored, granted);
-    },
-    [stored],
-  );
+  const setConsent = useCallback((granted: boolean) => {
+    setCookieConsent(granted);
+    const next: "granted" | "denied" = granted ? "granted" : "denied";
+    consentRef.current = next;
+    setConsentState(next);
+    setStored((prev) => {
+      writeStoredPrefs(prev, granted);
+      return prev;
+    });
+  }, []);
 
   const prefs: Prefs = useMemo(
     () => ({

@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { usePrefs } from "../../hooks/usePrefs";
 import type { CardDataBag } from "../../types/cardData";
-import type { CardId } from "../../types/prefs";
+import type { CardId, CardLayout } from "../../types/prefs";
 import { CARD_REGISTRY } from "./registry";
 import { CardChrome } from "./CardChrome";
 import { CardCatalog } from "./CardCatalog";
+import {
+  reorderCards,
+  setCardVisibility,
+  setColumnCount,
+  setHourlyVariant,
+  setSevenDayVariant,
+  toggleCardSpan,
+} from "./cardLayoutReducer";
 
 interface CardGridProps {
   data: CardDataBag;
@@ -26,45 +34,31 @@ export function CardGrid({ data, editing, onDoneEditing }: CardGridProps) {
   });
 
   function moveCard(sourceId: CardId, targetId: CardId) {
-    if (sourceId === targetId) return;
-    setLayout((prev) => {
-      const order = [...prev.order];
-      const from = order.indexOf(sourceId);
-      const to = order.indexOf(targetId);
-      if (from === -1 || to === -1) return prev;
-      order.splice(from, 1);
-      order.splice(to, 0, sourceId);
-      return { ...prev, order };
-    });
+    setLayout((prev) => reorderCards(prev, sourceId, targetId));
   }
 
   function toggleSpan(id: CardId) {
-    setLayout((prev) => ({
-      ...prev,
-      spans: { ...prev.spans, [id]: prev.spans[id] === "full" ? 1 : "full" },
-    }));
+    setLayout((prev) => toggleCardSpan(prev, id));
   }
 
   function removeCard(id: CardId) {
-    setLayout((prev) => ({
-      ...prev,
-      visible: { ...prev.visible, [id]: false },
-    }));
+    setLayout((prev) => setCardVisibility(prev, id, false));
   }
 
   function addCard(id: CardId) {
-    setLayout((prev) => ({
-      ...prev,
-      visible: { ...prev.visible, [id]: true },
-    }));
+    setLayout((prev) => setCardVisibility(prev, id, true));
   }
 
   function setColumns(columns: 1 | 2 | 3) {
-    setLayout((prev) => ({ ...prev, columns }));
+    setLayout((prev) => setColumnCount(prev, columns));
   }
 
   function setVariant(variantKey: "hourlyVariant" | "sevenDayVariant", value: string) {
-    setLayout((prev) => ({ ...prev, [variantKey]: value }));
+    setLayout((prev) =>
+      variantKey === "hourlyVariant"
+        ? setHourlyVariant(prev, value as CardLayout["hourlyVariant"])
+        : setSevenDayVariant(prev, value as CardLayout["sevenDayVariant"]),
+    );
   }
 
   return (

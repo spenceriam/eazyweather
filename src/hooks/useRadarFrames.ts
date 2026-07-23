@@ -13,7 +13,7 @@ interface RainViewerFrame {
   time?: number;
 }
 
-interface RainViewerResponse {
+export interface RainViewerResponse {
   host?: string;
   radar?: {
     past?: RainViewerFrame[];
@@ -25,7 +25,7 @@ const RAINVIEWER_URL = "https://api.rainviewer.com/public/weather-maps.json";
 const PAST_FRAME_COUNT = 7;
 const LOOP_INTERVAL_MS = 450;
 
-function buildFrames(data: RainViewerResponse): RadarFrame[] {
+export function buildFrames(data: RainViewerResponse): RadarFrame[] {
   const host = data.host || "https://tilecache.rainviewer.com";
   const past = Array.isArray(data.radar?.past) ? data.radar!.past! : [];
   const nowcast = Array.isArray(data.radar?.nowcast) ? data.radar!.nowcast! : [];
