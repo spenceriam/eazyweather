@@ -4,60 +4,93 @@ interface ConsentBannerProps {
   onOpenPrivacy: () => void;
 }
 
-function BittenCookieIcon() {
+function CookieIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width={28} height={28} viewBox="0 0 24 24" aria-hidden="true" className="flex-shrink-0">
-      <path
-        d="M12 2c5.2 0 9.4 3.9 9.9 8.9a2 2 0 0 1-2.5 2.1 2.4 2.4 0 0 0-2.9 2.6 2 2 0 0 1-2.7 2.1A10 10 0 0 1 12 22C6.5 22 2 17.5 2 12S6.5 2 12 2Z"
-        fill="#D9A066"
-        stroke="#8C5A2B"
-        strokeWidth={1.2}
-        strokeLinejoin="round"
-      />
-      <circle cx={9} cy={9} r={1} fill="#6B3F1D" />
-      <circle cx={13.5} cy={7.5} r={1} fill="#6B3F1D" />
-      <circle cx={8.5} cy={14} r={1} fill="#6B3F1D" />
-      <circle cx={11.5} cy={16.5} r={1} fill="#6B3F1D" />
-      <circle cx={15.5} cy={12.5} r={1} fill="#6B3F1D" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--soft)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
+      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5Z" />
+      <circle cx={8.5} cy={8.5} r={0.8} fill="var(--soft)" stroke="none" />
+      <circle cx={16} cy={15.5} r={0.8} fill="var(--soft)" stroke="none" />
+      <circle cx={8.5} cy={15} r={0.8} fill="var(--soft)" stroke="none" />
+      <circle cx={12} cy={12} r={0.8} fill="var(--soft)" stroke="none" />
     </svg>
   );
 }
 
 /**
- * Non-blocking consent surface (F12): slim banner on desktop, bottom sheet
- * on mobile. Appears alongside/after the WelcomeCard and never blocks
- * interaction with the page behind it.
+ * Cookie banner per the design: a slim fixed bar on desktop, a bottom sheet
+ * with scrim on mobile. z-[105] sits above the page chrome (Leaflet maps are
+ * isolated in their own stacking contexts, so nothing scrolls over this).
  */
 export function ConsentBanner({ onAccept, onDecline, onOpenPrivacy }: ConsentBannerProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-line bg-surface shadow-card">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3">
-        <div className="flex items-center gap-3 flex-1 text-center sm:text-left">
-          <BittenCookieIcon />
-          <p className="text-sm text-ink">
-            Your location stays on this device.{" "}
-            <button type="button" onClick={onOpenPrivacy} className="text-link hover:underline">
+    <>
+      {/* Desktop banner */}
+      <div
+        className="hidden md:block fixed left-0 right-0 bottom-0 z-[105] bg-surface border-t border-panelbrd"
+        style={{ boxShadow: "0 -6px 24px rgba(0,0,0,.12)" }}
+      >
+        <div className="max-w-[1264px] mx-auto px-12 py-3 flex items-center gap-3.5">
+          <CookieIcon />
+          <span className="text-[13px] text-ui-body">
+            One cookie remembers your location and settings between visits.{" "}
+            <button type="button" onClick={onOpenPrivacy} className="text-link cursor-pointer">
               Details
             </button>
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+          </span>
+          <div className="flex-1" />
           <button
             type="button"
             onClick={onDecline}
-            className="flex-1 sm:flex-none px-4 py-2 min-h-[44px] sm:min-h-[36px] text-sm font-medium border border-line rounded-control text-ink hover:bg-chip transition-colors"
+            className="h-9 px-4 border border-panelbrd rounded-control bg-surface text-[12.5px] font-semibold text-soft cursor-pointer"
           >
             Decline
           </button>
           <button
             type="button"
             onClick={onAccept}
-            className="flex-1 sm:flex-none px-4 py-2 min-h-[44px] sm:min-h-[36px] text-sm font-semibold bg-brand text-brandink rounded-control hover:bg-brand2 transition-colors"
+            className="h-9 px-[18px] rounded-control bg-brand text-brandink text-[12.5px] font-[650] cursor-pointer hover:bg-brand2 transition-colors"
           >
-            Accept
+            Allow cookies
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Mobile bottom sheet */}
+      <div
+        className="md:hidden fixed inset-0 z-[105] flex items-end"
+        style={{ background: "rgba(20,27,32,.45)", backdropFilter: "blur(2px)" }}
+      >
+        <div
+          className="w-full bg-surface border-t border-panelbrd rounded-t-card px-5 pt-2.5"
+          style={{ paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="w-9 h-1 rounded-full bg-barbg mx-auto mb-3.5" />
+          <div className="flex items-center gap-2.5">
+            <CookieIcon />
+            <span className="text-[15px] font-bold text-ink">Remember this device?</span>
+          </div>
+          <div className="text-[12.5px] leading-relaxed text-soft mt-2 mb-3.5">
+            One cookie keeps your location and settings between visits.{" "}
+            <button type="button" onClick={onOpenPrivacy} className="text-link cursor-pointer">
+              Details
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onAccept}
+            className="w-full h-11 rounded-control bg-brand text-brandink text-sm font-[650] cursor-pointer"
+          >
+            Allow cookies
+          </button>
+          <button
+            type="button"
+            onClick={onDecline}
+            className="w-full h-10 mt-2 rounded-control bg-transparent text-[13px] font-semibold text-soft cursor-pointer"
+          >
+            Decline
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

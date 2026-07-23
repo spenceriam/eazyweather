@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, Crosshair, Loader2, MapPin, Search, X } from "lucide-react";
 import {
   geocodeLocationMultiple,
   getZipFormatError,
@@ -24,7 +23,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 // digits/hyphens only — so we can gate the getZipFormatError() check without
 // duplicating its internals.
 const NUMERIC_LIKE_PATTERN = /^[\d-]+$/;
-const NO_MATCHES_MESSAGE = "No matches — try a ZIP code or a city, state.";
+const NO_MATCHES_MESSAGE = "No matches — try a ZIP code or “city, state”.";
 
 function buildContextLine(location: LocationResult): string {
   const { city, state, country } = location;
@@ -35,6 +34,7 @@ function buildContextLine(location: LocationResult): string {
   return country || state || "";
 }
 
+/** Anchored location panel per the design: search, results, GPS, clear-pin, RECENT. */
 export function LocationPanel({
   onLocationSelect,
   onRequestGps,
@@ -51,13 +51,11 @@ export function LocationPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
-  // Load recent searches + manual-pin state once on mount.
   useEffect(() => {
     setHistory(getLocationHistory());
     setIsPinned(hasManualPin());
   }, []);
 
-  // Escape closes the panel.
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -127,16 +125,10 @@ export function LocationPanel({
       } else {
         setResults(found);
       }
-    } catch (err) {
+    } catch {
       if (requestId !== requestIdRef.current) return;
       setResults([]);
-      setSearchError(
-        looksNumeric
-          ? err instanceof Error
-            ? err.message
-            : "Unable to find that ZIP code."
-          : NO_MATCHES_MESSAGE,
-      );
+      setSearchError(NO_MATCHES_MESSAGE);
     } finally {
       if (requestId === requestIdRef.current) {
         setIsSearching(false);
@@ -147,11 +139,6 @@ export function LocationPanel({
   function handleSelectResult(result: LocationResult) {
     onLocationSelect(result);
     saveLocationToHistory(result);
-    onClose();
-  }
-
-  function handleHistorySelect(entry: LocationResult) {
-    onLocationSelect(entry);
     onClose();
   }
 
@@ -171,118 +158,117 @@ export function LocationPanel({
   return (
     <div
       ref={panelRef}
-      className={`absolute top-full right-0 mt-2 w-full md:w-[420px] max-h-[70vh] overflow-y-auto bg-surface border border-line rounded-card shadow-card z-50 ${className}`}
+      className={`absolute top-[calc(100%+8px)] right-0 max-md:right-auto max-md:left-1/2 max-md:-translate-x-[58%] w-[min(380px,calc(100vw-24px))] bg-surface border border-panelbrd rounded-card z-[60] text-left ${className}`}
+      style={{ boxShadow: "0 14px 34px rgba(0,0,0,.18)" }}
     >
-      <div className="p-4 space-y-4">
-        {/* Search input */}
+      <div className="px-4 pt-3.5 pb-3.5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut pointer-events-none" />
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--mut)" strokeWidth={2.2} strokeLinecap="round" className="absolute left-3 top-1/2 -translate-y-1/2">
+            <circle cx={11} cy={11} r={7} />
+            <line x1={16.5} y1={16.5} x2={21} y2={21} />
+          </svg>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search city, state, or ZIP code"
+            placeholder={'City, state, or ZIP — try “Austin”'}
             autoFocus
             autoComplete="off"
-            className="w-full pl-9 pr-9 py-2.5 text-sm bg-panel border border-line rounded-control text-ink placeholder:text-mut focus:outline-none focus:ring-2 focus:ring-link"
+            className="w-full box-border h-10 border-[1.5px] border-panelbrd rounded-control pl-9 pr-3 text-[13px] text-ink2 bg-surface outline-none placeholder:text-mut"
           />
-          {isSearching ? (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut animate-spin" />
-          ) : query ? (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-mut hover:text-ink"
-              aria-label="Clear search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          ) : null}
         </div>
 
-        {searchError && <p className="text-xs text-warnink">{searchError}</p>}
-
         {results.length > 0 && (
-          <ul className="border border-line rounded-control divide-y divide-hair overflow-hidden max-h-48 overflow-y-auto">
+          <div className="border border-hair rounded-control mt-2 overflow-hidden max-h-56 overflow-y-auto">
             {results.map((result, index) => {
               const context = buildContextLine(result);
               return (
-                <li key={`${result.displayName}-${index}`}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectResult(result)}
-                    className="w-full text-left px-3 py-2 hover:bg-chip transition-colors focus:outline-none focus:bg-chip"
-                  >
-                    <div className="text-sm font-medium text-ink truncate">
-                      {result.displayName}
-                    </div>
-                    {context && <div className="text-xs text-mut truncate">{context}</div>}
-                  </button>
-                </li>
+                <button
+                  key={`${result.displayName}-${index}`}
+                  type="button"
+                  onClick={() => handleSelectResult(result)}
+                  className={`w-full text-left px-3 py-[9px] cursor-pointer hover:bg-panel ${index > 0 ? "border-t border-hair" : ""}`}
+                >
+                  <div className="text-[13px] font-semibold text-ink2 truncate">{result.displayName}</div>
+                  {context && <div className="text-[11px] text-mut mt-px truncate">{context}</div>}
+                </button>
               );
             })}
-          </ul>
+          </div>
         )}
 
-        {/* GPS trigger — actual geolocation request is owned by the caller */}
+        {(searchError || (isSearching && results.length === 0)) && (
+          <div className="mt-2 px-3 py-[9px] border border-dashed border-panelbrd rounded-control text-xs text-mut">
+            {isSearching ? "Searching…" : searchError}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={onRequestGps}
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 text-sm font-semibold bg-brand text-brandink rounded-control hover:bg-brand-dark transition-colors"
+          className="w-full h-10 mt-2.5 flex items-center justify-center gap-2 bg-brand text-brandink rounded-control text-[13px] font-[650] cursor-pointer hover:bg-brand2 transition-colors"
         >
-          <Crosshair className="w-4 h-4" />
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <circle cx={12} cy={12} r={6.5} />
+            <circle cx={12} cy={12} r={1.6} fill="currentColor" stroke="none" />
+            <line x1={12} y1={2.5} x2={12} y2={5.5} />
+            <line x1={12} y1={18.5} x2={12} y2={21.5} />
+            <line x1={2.5} y1={12} x2={5.5} y2={12} />
+            <line x1={18.5} y1={12} x2={21.5} y2={12} />
+          </svg>
           Use my current location
         </button>
 
         {isPinned && (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-control bg-chip">
-            <div className="flex items-center gap-2 text-sm text-ink2 min-w-0">
-              <MapPin className="w-4 h-4 shrink-0" style={{ color: "#E8862E" }} />
-              <span className="truncate">Pinned location active</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleClearPin}
-              className="text-xs font-semibold text-link hover:underline whitespace-nowrap"
-            >
-              Clear pinned location
-            </button>
-          </div>
-        )}
-
-        {history.length > 0 && (
-          <div>
-            <div className="flex items-center gap-1.5 mb-2 text-mut">
-              <Clock className="w-3.5 h-3.5" />
-              <span className="text-xs font-semibold uppercase tracking-[0.06em]">Recent</span>
-            </div>
-            <ul className="space-y-1">
-              {history.map((entry, index) => (
-                <li
-                  key={`${entry.displayName}-${index}`}
-                  className="group flex items-center justify-between gap-1 rounded-control hover:bg-chip transition-colors"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleHistorySelect(entry)}
-                    className="flex-1 min-w-0 text-left px-3 py-2 text-sm text-ink2 truncate"
-                  >
-                    {entry.displayName}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => removeHistoryEntry(entry, e)}
-                    className="p-1.5 mr-1 rounded-control text-mut opacity-0 group-hover:opacity-100 hover:text-warnink transition-all"
-                    aria-label={`Remove ${entry.displayName} from recent searches`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <button
+            type="button"
+            onClick={handleClearPin}
+            className="w-full h-9 mt-2 bg-transparent border border-panelbrd rounded-control text-[12.5px] font-semibold text-soft cursor-pointer hover:bg-panel transition-colors"
+          >
+            Clear manual pin
+          </button>
         )}
       </div>
+
+      {history.length > 0 && (
+        <div className="border-t border-hair px-4 py-2.5">
+          <div className="flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.06em] text-mut mb-0.5">
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+              <circle cx={12} cy={12} r={9} />
+              <path d="M12 7v5l3 2" />
+            </svg>
+            RECENT
+          </div>
+          {history.map((entry, index) => (
+            <div
+              key={`${entry.displayName}-${index}`}
+              className="flex items-center gap-2 px-1 py-1.5 rounded-control hover:bg-panel"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  onLocationSelect(entry);
+                  onClose();
+                }}
+                className="flex-1 min-w-0 text-left text-[13px] text-ink2 truncate cursor-pointer"
+              >
+                {entry.displayName}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => removeHistoryEntry(entry, e)}
+                aria-label={`Remove ${entry.displayName} from recents`}
+                className="w-[22px] h-[22px] flex items-center justify-center rounded-control text-mut hover:text-[#A33B24] cursor-pointer"
+              >
+                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
+                  <line x1={6} y1={6} x2={18} y2={18} />
+                  <line x1={18} y1={6} x2={6} y2={18} />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

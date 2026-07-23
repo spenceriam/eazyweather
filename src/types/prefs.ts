@@ -15,7 +15,7 @@ export type CardId =
   | "wind"
   | "almanac";
 
-export type CardSpan = 1 | "full";
+export type CardSpan = 1 | 2 | "full";
 
 export interface CardLayout {
   order: CardId[];

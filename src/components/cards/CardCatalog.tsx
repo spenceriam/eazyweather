@@ -8,7 +8,11 @@ interface CardCatalogProps {
   onAdd: (id: CardId) => void;
 }
 
-/** Dashed tray of hidden cards, each a real scaled-down live preview (not a schematic). */
+/**
+ * Dashed catalog tray at the bottom of the grid in edit mode (design: 196px
+ * preview tiles with a "+ name" row). Previews are the real card components
+ * scaled down, so they show live data rather than schematics.
+ */
 export function CardCatalog({ data, layout, onAdd }: CardCatalogProps) {
   const hiddenIds = layout.order.filter((id) => {
     const entry = CARD_REGISTRY[id];
@@ -17,44 +21,42 @@ export function CardCatalog({ data, layout, onAdd }: CardCatalogProps) {
     return !layout.visible[id];
   });
 
-  if (hiddenIds.length === 0) {
-    return (
-      <div className="mt-6 border border-dashed border-line rounded-card p-4 text-center text-sm text-mut">
-        All available cards are on your dashboard.
-      </div>
-    );
-  }
+  if (hiddenIds.length === 0) return null;
 
   return (
-    <div className="mt-6 border border-dashed border-line rounded-card p-4">
-      <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-mut mb-3">
-        Card catalog
-      </div>
-      <div className="flex flex-wrap gap-4">
+    <div
+      className="border-[1.5px] border-dashed border-panelbrd rounded-card px-[18px] pt-3.5 pb-4"
+      style={{ gridColumn: "1 / -1", order: 99 }}
+    >
+      <div className="text-xs font-[650] text-mut2">Card catalog</div>
+      <div className="flex flex-wrap gap-3 mt-2.5">
         {hiddenIds.map((id) => {
           const entry = CARD_REGISTRY[id];
           const Component = entry.Component;
           return (
-            <div key={id} className="w-[220px]">
-              <div className="relative h-[96px] overflow-hidden rounded-card border border-line bg-panel">
+            <button
+              key={id}
+              type="button"
+              onClick={() => onAdd(id)}
+              aria-label={`Add ${entry.label} card`}
+              className="w-[196px] text-left cursor-pointer border border-panelbrd rounded-control bg-surface overflow-hidden hover:border-[#8FA9B8] hover:shadow-[0_2px_8px_rgba(0,0,0,.08)] transition-shadow"
+            >
+              <div className="relative h-24 bg-panel overflow-hidden pointer-events-none">
                 <div
-                  className="absolute top-0 left-0 origin-top-left pointer-events-none"
-                  style={{ width: "182%", height: "182%", transform: "scale(0.55)" }}
+                  className="absolute top-0 left-0 origin-top-left"
+                  style={{ width: "200%", height: "200%", transform: "scale(0.5)" }}
                 >
                   <Component data={data} />
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-xs font-medium text-ink">{entry.label}</span>
-                <button
-                  type="button"
-                  onClick={() => onAdd(id)}
-                  className="text-xs font-semibold text-link hover:underline"
-                >
-                  Add
-                </button>
+              <div className="flex items-center gap-1.5 px-2.5 py-2 border-t border-hair">
+                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="var(--link)" strokeWidth={2.6} strokeLinecap="round" aria-hidden="true">
+                  <line x1={12} y1={5} x2={12} y2={19} />
+                  <line x1={5} y1={12} x2={19} y2={12} />
+                </svg>
+                <span className="text-xs font-semibold text-ink2">{entry.label}</span>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

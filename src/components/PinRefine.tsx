@@ -121,7 +121,7 @@ export function PinRefine({ initialCoordinates, onConfirm, onCancel }: PinRefine
         Drag the pin or tap the map to set your exact location.
       </p>
 
-      <div className="relative w-full h-[280px] sm:h-[340px] rounded-card overflow-hidden border border-line">
+      <div className="relative isolate w-full h-[280px] sm:h-[340px] rounded-card overflow-hidden border border-line">
         <MapContainer
           center={[position.lat, position.lng]}
           zoom={15}

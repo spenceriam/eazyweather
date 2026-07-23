@@ -23,7 +23,7 @@ export interface RainViewerResponse {
 
 const RAINVIEWER_URL = "https://api.rainviewer.com/public/weather-maps.json";
 const PAST_FRAME_COUNT = 7;
-const LOOP_INTERVAL_MS = 450;
+const LOOP_INTERVAL_MS = 900;
 
 export function buildFrames(data: RainViewerResponse): RadarFrame[] {
   const host = data.host || "https://tilecache.rainviewer.com";
@@ -74,9 +74,7 @@ export interface UseRadarFramesResult {
  * user's radarLoop preference) and the OS prefers-reduced-motion setting.
  *
  * Tile prefetching for the current map viewport is the caller's
- * responsibility (this hook has no knowledge of the Leaflet viewport) —
- * RadarCard/RadarFullscreen should preload a few frames ahead at the
- * current z/x/y before starting playback to avoid flicker.
+ * responsibility (this hook has no knowledge of the Leaflet viewport).
  */
 export function useRadarFrames(autoplay: boolean): UseRadarFramesResult {
   const [frames, setFrames] = useState<RadarFrame[]>([]);

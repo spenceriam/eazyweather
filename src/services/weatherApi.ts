@@ -54,10 +54,14 @@ async function fetchWithUserAgent(
   const cacheKey = url;
   const now = Date.now();
 
-  // Check cache first (unless explicitly skipped)
+  // Check cache first (unless explicitly skipped). A cache entry with null
+  // data is an in-flight placeholder (its promise is still pending) — fall
+  // through to the promise check below instead of returning null, which
+  // previously made concurrent duplicate calls resolve to null and flash a
+  // transient "weather unavailable" error in the UI.
   if (!options.skipCache) {
     const cached = requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
+    if (cached && cached.data != null && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
       return cached.data;
     }
   }
@@ -656,6 +660,9 @@ export async function getAllWeatherData(
           windGust: props.windGust?.value
             ? props.windGust.value * 0.621371
             : undefined, // Convert m/s to mph
+          pressureInHg: props.barometricPressure?.value
+            ? props.barometricPressure.value / 3386.39
+            : undefined, // Convert Pa to inches of mercury
           precipitationLastHour: props.precipitationLastHour?.value,
           snowDepth: props.snowDepth?.value, // Already in inches
           sunriseTime: props.sunriseTime,

@@ -16,6 +16,4 @@ export interface CardDataBag {
   timezone: string;
   coordinates: Coordinates | null;
   alerts: WeatherAlert[];
-  /** Opens the full-screen radar view; wired by App.tsx, read by RadarCard. */
-  onExpandRadar?: () => void;
 }

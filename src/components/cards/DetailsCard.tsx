@@ -1,23 +1,13 @@
-import type { CardDataBag } from "../../types/cardData";
-import { degreesToAbbreviatedDirection, formatWindDisplay } from "../../utils/weatherHelpers";
-
-interface CardProps {
-  data: CardDataBag;
-  variant?: string;
-}
+import type { CardBodyProps } from "./registry";
+import {
+  degreesToAbbreviatedDirection,
+  formatWindDisplay,
+  toFahrenheit,
+} from "../../utils/weatherHelpers";
 
 interface StatEntry {
   label: string;
   value: string;
-}
-
-function Stat({ label, value }: StatEntry) {
-  return (
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="text-[11px] text-mut uppercase tracking-[0.04em]">{label}</span>
-      <span className="text-sm font-semibold text-ink tabular-nums truncate">{value}</span>
-    </div>
-  );
 }
 
 function formatClockTime(iso: string | undefined, timezone: string): string | null {
@@ -32,15 +22,21 @@ function formatClockTime(iso: string | undefined, timezone: string): string | nu
 }
 
 /**
- * Compact 2-column grid of real current-conditions stats. Rows for fields
- * that aren't present on this observation (dewpoint, gust, sunrise/sunset)
- * are simply omitted rather than shown with placeholder values.
+ * Label/value grid of real current-conditions stats in the design's
+ * two-column layout. Rows whose fields aren't present on this observation
+ * (dew point, pressure, sunrise/sunset) are omitted rather than shown with
+ * placeholder values.
  */
-export function DetailsCard({ data }: CardProps) {
+export function DetailsCard({ data }: CardBodyProps) {
   const current = data.currentConditions;
 
   if (!current) {
-    return <p className="text-sm text-mut py-4 text-center">Details unavailable</p>;
+    return (
+      <div>
+        <span className="font-serif text-base font-semibold text-ink2">Details</span>
+        <p className="text-sm text-mut mt-3">Details unavailable</p>
+      </div>
+    );
   }
 
   const stats: StatEntry[] = [
@@ -58,13 +54,15 @@ export function DetailsCard({ data }: CardProps) {
   ];
 
   if (current.dewpoint !== undefined) {
-    // NWS reports dewpoint in Celsius; labeled explicitly rather than
-    // silently implying Fahrenheit.
-    stats.push({ label: "Dew point", value: `${Math.round(current.dewpoint)}°C` });
+    // NWS observations report dew point in Celsius; convert before display.
+    stats.push({
+      label: "Dew point",
+      value: `${Math.round(toFahrenheit(current.dewpoint, current.temperatureUnit))}°`,
+    });
   }
 
-  if (current.windGust !== undefined) {
-    stats.push({ label: "Wind gust", value: `${Math.round(current.windGust)} mph` });
+  if (current.pressureInHg !== undefined) {
+    stats.push({ label: "Pressure", value: `${current.pressureInHg.toFixed(2)} in` });
   }
 
   const sunrise = formatClockTime(current.sunriseTime, data.timezone);
@@ -77,11 +75,27 @@ export function DetailsCard({ data }: CardProps) {
     stats.push({ label: "Sunset", value: sunset });
   }
 
+  // Hairline under every visual row of the 2-column grid except the last.
+  const lastRowStart = stats.length - (stats.length % 2 === 0 ? 2 : 1);
+
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-      {stats.map((stat) => (
-        <Stat key={stat.label} label={stat.label} value={stat.value} />
-      ))}
+    <div>
+      <span className="font-serif text-base font-semibold text-ink2">Details</span>
+      <div className="grid grid-cols-2 gap-x-[22px] gap-y-[10px] mt-3">
+        {stats.map((stat, index) => (
+          <div
+            key={stat.label}
+            className={
+              index < lastRowStart
+                ? "flex justify-between items-baseline border-b border-hair pb-2"
+                : "flex justify-between items-baseline"
+            }
+          >
+            <span className="text-[11.5px] text-mut font-[550]">{stat.label}</span>
+            <span className="text-[13px] font-[650] text-ink2 tabular-nums">{stat.value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

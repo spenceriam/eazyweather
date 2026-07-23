@@ -12,9 +12,10 @@ export function reorderCards(layout: CardLayout, sourceId: CardId, targetId: Car
   return { ...layout, order };
 }
 
-/** Toggles a card between full-width and its default single-column span. */
-export function toggleCardSpan(layout: CardLayout, id: CardId): CardLayout {
-  const nextSpan: CardSpan = layout.spans[id] === "full" ? 1 : "full";
+/** Cycles a card's width: 1 column -> 2 columns -> full width -> 1 column (per the design's width button). */
+export function cycleCardSpan(layout: CardLayout, id: CardId): CardLayout {
+  const current = layout.spans[id];
+  const nextSpan: CardSpan = current === 1 ? 2 : current === 2 ? "full" : 1;
   return { ...layout, spans: { ...layout.spans, [id]: nextSpan } };
 }
 

@@ -1,9 +1,4 @@
-import type { CardDataBag } from "../../types/cardData";
-
-interface CardProps {
-  data: CardDataBag;
-  variant?: string;
-}
+import type { CardBodyProps } from "./registry";
 
 /**
  * No air-quality (AQI) or UV-index data source is integrated anywhere in
@@ -13,12 +8,13 @@ interface CardProps {
  * directly.
  */
 // TODO: air quality (AQI) and UV index data source
-export function AirUvCard({ data }: CardProps) {
+export function AirUvCard({ data }: CardBodyProps) {
   void data; // no fields of the data bag apply until an AQI/UV source exists
 
   return (
-    <div className="flex items-center justify-center py-4 text-center">
-      <p className="text-sm text-mut">Air quality and UV data aren't available yet.</p>
+    <div>
+      <span className="font-serif text-base font-semibold text-ink2">Air quality &amp; UV</span>
+      <p className="text-sm text-mut mt-3">Air quality and UV data aren't available yet.</p>
     </div>
   );
 }

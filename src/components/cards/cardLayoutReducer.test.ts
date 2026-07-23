@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CARD_LAYOUT } from "../../types/prefs";
 import {
+  cycleCardSpan,
   reorderCards,
   setCardVisibility,
   setColumnCount,
   setHourlyVariant,
   setSevenDayVariant,
-  toggleCardSpan,
 } from "./cardLayoutReducer";
 
 describe("reorderCards", () => {
@@ -36,14 +36,20 @@ describe("reorderCards", () => {
   });
 });
 
-describe("toggleCardSpan", () => {
-  it("flips a 1-column card to full width", () => {
-    const next = toggleCardSpan(DEFAULT_CARD_LAYOUT, "details");
+describe("cycleCardSpan", () => {
+  it("cycles a 1-column card to 2 columns", () => {
+    const next = cycleCardSpan(DEFAULT_CARD_LAYOUT, "details");
+    expect(next.spans.details).toBe(2);
+  });
+
+  it("cycles a 2-column card to full width", () => {
+    const two = cycleCardSpan(DEFAULT_CARD_LAYOUT, "details");
+    const next = cycleCardSpan(two, "details");
     expect(next.spans.details).toBe("full");
   });
 
-  it("flips a full-width card back to 1 column", () => {
-    const next = toggleCardSpan(DEFAULT_CARD_LAYOUT, "hourly");
+  it("cycles a full-width card back to 1 column", () => {
+    const next = cycleCardSpan(DEFAULT_CARD_LAYOUT, "hourly");
     expect(next.spans.hourly).toBe(1);
   });
 });

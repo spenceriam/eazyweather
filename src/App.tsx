@@ -16,10 +16,9 @@ import { ConsentBanner } from "./components/ConsentBanner";
 import { CoverageNotice } from "./components/CoverageNotice";
 import { LocationPermissionOverlay } from "./components/LocationPermissionOverlay";
 import { PinRefine } from "./components/PinRefine";
-import { RadarFullscreen } from "./components/RadarFullscreen";
 import { CardGrid } from "./components/cards/CardGrid";
-import { CardChrome } from "./components/cards/CardChrome";
 import { RadarCard } from "./components/cards/RadarCard";
+import { CARD_REGISTRY } from "./components/cards/registry";
 import { PrivacyModal } from "./components/modals/PrivacyModal";
 import { calculateIsDaytime } from "./utils/weatherHelpers";
 
@@ -133,7 +132,7 @@ function isNonUsLocation(location: LocationResult): boolean {
 }
 
 function AppShell() {
-  const { prefs, resolvedTheme, setConsent } = usePrefs();
+  const { prefs, setConsent } = usePrefs();
 
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState(CHICAGO_NAME);
@@ -148,7 +147,6 @@ function AppShell() {
   const [pendingGPSCoordinates, setPendingGPSCoordinates] = useState<Coordinates | null>(null);
   const [showPinRefine, setShowPinRefine] = useState(false);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
-  const [showRadarFullscreen, setShowRadarFullscreen] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [openLocationPanelSignal, setOpenLocationPanelSignal] = useState<number | undefined>(undefined);
 
@@ -160,11 +158,6 @@ function AppShell() {
   const [hourlyForecast, setHourlyForecast] = useState<HourlyForecastType[]>([]);
   const [monthlyForecast, setMonthlyForecast] = useState<MonthlyForecastType | null>(null);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
-  // refreshService's own lastRefreshTime/isRefreshing bookkeeping is only
-  // populated by requestManualRefresh(), which this app never calls (it
-  // drives loadWeatherData directly) — lastLoadedAt below is the real
-  // "when did we last successfully fetch" signal used by the Hero band.
-  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
 
   const loadWeatherData = useCallback(
     async (skipRateLimit = false, coordsOverride?: Coordinates) => {
@@ -193,7 +186,6 @@ function AppShell() {
           setError("Weather data unavailable for this location. Try searching for a nearby city.");
         } else {
           setError(null);
-          setLastLoadedAt(Date.now());
           if (current) {
             const parts = locationName.split(",");
             updateStructuredData(
@@ -234,8 +226,7 @@ function AppShell() {
         const monthly = await getMonthlyForecast(coordinates);
         if (!cancelled) setMonthlyForecast(monthly);
       } catch {
-        // MonthlyCard already renders its own "unavailable" state when
-        // monthlyForecast is null — nothing else to surface here.
+        // MonthlyCard renders its own "unavailable" state when monthlyForecast is null.
       }
     })();
     return () => {
@@ -307,6 +298,7 @@ function AppShell() {
 
   const initializeLocation = useCallback(async () => {
     setError(null);
+    const consentUnset = getCookieConsent() === null;
 
     const potentialLocationCode = getPotentialLocationFromUrl();
     if (potentialLocationCode) {
@@ -320,7 +312,8 @@ function AppShell() {
             finalDisplayName = `${locationResult.city}, ${locationResult.country}`;
           }
         }
-        // Deliberately not persisted: a URL location is temporary for this view only.
+        // Deliberately not persisted, and no consent UI: a URL location is
+        // temporary for this view only (pre-existing deep-link behavior).
         applyLocation({ ...locationResult, displayName: finalDisplayName }, { persist: false });
         return;
       } catch {
@@ -332,6 +325,7 @@ function AppShell() {
     if (manualPin) {
       setIsPinned(true);
       applyLocation(manualPin, { persist: false });
+      if (consentUnset) setShowConsentBanner(true);
       return;
     }
 
@@ -341,18 +335,20 @@ function AppShell() {
         try {
           const locationResult = await reverseGeocode(saved.coordinates);
           applyLocation(locationResult);
-          return;
         } catch {
           applyLocation(saved, { persist: false });
-          return;
         }
+      } else {
+        applyLocation(saved, { persist: false });
       }
-      applyLocation(saved, { persist: false });
+      if (consentUnset) setShowConsentBanner(true);
       return;
     }
 
     // No saved/pinned/URL location: default to Chicago, load silently, and
-    // surface the welcome card — never a blank screen.
+    // surface the welcome card — never a blank screen. The welcome card's
+    // "Remember my location" toggle carries the consent decision, so no
+    // separate cookie banner shows alongside it.
     setCoordinates(CHICAGO_COORDS);
     setLocationName(CHICAGO_NAME);
     updatePageTitle(CHICAGO_NAME);
@@ -360,14 +356,7 @@ function AppShell() {
     setShowWelcomeCard(true);
   }, [applyLocation]);
 
-  // First-run: consent banner shows independently of the welcome card, and
-  // neither blocks initializeLocation — Chicago (or a saved/pinned/URL
-  // location) loads immediately regardless of consent state.
   useEffect(() => {
-    const potentialLocationUrl = getPotentialLocationFromUrl();
-    if (!potentialLocationUrl && getCookieConsent() === null) {
-      setShowConsentBanner(true);
-    }
     initializeLocation();
     // Runs once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,17 +370,13 @@ function AppShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coordinates, coverageNotice]);
 
-  function handleAcceptConsent() {
-    setConsent(true);
+  function applyWelcomeConsent(remember: boolean) {
+    setShowWelcomeCard(false);
     setShowConsentBanner(false);
+    setConsent(remember);
   }
 
-  function handleDeclineConsent() {
-    setConsent(false);
-    setShowConsentBanner(false);
-  }
-
-  async function handleLocationSelect(location: LocationResult) {
+  function handleLocationSelect(location: LocationResult) {
     applyLocation(location);
     setShowWelcomeCard(false);
   }
@@ -433,10 +418,6 @@ function AppShell() {
     }
   }
 
-  function handleCoverageChooseUs() {
-    setOpenLocationPanelSignal((prev) => (prev ?? 0) + 1);
-  }
-
   const isDaytime = currentConditions
     ? calculateIsDaytime(currentConditions, prefs.timezone)
     : true;
@@ -449,89 +430,100 @@ function AppShell() {
     timezone: prefs.timezone,
     coordinates,
     alerts,
-    onExpandRadar: () => setShowRadarFullscreen(true),
   };
 
-  const lastUpdatedMinutesAgo = lastLoadedAt
-    ? Math.max(0, Math.round((Date.now() - lastLoadedAt) / 60000))
-    : null;
+  const hasAnyWeather = Boolean(currentConditions) || forecast.length > 0 || hourlyForecast.length > 0;
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg flex flex-col">
       <Header
         locationName={locationName}
         isPinned={isPinned}
+        isEditing={isEditingLayout}
         onLocationSelect={handleLocationSelect}
         onRequestGps={handleRequestGps}
-        onEnterEditMode={() => setIsEditingLayout(true)}
+        onToggleEdit={() => setIsEditingLayout((v) => !v)}
         openLocationPanelSignal={openLocationPanelSignal}
       />
 
-      <main>
-        <h1 className="sr-only">
-          {locationName} weather forecast, radar, and severe weather alerts
-        </h1>
+      <h1 className="sr-only">
+        {locationName} weather forecast, radar, and severe weather alerts
+      </h1>
 
-        <div id="current">
-          <Hero
-            currentConditions={currentConditions}
-            isDaytime={isDaytime}
-            locationName={locationName}
-            onRefresh={() => loadWeatherData(true)}
-            lastUpdatedMinutesAgo={lastUpdatedMinutesAgo}
-          />
-        </div>
+      <div id="current">
+        <Hero
+          currentConditions={currentConditions}
+          isDaytime={isDaytime}
+          timezone={prefs.timezone}
+          coverageGap={Boolean(coverageNotice)}
+        />
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-          {error && !coverageNotice && (
-            <div className="flex items-center justify-between gap-3 border border-warnbrd bg-warnbg rounded-card px-4 py-3">
-              <span className="text-sm text-warnink">{error}</span>
-              <button
-                type="button"
-                onClick={() => loadWeatherData(true)}
-                className="text-sm font-semibold text-warnink hover:underline shrink-0"
-              >
-                Retry
-              </button>
+      <main className="max-w-[1264px] mx-auto w-full box-border px-4 pt-2.5 pb-7 md:px-12 md:pt-3 md:pb-10">
+        {error && !coverageNotice && !hasAnyWeather && (
+          <div className="flex items-center justify-between gap-3 border border-warnbrd bg-warnbg rounded-card px-4 py-3 mb-5">
+            <span className="text-sm text-warnink">{error}</span>
+            <button
+              type="button"
+              onClick={() => loadWeatherData(true)}
+              className="text-sm font-semibold text-warnink hover:underline shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {alerts.length > 0 && <AlertsBlock alerts={alerts} />}
+
+        {coverageNotice ? (
+          <div className="grid gap-5">
+            <CoverageNotice
+              placeName={coverageNotice.placeName}
+              previousLocationName={previousUsLocation?.displayName ?? null}
+              onBack={handleCoverageBack}
+              onChooseUs={() => setOpenLocationPanelSignal((prev) => (prev ?? 0) + 1)}
+            />
+            {/* Radar has no NWS dependency, so it stays live for non-US locations. */}
+            <div
+              className="relative bg-surface border border-line rounded-card shadow-card flex flex-col gap-2.5 md:max-w-[50%]"
+              style={{ padding: CARD_REGISTRY.radar.padding }}
+            >
+              <RadarCard data={cardData} />
             </div>
-          )}
-
-          {alerts.length > 0 && <AlertsBlock alerts={alerts} />}
-
-          {coverageNotice ? (
-            <>
-              <CoverageNotice
-                placeName={coverageNotice.placeName}
-                previousLocationName={previousUsLocation?.displayName ?? null}
-                onBack={handleCoverageBack}
-                onChooseUs={handleCoverageChooseUs}
-              />
-              {/* Forecast cards pause (no NWS calls for non-US points), but radar has
-                  no US-only dependency — it stays live per F13. */}
-              <CardChrome label="Radar" span={1}>
-                <RadarCard data={cardData} />
-              </CardChrome>
-            </>
-          ) : (
-            <CardGrid data={cardData} editing={isEditingLayout} onDoneEditing={() => setIsEditingLayout(false)} />
-          )}
-        </div>
+          </div>
+        ) : (
+          <CardGrid data={cardData} editing={isEditingLayout} onDoneEditing={() => setIsEditingLayout(false)} />
+        )}
       </main>
 
       <Footer />
 
       {showWelcomeCard && (
         <WelcomeCard
-          onLocationSelect={handleLocationSelect}
-          onRequestGps={handleRequestGps}
-          onSkip={() => setShowWelcomeCard(false)}
+          onLocationSelect={(location, remember) => {
+            applyWelcomeConsent(remember);
+            handleLocationSelect(location);
+          }}
+          onRequestGps={(remember) => {
+            applyWelcomeConsent(remember);
+            void handleRequestGps();
+          }}
+          onSkip={(remember) => {
+            applyWelcomeConsent(remember);
+          }}
         />
       )}
 
       {showConsentBanner && (
         <ConsentBanner
-          onAccept={handleAcceptConsent}
-          onDecline={handleDeclineConsent}
+          onAccept={() => {
+            setConsent(true);
+            setShowConsentBanner(false);
+          }}
+          onDecline={() => {
+            setConsent(false);
+            setShowConsentBanner(false);
+          }}
           onOpenPrivacy={() => setIsPrivacyOpen(true)}
         />
       )}
@@ -539,8 +531,14 @@ function AppShell() {
       {isRequestingLocationPermission && <LocationPermissionOverlay />}
 
       {showPinRefine && pendingGPSCoordinates && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl bg-surface border border-line rounded-card shadow-card p-4 space-y-4">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3"
+          style={{ background: "rgba(20,27,32,.5)", backdropFilter: "blur(3px)" }}
+        >
+          <div
+            className="w-[720px] max-w-full bg-surface border border-panelbrd rounded-card overflow-hidden p-4 space-y-4"
+            style={{ boxShadow: "0 24px 60px rgba(0,0,0,.35)" }}
+          >
             <PinRefine
               initialCoordinates={pendingGPSCoordinates}
               onConfirm={handlePinConfirm}
@@ -553,19 +551,7 @@ function AppShell() {
         </div>
       )}
 
-      {showRadarFullscreen && (
-        <RadarFullscreen
-          isOpen={showRadarFullscreen}
-          onClose={() => setShowRadarFullscreen(false)}
-          coordinates={coordinates}
-          timezone={prefs.timezone}
-        />
-      )}
-
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
-
-      {/* Keeps html.dark in sync for any remaining Tailwind dark: utilities during the transition. */}
-      <span className="hidden" data-resolved-theme={resolvedTheme} />
     </div>
   );
 }

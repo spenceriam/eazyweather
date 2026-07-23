@@ -42,6 +42,15 @@ export function abbreviateWindDirection(direction: string): string {
 }
 
 /**
+ * Converts a temperature reading to Fahrenheit when the unit is Celsius.
+ * NWS station observations report temperature/heat index/wind chill/dew point
+ * in Celsius; forecast periods are already Fahrenheit.
+ */
+export function toFahrenheit(value: number, unit: string): number {
+  return unit === 'C' ? (value * 9) / 5 + 32 : value;
+}
+
+/**
  * Converts wind direction from degrees to abbreviated cardinal direction
  */
 export function degreesToAbbreviatedDirection(degrees: number): string {
