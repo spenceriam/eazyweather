@@ -7,6 +7,7 @@ import type {
   MonthlyForecast,
   MonthlyDay,
 } from "../types/weather";
+import type { AlertSeverityClass, WeatherAlert } from "../types/alerts";
 import {
   getHistoricalAveragesForRange,
   getHistoricalWeather,
@@ -909,6 +910,65 @@ export async function getAllWeatherData(
   } catch (error) {
     console.error("Error fetching all weather data:", error);
     throw error;
+  }
+}
+
+function classifyAlertSeverity(
+  event: string,
+  severity: string,
+): AlertSeverityClass {
+  const lowerEvent = event.toLowerCase();
+  if (lowerEvent.includes("warning")) return "warning";
+  if (lowerEvent.includes("watch") || lowerEvent.includes("advisory")) {
+    return "advisory";
+  }
+  return severity === "Extreme" || severity === "Severe"
+    ? "warning"
+    : "advisory";
+}
+
+export async function getActiveAlerts(
+  coords: Coordinates,
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
+): Promise<WeatherAlert[]> {
+  try {
+    const url = `${BASE_URL}/alerts/active?point=${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
+    const data = await fetchWithUserAgent(url, {
+      ...options,
+      skipRateLimit: true,
+    });
+    const features: Array<{ id?: string; properties?: Record<string, unknown> }> =
+      Array.isArray(data?.features) ? data.features : [];
+
+    return features.map((feature) => {
+      const props = feature.properties ?? {};
+      const event = (props.event as string) || "Weather Alert";
+      const severity = (props.severity as string) || "Unknown";
+      const areaDesc = (props.areaDesc as string) || "";
+      const effective =
+        (props.effective as string) || (props.onset as string) || "";
+
+      return {
+        id: (props.id as string) || feature.id || `${event}-${effective}`,
+        event,
+        severityClass: classifyAlertSeverity(event, severity),
+        headline: (props.headline as string) || event,
+        description: (props.description as string) || "",
+        areaDesc,
+        counties: areaDesc
+          ? areaDesc
+              .split(";")
+              .map((part) => part.trim())
+              .filter(Boolean)
+          : [],
+        effective,
+        expires: (props.expires as string) || (props.ends as string) || "",
+        senderName: (props.senderName as string) || "National Weather Service",
+      };
+    });
+  } catch (error) {
+    console.warn("Error fetching active alerts:", error);
+    return [];
   }
 }
 
