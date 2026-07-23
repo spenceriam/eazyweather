@@ -87,3 +87,41 @@ export function setCookieConsent(granted: boolean): void {
     }
   }
 }
+
+/**
+ * Generic JSON preference blob storage used by usePrefs.
+ * Granted consent mirrors the blob into a cookie (180 days); denied consent
+ * keeps it localStorage-only and clears any existing cookie for the key.
+ */
+export function readPrefsBlob(key: string): string | null {
+  const cookieVal = getCookie(key);
+  if (cookieVal) {
+    try {
+      return decodeURIComponent(cookieVal);
+    } catch {
+      return cookieVal;
+    }
+  }
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function writePrefsBlob(
+  key: string,
+  raw: string,
+  consentGranted: boolean,
+): void {
+  try {
+    localStorage.setItem(key, raw);
+  } catch {
+    // Ignore LS errors
+  }
+  if (consentGranted) {
+    setCookie(key, encodeURIComponent(raw), 180);
+  } else {
+    eraseCookie(key);
+  }
+}
