@@ -1,12 +1,33 @@
 import type { Coordinates } from "../types/weather";
 import { setCookie, getCookie, eraseCookie, getCookieConsent } from "../utils/cookieUtils";
 
+interface NominatimAddress {
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  locality?: string;
+  hamlet?: string;
+  state?: string;
+  province?: string;
+  country?: string;
+}
+
+interface NominatimResult {
+  lat: string;
+  lon: string;
+  address: NominatimAddress;
+  display_name?: string;
+}
+
 export interface LocationResult {
   coordinates: Coordinates;
   displayName: string;
   city: string;
   state: string;
   country: string;
+  /** True when this result came from a ZIP/postal-code query. */
+  isZip?: boolean;
 }
 
 // Storage configuration
@@ -14,14 +35,28 @@ const STORAGE_EXPIRATION_DAYS = 180;
 const STORAGE_EXPIRATION_MS = STORAGE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 // ZIP Code validation utilities
-function isValidZipCode(zip: string): boolean {
+const ZIP_LIKE_PATTERN = /^[\d-]+$/;
+
+export function isValidZipCode(zip: string): boolean {
   // US ZIP: 5 digits or ZIP+4: 5-4 digits
   const zipPattern = /^\d{5}(-\d{4})?$/;
   return zipPattern.test(zip);
 }
 
-function isZipCode(query: string): boolean {
+export function isZipCode(query: string): boolean {
   return isValidZipCode(query.trim());
+}
+
+/**
+ * Returns a user-facing error if the query looks like an attempted ZIP code
+ * (digits and hyphens only) but doesn't match the valid ZIP/ZIP+4 shape.
+ * Lets the caller reject malformed ZIP queries before any network request.
+ */
+export function getZipFormatError(query: string): string | null {
+  const trimmed = query.trim();
+  if (!trimmed || !ZIP_LIKE_PATTERN.test(trimmed)) return null;
+  if (isValidZipCode(trimmed)) return null;
+  return "Invalid ZIP code format — use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).";
 }
 
 function normalizeZipCode(zip: string): string {
@@ -44,6 +79,7 @@ export function getChicagoFallback(): LocationResult {
     city: "Chicago",
     state: "Illinois",
     country: "United States",
+    isZip: false,
   };
 }
 
@@ -69,7 +105,7 @@ export async function getBrowserLocation(): Promise<Coordinates> {
           longitude: position.coords.longitude,
         });
       },
-      (error) => {
+      () => {
         // Second attempt with high accuracy enabled
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -78,7 +114,7 @@ export async function getBrowserLocation(): Promise<Coordinates> {
               longitude: position.coords.longitude,
             });
           },
-          (secondError) => {
+          () => {
             // Final attempt with maximum timeout
             navigator.geolocation.getCurrentPosition(
               (position) => {
@@ -200,6 +236,7 @@ export async function reverseGeocode(
       city,
       state,
       country,
+      isZip: false,
     };
   } catch (error) {
     console.error("Reverse geocoding error:", error);
@@ -210,13 +247,14 @@ export async function reverseGeocode(
       city: "",
       state: "",
       country: "",
+      isZip: false,
     };
   }
 }
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
-    let searchQuery = query.trim();
+    const searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
 
     // Store original query for display (preserve ZIP code format)
@@ -310,6 +348,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       city,
       state,
       country,
+      isZip: isZipCode(originalQuery),
     };
   } catch (error) {
     console.error("Geocoding error:", error);
@@ -321,7 +360,7 @@ export async function geocodeLocationMultiple(
   query: string,
 ): Promise<LocationResult[]> {
   try {
-    let searchQuery = query.trim();
+    const searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
 
     // Store original query for display (preserve ZIP code format)
@@ -359,7 +398,7 @@ export async function geocodeLocationMultiple(
       throw new Error("Location not found");
     }
 
-    return data.map((result: any) => {
+    return data.map((result: NominatimResult) => {
       const address = result.address;
       const coords = {
         latitude: parseFloat(result.lat),
@@ -403,6 +442,7 @@ export async function geocodeLocationMultiple(
         city,
         state,
         country,
+        isZip: isZipCode(originalQuery),
       };
     });
   } catch (error) {
@@ -465,6 +505,7 @@ export function getSavedLocation(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      isZip: data.isZip ?? false,
     };
   } catch {
     return null;
@@ -561,6 +602,7 @@ export function getManualPin(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      isZip: data.isZip ?? false,
     };
   } catch {
     return null;
