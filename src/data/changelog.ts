@@ -8,6 +8,21 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "2.0.0",
+    date: "July 23, 2026",
+    type: "major",
+    title: "UI/UX Refresh",
+    changes: [
+      "Replaced the carousel-and-modal layout with a modular, user-arrangeable card dashboard (reorder, resize, hide/show, 1/2/3 columns).",
+      "Added a designed dark mode with a real color palette instead of a CSS inversion filter.",
+      "Rebuilt the radar as an inline card with past-to-forecast playback, a scrub timeline, and a full-screen view.",
+      "Replaced the blocking cookie modal with a non-blocking consent banner; weather now loads immediately on first visit.",
+      "Added active severe weather alerts, shown in one block above the dashboard.",
+      "Added a coverage notice for locations outside current forecast coverage, with radar still available.",
+      "Slimmed the footer to a single in-flow row; About is now a modal.",
+    ],
+  },
+  {
     version: "1.14.1",
     date: "February 21, 2026",
     type: "patch",
