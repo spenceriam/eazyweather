@@ -175,12 +175,13 @@ export function extractWindSpeed(windSpeedString: string): number {
  * Example: "10 mph NW" or "Calm"
  */
 export function formatWindDisplay(speed: number, direction: string): string {
-  if (speed === 0) {
+  const rounded = Math.round(speed);
+  if (rounded === 0) {
     return 'Calm';
   }
 
   const abbr = abbreviateWindDirection(direction);
-  return `${speed} mph ${abbr}`;
+  return `${rounded} mph ${abbr}`;
 }
 
 /**

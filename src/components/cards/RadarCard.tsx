@@ -11,15 +11,14 @@ interface RadarCardProps {
   data: CardDataBag;
   /** Unused — kept for CardBodyProps compatibility with the card registry. */
   variant?: string;
-  /** Wired up by the parent to open RadarFullscreen; safe to omit while that wiring lands. */
-  onExpand?: () => void;
 }
 
 const DEFAULT_COORDS = { latitude: 41.8781, longitude: -87.6298 };
 
 const CARTO_ATTRIBUTION = "&copy; OpenStreetMap &copy; CARTO &middot; Radar &copy; RainViewer";
 
-export function RadarCard({ data, onExpand }: RadarCardProps) {
+export function RadarCard({ data }: RadarCardProps) {
+  const onExpand = data.onExpandRadar;
   const { prefs } = usePrefs();
   const radar = useRadarFrames(prefs.radarLoop);
   const isDark = useIsDarkTheme();

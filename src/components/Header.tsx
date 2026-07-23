@@ -12,6 +12,8 @@ interface HeaderProps {
   onLocationSelect: (location: LocationResult) => void;
   onRequestGps: () => void;
   onEnterEditMode: () => void;
+  /** Bump this (e.g. from CoverageNotice's "Choose a US location") to force the location panel open. */
+  openLocationPanelSignal?: number;
 }
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -26,10 +28,17 @@ export function Header({
   onLocationSelect,
   onRequestGps,
   onEnterEditMode,
+  openLocationPanelSignal,
 }: HeaderProps) {
   const { prefs, setTheme, setTimezone } = usePrefs();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isGearOpen, setIsGearOpen] = useState(false);
+
+  useEffect(() => {
+    if (openLocationPanelSignal !== undefined) {
+      setIsLocationOpen(true);
+    }
+  }, [openLocationPanelSignal]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const locationRef = useRef<HTMLDivElement>(null);
