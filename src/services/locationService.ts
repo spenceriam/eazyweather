@@ -1,12 +1,41 @@
 import type { Coordinates } from "../types/weather";
 import { setCookie, getCookie, eraseCookie, getCookieConsent } from "../utils/cookieUtils";
 
+interface NominatimAddress {
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  locality?: string;
+  hamlet?: string;
+  state?: string;
+  province?: string;
+  country?: string;
+  /** ISO 3166-1 alpha-2, lowercase — locale-independent, unlike `country`. */
+  country_code?: string;
+}
+
+interface NominatimResult {
+  lat: string;
+  lon: string;
+  address: NominatimAddress;
+  display_name?: string;
+}
+
 export interface LocationResult {
   coordinates: Coordinates;
   displayName: string;
   city: string;
   state: string;
   country: string;
+  /**
+   * ISO 3166-1 alpha-2 country code (lowercase), when the geocoder provided
+   * one. Nominatim localizes the `country` display name to the browser's
+   * Accept-Language, so coverage gating must prefer this field.
+   */
+  countryCode?: string;
+  /** True when this result came from a ZIP/postal-code query. */
+  isZip?: boolean;
 }
 
 // Storage configuration
@@ -14,14 +43,28 @@ const STORAGE_EXPIRATION_DAYS = 180;
 const STORAGE_EXPIRATION_MS = STORAGE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 // ZIP Code validation utilities
-function isValidZipCode(zip: string): boolean {
+const ZIP_LIKE_PATTERN = /^[\d-]+$/;
+
+export function isValidZipCode(zip: string): boolean {
   // US ZIP: 5 digits or ZIP+4: 5-4 digits
   const zipPattern = /^\d{5}(-\d{4})?$/;
   return zipPattern.test(zip);
 }
 
-function isZipCode(query: string): boolean {
+export function isZipCode(query: string): boolean {
   return isValidZipCode(query.trim());
+}
+
+/**
+ * Returns a user-facing error if the query looks like an attempted ZIP code
+ * (digits and hyphens only) but doesn't match the valid ZIP/ZIP+4 shape.
+ * Lets the caller reject malformed ZIP queries before any network request.
+ */
+export function getZipFormatError(query: string): string | null {
+  const trimmed = query.trim();
+  if (!trimmed || !ZIP_LIKE_PATTERN.test(trimmed)) return null;
+  if (isValidZipCode(trimmed)) return null;
+  return "Invalid ZIP code format — use 5 digits (e.g., 90210) or ZIP+4 (e.g., 90210-1234).";
 }
 
 function normalizeZipCode(zip: string): string {
@@ -44,6 +87,8 @@ export function getChicagoFallback(): LocationResult {
     city: "Chicago",
     state: "Illinois",
     country: "United States",
+    countryCode: "us",
+    isZip: false,
   };
 }
 
@@ -69,7 +114,7 @@ export async function getBrowserLocation(): Promise<Coordinates> {
           longitude: position.coords.longitude,
         });
       },
-      (error) => {
+      () => {
         // Second attempt with high accuracy enabled
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -78,7 +123,7 @@ export async function getBrowserLocation(): Promise<Coordinates> {
               longitude: position.coords.longitude,
             });
           },
-          (secondError) => {
+          () => {
             // Final attempt with maximum timeout
             navigator.geolocation.getCurrentPosition(
               (position) => {
@@ -165,6 +210,7 @@ export async function reverseGeocode(
       "";
     const state = address.state || address.province || "";
     const country = address.country || "";
+    const countryCode = address.country_code || "";
 
     // Format display name based on location type
     let displayName = "";
@@ -200,6 +246,8 @@ export async function reverseGeocode(
       city,
       state,
       country,
+      countryCode,
+      isZip: false,
     };
   } catch (error) {
     console.error("Reverse geocoding error:", error);
@@ -210,13 +258,15 @@ export async function reverseGeocode(
       city: "",
       state: "",
       country: "",
+      countryCode: "",
+      isZip: false,
     };
   }
 }
 
 export async function geocodeLocation(query: string): Promise<LocationResult> {
   try {
-    let searchQuery = query.trim();
+    const searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1`;
 
     // Store original query for display (preserve ZIP code format)
@@ -272,6 +322,7 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       "";
     const state = address.state || address.province || "";
     const country = address.country || "";
+    const countryCode = address.country_code || "";
 
     // Format display name based on location type - same logic as reverse geocoding
     let displayName = "";
@@ -310,6 +361,8 @@ export async function geocodeLocation(query: string): Promise<LocationResult> {
       city,
       state,
       country,
+      countryCode,
+      isZip: isZipCode(originalQuery),
     };
   } catch (error) {
     console.error("Geocoding error:", error);
@@ -321,7 +374,7 @@ export async function geocodeLocationMultiple(
   query: string,
 ): Promise<LocationResult[]> {
   try {
-    let searchQuery = query.trim();
+    const searchQuery = query.trim();
     let searchParams = `format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
 
     // Store original query for display (preserve ZIP code format)
@@ -359,7 +412,7 @@ export async function geocodeLocationMultiple(
       throw new Error("Location not found");
     }
 
-    return data.map((result: any) => {
+    return data.map((result: NominatimResult) => {
       const address = result.address;
       const coords = {
         latitude: parseFloat(result.lat),
@@ -377,6 +430,7 @@ export async function geocodeLocationMultiple(
         "";
       const state = address.state || address.province || "";
       const country = address.country || "";
+      const countryCode = address.country_code || "";
 
       // Format full display name with complete context
       let displayName = "";
@@ -403,6 +457,8 @@ export async function geocodeLocationMultiple(
         city,
         state,
         country,
+        countryCode,
+        isZip: isZipCode(originalQuery),
       };
     });
   } catch (error) {
@@ -465,6 +521,8 @@ export function getSavedLocation(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      countryCode: data.countryCode,
+      isZip: data.isZip ?? false,
     };
   } catch {
     return null;
@@ -495,6 +553,28 @@ export function saveLocationToHistory(locationResult: LocationResult): void {
   } catch (error) {
     console.error("Error saving location history:", error);
   }
+}
+
+/**
+ * Removes one entry from the recents list in BOTH storage layers. Writing
+ * only localStorage left the cookie copy intact, and since reads prefer the
+ * cookie under granted consent, removed entries silently reappeared.
+ */
+export function removeLocationFromHistory(displayName: string): LocationResult[] {
+  const updated = getLocationHistory().filter((loc) => loc.displayName !== displayName);
+  const json = JSON.stringify(updated);
+
+  try {
+    localStorage.setItem("eazyweather_location_history", json);
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  if (getCookieConsent() === "granted") {
+    setCookie("eazyweather_location_history", json, STORAGE_EXPIRATION_DAYS);
+  }
+
+  return updated;
 }
 
 export function getLocationHistory(): LocationResult[] {
@@ -561,6 +641,8 @@ export function getManualPin(): LocationResult | null {
       city: data.city,
       state: data.state,
       country: data.country,
+      countryCode: data.countryCode,
+      isZip: data.isZip ?? false,
     };
   } catch {
     return null;

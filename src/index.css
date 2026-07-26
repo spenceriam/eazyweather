@@ -2,64 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design tokens — EazyWeather UI refresh (Design.md section 1, verbatim) */
+html {
+    --sbthumb: #c9c3b3;
+    --sbtrack: #eae7db;
+}
+
+html[data-theme="dark"] {
+    --sbthumb: #3a4954;
+    --sbtrack: #171f26;
+}
+
+body {
+    --bg: #f2f0e9;
+    --surface: #ffffff;
+    --line: #e6e2d4;
+    --hair: #f3f0e6;
+    --ink: #232e34;
+    --ink2: #26333a;
+    --body: #46545c;
+    --soft: #5a6870;
+    --mut: #8a9299;
+    --mut2: #7c8a93;
+    --chip: #f5f1e2;
+    --panel: #fbfaf5;
+    --brand: #364247;
+    --brand2: #2a3337;
+    --brandink: #f9f6ee;
+    --link: #3e718f;
+    --headbg: rgba(249, 246, 238, 0.92);
+    --headline: #e6e1d2;
+    --panelbrd: #ddd8c8;
+    --ghost: rgba(255, 255, 255, 0.55);
+    --ghostbrd: rgba(38, 51, 58, 0.14);
+    --warnbg: #f8e4de;
+    --warnbg2: #fbefea;
+    --warnbrd: #ecc3b8;
+    --warnink: #8c3320;
+    --warnmut: #9c5a48;
+    --warnbadge: #a33b24;
+    --advbg: #fbf3df;
+    --advbrd: #eeddae;
+    --advink: #7a5a10;
+    --advmut: #8a6d1f;
+    --advbdg: #d9bc72;
+    --calh: #e7eef6;
+    --calhb: #c6d6e8;
+    --calf: #e4f1f5;
+    --calfb: #bcdde6;
+    --calp: #f6eedc;
+    --calpb: #e6d6ae;
+    --barbg: #efece1;
+    --csh: 0 1px 2px rgba(31, 41, 45, 0.04);
+}
+
+body[data-theme="dark"] {
+    --bg: #12181d;
+    --surface: #1a2228;
+    --line: #26303a;
+    --hair: #212b33;
+    --ink: #edf2f5;
+    --ink2: #e7ecef;
+    --body: #c3cfd7;
+    --soft: #93a3ad;
+    --mut: #7c8a93;
+    --mut2: #93a3ad;
+    --chip: #212b33;
+    --panel: #161e24;
+    --brand: #3e6e93;
+    --brand2: #356082;
+    --brandink: #f2f7fa;
+    --link: #7fb2d9;
+    --headbg: rgba(23, 31, 38, 0.92);
+    --headline: #232e36;
+    --panelbrd: #26303a;
+    --ghost: rgba(255, 255, 255, 0.06);
+    --ghostbrd: rgba(255, 255, 255, 0.14);
+    --warnbg: #33231d;
+    --warnbg2: #2b1f1a;
+    --warnbrd: #4a342b;
+    --warnink: #f0a794;
+    --warnmut: #c08a7a;
+    --warnbadge: #c24c31;
+    --advbg: #322b18;
+    --advbrd: #4e421f;
+    --advink: #d9b45b;
+    --advmut: #b29a55;
+    --advbdg: #7a6530;
+    --calh: #20303f;
+    --calhb: #31465a;
+    --calf: #183440;
+    --calfb: #28505f;
+    --calp: #332e1c;
+    --calpb: #54491f;
+    --barbg: #242f38;
+    --csh: none;
+}
+
 html {
     scroll-behavior: smooth;
 }
 
 body {
     @apply transition-colors duration-200;
-}
-
-.dark .bg-white {
-    background-color: #111827 !important;
-}
-
-.dark .bg-gray-50 {
-    background-color: #0f172a !important;
-}
-
-.dark .bg-gray-100 {
-    background-color: #111827 !important;
-}
-
-.dark .bg-brand-cream {
-    background-color: #0f172a !important;
-}
-
-.dark .text-gray-800 {
-    color: #f3f4f6 !important;
-}
-
-.dark .text-gray-700 {
-    color: #e5e7eb !important;
-}
-
-.dark .text-gray-600 {
-    color: #d1d5db !important;
-}
-
-.dark .text-gray-500 {
-    color: #9ca3af !important;
-}
-
-.dark .border-gray-100,
-.dark .border-gray-200,
-.dark .border-gray-300 {
-    border-color: #374151 !important;
+    background-color: var(--bg);
+    color: var(--body);
 }
 
 .night-map-base {
     filter: brightness(0.62) contrast(1.15) saturate(0.85);
-}
-
-.radar-map-dark .leaflet-control-zoom a {
-    background: rgba(17, 24, 39, 0.92) !important;
-    color: #e5e7eb !important;
-    border-color: #374151 !important;
-}
-
-.radar-map-dark .leaflet-control-zoom a:hover {
-    background: rgba(31, 41, 55, 0.98) !important;
 }
 
 .pin-map-dark .leaflet-control-zoom a {
@@ -72,68 +123,34 @@ body {
     background: rgba(31, 41, 55, 0.98) !important;
 }
 
-.dark .settings-search-input,
-.dark .settings-search-input:focus,
-.dark .settings-search-input:hover {
-    background-color: #1f2937 !important;
-    color: #f3f4f6 !important;
-    border-color: #4b5563 !important;
-    caret-color: #f3f4f6 !important;
+/* Themed scrollbars */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sbthumb) var(--sbtrack);
 }
 
-.dark .settings-search-input::placeholder {
-    color: #9ca3af !important;
-}
-
-.dark .settings-search-input:-webkit-autofill,
-.dark .settings-search-input:-webkit-autofill:hover,
-.dark .settings-search-input:-webkit-autofill:focus,
-.dark .settings-search-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
-    box-shadow: 0 0 0 1000px #1f2937 inset !important;
-    -webkit-text-fill-color: #f3f4f6 !important;
-    caret-color: #f3f4f6 !important;
-}
-
-.dark .initial-location-input,
-.dark .initial-location-input:focus,
-.dark .initial-location-input:hover {
-    background-color: #1f2937 !important;
-    color: #f3f4f6 !important;
-    border-color: #4b5563 !important;
-    caret-color: #f3f4f6 !important;
-}
-
-.dark .initial-location-input::placeholder {
-    color: #9ca3af !important;
-}
-
-.dark .initial-location-input:-webkit-autofill,
-.dark .initial-location-input:-webkit-autofill:hover,
-.dark .initial-location-input:-webkit-autofill:focus,
-.dark .initial-location-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset !important;
-    box-shadow: 0 0 0 1000px #1f2937 inset !important;
-    -webkit-text-fill-color: #f3f4f6 !important;
-    caret-color: #f3f4f6 !important;
-}
-
-/* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--sbtrack);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
+    background: var(--sbthumb);
+    border-radius: 2px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+/* Horizontal card scrollers: hidden scrollbar, still drag/swipe scrollable */
+[data-hscroll] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+[data-hscroll]::-webkit-scrollbar {
+    display: none;
 }
 
 /* Weather icon animations */

@@ -7,6 +7,7 @@ import type {
   MonthlyForecast,
   MonthlyDay,
 } from "../types/weather";
+import type { AlertSeverityClass, WeatherAlert } from "../types/alerts";
 import {
   getHistoricalAveragesForRange,
   getHistoricalWeather,
@@ -53,10 +54,14 @@ async function fetchWithUserAgent(
   const cacheKey = url;
   const now = Date.now();
 
-  // Check cache first (unless explicitly skipped)
+  // Check cache first (unless explicitly skipped). A cache entry with null
+  // data is an in-flight placeholder (its promise is still pending) — fall
+  // through to the promise check below instead of returning null, which
+  // previously made concurrent duplicate calls resolve to null and flash a
+  // transient "weather unavailable" error in the UI.
   if (!options.skipCache) {
     const cached = requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
+    if (cached && cached.data != null && now - cached.timestamp < MIN_REQUEST_INTERVAL) {
       return cached.data;
     }
   }
@@ -144,6 +149,15 @@ async function fetchWithUserAgent(
       data: null,
       timestamp: now,
       promise,
+    });
+    // A rejected promise must not stay cached: leaving the placeholder in
+    // place handed the same rejection to every later caller (including the
+    // UI's Retry button) until a full page reload.
+    promise.then(undefined, () => {
+      const cached = requestCache.get(cacheKey);
+      if (cached?.promise === promise) {
+        requestCache.delete(cacheKey);
+      }
     });
   }
 
@@ -275,10 +289,10 @@ export async function getCurrentConditions(
     }
 
     return {
-      temperature: props.temperature.value,
+      temperature: props.temperature?.value ?? null,
       temperatureUnit:
         props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
-      relativeHumidity: props.relativeHumidity.value,
+      relativeHumidity: props.relativeHumidity?.value ?? null,
       windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
       windDirection: props.windDirection.value || 0,
       textDescription: textDescription || "Unknown",
@@ -640,10 +654,10 @@ export async function getAllWeatherData(
         }
 
         current = {
-          temperature: props.temperature.value,
+          temperature: props.temperature?.value ?? null,
           temperatureUnit:
             props.temperature.unitCode === "wmoUnit:degC" ? "C" : "F",
-          relativeHumidity: props.relativeHumidity.value,
+          relativeHumidity: props.relativeHumidity?.value ?? null,
           windSpeedValue: (props.windSpeed.value ?? 0) * 0.621371,
           windDirection: props.windDirection.value ?? 0,
           textDescription: textDescription || "Unknown",
@@ -655,6 +669,9 @@ export async function getAllWeatherData(
           windGust: props.windGust?.value
             ? props.windGust.value * 0.621371
             : undefined, // Convert m/s to mph
+          pressureInHg: props.barometricPressure?.value
+            ? props.barometricPressure.value / 3386.39
+            : undefined, // Convert Pa to inches of mercury
           precipitationLastHour: props.precipitationLastHour?.value,
           snowDepth: props.snowDepth?.value, // Already in inches
           sunriseTime: props.sunriseTime,
@@ -696,7 +713,7 @@ export async function getAllWeatherData(
       if (isToday && firstPeriod.isDaytime) {
         // It's still daytime today - use forecast high
         todayHigh = firstPeriod.temperature;
-      } else if (currentHour >= 6 && currentHour < 20) {
+      } else if (currentHour >= 6 && currentHour < 20 && current.temperature != null) {
         // It's daytime but forecast starts with tonight - use current temp as high
         // Convert to Fahrenheit if needed
         const currentTempF =
@@ -909,6 +926,65 @@ export async function getAllWeatherData(
   } catch (error) {
     console.error("Error fetching all weather data:", error);
     throw error;
+  }
+}
+
+function classifyAlertSeverity(
+  event: string,
+  severity: string,
+): AlertSeverityClass {
+  const lowerEvent = event.toLowerCase();
+  if (lowerEvent.includes("warning")) return "warning";
+  if (lowerEvent.includes("watch") || lowerEvent.includes("advisory")) {
+    return "advisory";
+  }
+  return severity === "Extreme" || severity === "Severe"
+    ? "warning"
+    : "advisory";
+}
+
+export async function getActiveAlerts(
+  coords: Coordinates,
+  options: { skipRateLimit?: boolean; skipCache?: boolean } = {},
+): Promise<WeatherAlert[]> {
+  try {
+    const url = `${BASE_URL}/alerts/active?point=${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
+    const data = await fetchWithUserAgent(url, {
+      ...options,
+      skipRateLimit: true,
+    });
+    const features: Array<{ id?: string; properties?: Record<string, unknown> }> =
+      Array.isArray(data?.features) ? data.features : [];
+
+    return features.map((feature) => {
+      const props = feature.properties ?? {};
+      const event = (props.event as string) || "Weather Alert";
+      const severity = (props.severity as string) || "Unknown";
+      const areaDesc = (props.areaDesc as string) || "";
+      const effective =
+        (props.effective as string) || (props.onset as string) || "";
+
+      return {
+        id: (props.id as string) || feature.id || `${event}-${effective}`,
+        event,
+        severityClass: classifyAlertSeverity(event, severity),
+        headline: (props.headline as string) || event,
+        description: (props.description as string) || "",
+        areaDesc,
+        counties: areaDesc
+          ? areaDesc
+              .split(";")
+              .map((part) => part.trim())
+              .filter(Boolean)
+          : [],
+        effective,
+        expires: (props.expires as string) || (props.ends as string) || "",
+        senderName: (props.senderName as string) || "National Weather Service",
+      };
+    });
+  } catch (error) {
+    console.warn("Error fetching active alerts:", error);
+    return [];
   }
 }
 

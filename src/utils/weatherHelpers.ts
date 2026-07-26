@@ -42,6 +42,15 @@ export function abbreviateWindDirection(direction: string): string {
 }
 
 /**
+ * Converts a temperature reading to Fahrenheit when the unit is Celsius.
+ * NWS station observations report temperature/heat index/wind chill/dew point
+ * in Celsius; forecast periods are already Fahrenheit.
+ */
+export function toFahrenheit(value: number, unit: string): number {
+  return unit === 'C' ? (value * 9) / 5 + 32 : value;
+}
+
+/**
  * Converts wind direction from degrees to abbreviated cardinal direction
  */
 export function degreesToAbbreviatedDirection(degrees: number): string {
@@ -175,12 +184,13 @@ export function extractWindSpeed(windSpeedString: string): number {
  * Example: "10 mph NW" or "Calm"
  */
 export function formatWindDisplay(speed: number, direction: string): string {
-  if (speed === 0) {
+  const rounded = Math.round(speed);
+  if (rounded === 0) {
     return 'Calm';
   }
 
   const abbr = abbreviateWindDirection(direction);
-  return `${speed} mph ${abbr}`;
+  return `${rounded} mph ${abbr}`;
 }
 
 /**

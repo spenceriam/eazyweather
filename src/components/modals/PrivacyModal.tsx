@@ -11,14 +11,14 @@ export function PrivacyModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Privacy Policy">
       <div className="space-y-4">
         <div>
-          <h3 className="font-medium text-gray-900 mb-2">
+          <h3 className="font-medium text-ink mb-2">
             Information We Collect
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ui-body">
             EazyWeather collects minimal information necessary to provide
             weather services:
           </p>
-          <ul className="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-ui-body mt-2 space-y-1 list-disc list-inside">
             <li>Location data (coordinates) for weather requests</li>
             <li>Location search history (stored locally on your device)</li>
             <li>Basic usage analytics (no personal information)</li>
@@ -26,13 +26,13 @@ export function PrivacyModal({
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-900 mb-2">
+          <h3 className="font-medium text-ink mb-2">
             How We Use Your Information
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ui-body">
             Your location information is used solely to:
           </p>
-          <ul className="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-ui-body mt-2 space-y-1 list-disc list-inside">
             <li>Provide accurate weather data for your location</li>
             <li>Power location search and save search history locally</li>
             <li>Improve the accuracy of weather forecasts</li>
@@ -40,8 +40,8 @@ export function PrivacyModal({
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-900 mb-2">Data Storage</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="font-medium text-ink mb-2">Data Storage</h3>
+          <p className="text-sm text-ui-body">
             Location data and search history are stored locally on your device.
             You have the option to enable cookies to ensure this data persists
             reliably for up to 6 months. If cookies are disabled, data is stored
@@ -51,13 +51,13 @@ export function PrivacyModal({
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-900 mb-2">
+          <h3 className="font-medium text-ink mb-2">
             Third-Party Services
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ui-body">
             EazyWeather uses the following third-party services:
           </p>
-          <ul className="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-ui-body mt-2 space-y-1 list-disc list-inside">
             <li>
               <strong>National Weather Service:</strong> Current conditions,
               forecasts, and weather alerts from official US government weather
@@ -74,8 +74,8 @@ export function PrivacyModal({
           </ul>
         </div>
 
-        <div className="pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
+        <div className="pt-4 border-t border-line">
+          <p className="text-sm text-mut">
             <strong>Last Updated:</strong> October 2025
             <br />
             For questions about this privacy policy, contact us at:{" "}

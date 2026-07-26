@@ -20,36 +20,36 @@ export function WhatsNewModal({
             {changelog[0].changes.map((change, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-brand dark:text-blue-300 mt-1">•</span>
-                <span className="text-sm text-gray-700 dark:text-gray-200">{change}</span>
+                <span className="text-sm text-ink2">{change}</span>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">{changelog[0].date}</p>
+          <p className="text-xs text-mut mt-3">{changelog[0].date}</p>
         </div>
 
         {/* Previous versions */}
         {changelog.length > 1 && (
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <h4 className="text-sm font-medium text-mut uppercase tracking-wide">
               Previous Updates
             </h4>
             {changelog.slice(1).map((entry) => (
               <div
                 key={entry.version}
-                className="border-l-2 border-gray-200 dark:border-gray-700 pl-4"
+                className="border-l-2 border-line pl-4"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-semibold text-ink">
                     v{entry.version}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">• {entry.date}</span>
+                  <span className="text-xs text-mut">• {entry.date}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                <p className="text-sm font-medium text-ink2 mb-1">
                   {entry.title}
                 </p>
                 <ul className="space-y-1">
                   {entry.changes.map((change, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-300">
+                    <li key={idx} className="text-sm text-ui-body">
                       • {change}
                     </li>
                   ))}

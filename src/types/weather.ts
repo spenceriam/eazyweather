@@ -16,9 +16,11 @@ export interface WeatherPoint {
 }
 
 export interface CurrentConditions {
-  temperature: number;
+  /** Null when the station observation failed QC — never coerce to 0. */
+  temperature: number | null;
   temperatureUnit: string;
-  relativeHumidity: number;
+  /** Null when the station observation failed QC — never coerce to 0. */
+  relativeHumidity: number | null;
   windSpeedValue?: number;
   windDirection: number;
   textDescription: string;
@@ -28,6 +30,8 @@ export interface CurrentConditions {
   windChill?: number;
   dewpoint?: number;
   windGust?: number;
+  /** Barometric pressure converted to inches of mercury. */
+  pressureInHg?: number;
   precipitationLastHour?: number;
   snowDepth?: number;
   sunriseTime?: string;
@@ -35,6 +39,12 @@ export interface CurrentConditions {
   todayHigh?: number;
   todayLow?: number;
   timezone?: string;
+}
+
+/** NWS probability-of-precipitation object, passed through verbatim on forecast periods. */
+export interface PrecipProbability {
+  unitCode?: string;
+  value: number | null;
 }
 
 export interface ForecastPeriod {
@@ -50,6 +60,8 @@ export interface ForecastPeriod {
   shortForecast: string;
   detailedForecast: string;
   isDaytime: boolean;
+  /** Present on raw NWS periods; value may be null when NWS omits it. */
+  probabilityOfPrecipitation?: PrecipProbability;
 }
 
 export interface HourlyForecast {
@@ -60,6 +72,8 @@ export interface HourlyForecast {
   shortForecast: string;
   icon: string;
   isDaytime: boolean;
+  /** Present on raw NWS periods; value may be null when NWS omits it. */
+  probabilityOfPrecipitation?: PrecipProbability;
 }
 
 export interface Location {
